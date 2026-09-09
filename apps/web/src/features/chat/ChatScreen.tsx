@@ -54,6 +54,7 @@ export function ChatScreen(props: { conversationId: string; activeConnector: Con
           <ChatPanel
             messages={messages.data ?? []}
             streamText={runEvents.streamText}
+            reasoningText={runEvents.reasoningText}
             liveEvents={runEvents.events}
             toolActivity={runEvents.toolActivity}
             persistedActivities={activities.data ?? []}

@@ -5,6 +5,8 @@ import type { SettingsTab } from "./settings-tabs/provider-templates";
 import { SettingsTabNav } from "./settings-tabs/SettingsTabNav";
 import { ProviderTab } from "./settings-tabs/ProviderTab";
 import { SafeModeTab } from "./settings-tabs/SafeModeTab";
+import { MonitoringTab } from "./settings-tabs/MonitoringTab";
+import { MemoryTab } from "./settings-tabs/MemoryTab";
 import { AboutTab } from "./settings-tabs/AboutTab";
 
 export function SettingsPage(props: { initialTab?: SettingsTab; hideHeader?: boolean } = {}) {
@@ -36,7 +38,13 @@ export function SettingsPage(props: { initialTab?: SettingsTab; hideHeader?: boo
       {/* Tab 2: Safe Mode */}
       {activeTab === "safemode" && <SafeModeTab />}
 
-      {/* Tab 3: About & System */}
+      {/* Tab 3: Monitoring proaktif */}
+      {activeTab === "monitoring" && <MonitoringTab />}
+
+      {/* Tab 4: Memori lintas percakapan */}
+      {activeTab === "memory" && <MemoryTab />}
+
+      {/* Tab 5: About & System */}
       {activeTab === "about" && <AboutTab />}
     </div>
   );

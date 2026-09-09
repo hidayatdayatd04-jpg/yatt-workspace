@@ -30,12 +30,23 @@ export function UserMessage(props: {
           <p className="whitespace-pre-wrap text-sm leading-relaxed font-normal">{m.content.text}</p>
           {m.content.attachments && m.content.attachments.length > 0 && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {m.content.attachments.map((a) => (
-                <span key={a.id} className="flex items-center gap-1 rounded-md bg-white/20 px-2.5 py-0.5 text-xs text-white">
-                  <FileText className="size-3" />
-                  {a.name}
-                </span>
-              ))}
+              {m.content.attachments.map((a) =>
+                a.kind === "image" ? (
+                  <a key={a.id} href={`/api/attachments/files/${a.id}`} target="_blank" rel="noreferrer" title={a.name}>
+                    <img
+                      src={`/api/attachments/files/${a.id}`}
+                      alt={a.name}
+                      loading="lazy"
+                      className="h-20 w-20 rounded-lg border border-white/30 object-cover"
+                    />
+                  </a>
+                ) : (
+                  <span key={a.id} className="flex items-center gap-1 rounded-md bg-white/20 px-2.5 py-0.5 text-xs text-white">
+                    <FileText className="size-3" />
+                    {a.name}
+                  </span>
+                ),
+              )}
             </div>
           )}
         </div>

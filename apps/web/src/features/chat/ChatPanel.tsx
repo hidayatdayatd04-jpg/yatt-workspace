@@ -22,6 +22,7 @@ export { fmtSize } from "./format-size";
 export function ChatPanel(props: {
   messages: MessageDTO[];
   streamText: string;
+  reasoningText?: string;
   liveEvents?: RunEventDTO[];
   toolActivity: ToolActivity[];
   persistedActivities?: ActivityEventDTO[];
@@ -44,8 +45,7 @@ export function ChatPanel(props: {
     props.toolActivity.length,
     props.runLive,
     props.persistedActivities?.length,
-  );
-  const edit = useMessageEditing();
+  );  const edit = useMessageEditing();
   const { rows, byRun, liveSteps } = useChatRows(props.messages, props.persistedActivities ?? [], props.toolActivity);
 
   function submitEdit() {
@@ -95,7 +95,7 @@ export function ChatPanel(props: {
 
       <div ref={scroll.containerRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-[850px] flex-col gap-6">
-          {showEmpty && <EmptyChatState />}
+          {showEmpty && <EmptyChatState onSelect={props.onResendPrompt} />}
 
           {rows.map((row) => (
             <MessageItem
@@ -122,6 +122,7 @@ export function ChatPanel(props: {
           <LiveTurn
             runLive={props.runLive}
             streamText={props.streamText}
+            reasoningText={props.reasoningText}
             liveEvents={props.liveEvents}
             liveSteps={liveSteps}
             queueStatus={props.queueStatus}

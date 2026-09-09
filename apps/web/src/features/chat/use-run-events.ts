@@ -21,6 +21,7 @@ export function useRunEvents(runId: string | null, onDone?: () => void) {
   const [events, setEvents] = useState<RunEventDTO[]>([]);
   const [live, setLive] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [reasoningText, setReasoningText] = useState("");
   const [toolActivity, setToolActivity] = useState<LiveToolItem[]>([]);
   const [txStatus, setTxStatus] = useState<string | null>(null);
   const [queueStatus, setQueueStatus] = useState<string | null>(null);
@@ -32,12 +33,12 @@ export function useRunEvents(runId: string | null, onDone?: () => void) {
 
   useRunEventStream(
     runId,
-    { setEvents, setStreamText, setToolActivity, setTxStatus, setQueueStatus, setLive, setRunError },
+    { setEvents, setStreamText, setReasoningText, setToolActivity, setTxStatus, setQueueStatus, setLive, setRunError },
     doneRef,
     finishRef,
     lastSeqRef,
   );
   useRunEventsPoll(runId, finishRef);
 
-  return { events, streamText, toolActivity, txStatus, queueStatus, live, runError };
+  return { events, streamText, reasoningText, toolActivity, txStatus, queueStatus, live, runError };
 }

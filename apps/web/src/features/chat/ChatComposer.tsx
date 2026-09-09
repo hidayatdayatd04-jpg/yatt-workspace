@@ -10,6 +10,8 @@ import { useComposerActions } from "./composer/use-composer-actions";
 import { useComposerReasoning } from "./composer/use-composer-reasoning";
 import { ReasoningPicker } from "./composer/ReasoningPicker";
 import { ComposerMenu } from "./composer/ComposerMenu";
+import { VoiceButton } from "./composer/VoiceButton";
+import { saveRecentPrompt } from "./composer/prompt-library";
 import { ModelPicker } from "./composer/ModelPicker";
 import { ComposerAttachments } from "./composer/ComposerExtras";
 import type { ChatComposerProps } from "./composer/types";
@@ -29,14 +31,16 @@ export function ChatComposer(props: ChatComposerProps) {
     externalText: props.externalText,
     onClearExternalText: props.onClearExternalText,
     canSubmit: () => !props.disabled && !props.running && !props.uploading && !setMode.isPending,
-    onSend: (trimmed) =>
+    onSend: (trimmed) => {
+      saveRecentPrompt(trimmed);
       props.onSend(
         trimmed,
         props.attachments.map((a) => a.id),
         model.effectiveModel || undefined,
         model.effectiveSelection?.providerId,
         reasoning.effort,
-      ),
+      );
+    },
   });
   const { text, setText, textareaRef } = draft;
 
@@ -57,15 +61,33 @@ export function ChatComposer(props: ChatComposerProps) {
       <div className={isDocked ? "mx-auto max-w-3xl" : "w-full"}>
         <ComposerAttachments attachments={props.attachments} onRemoveAttachment={props.onRemoveAttachment} />
 
-        <div className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border">
+        <div
+          className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border"
+          onDragOver={(e) => {
+            if (props.uploading || uploadDisabled) return;
+            e.preventDefault();
+          }}
+          onDrop={(e) => {
+            if (props.uploading || uploadDisabled) return;
+            const files = Array.from(e.dataTransfer.files ?? []);
+            if (files.length === 0) return;
+            e.preventDefault();
+            const room = Math.max(0, 4 - props.attachments.length);
+            files.slice(0, room).forEach((f) => props.onPickFile(f));
+            if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
+          }}
+        >
           <input
             ref={actions.fileInputRef}
             type="file"
+            multiple
             className="hidden"
             accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.csv,.log,.rsc"
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) props.onPickFile(f);
+              const files = Array.from(e.target.files ?? []);
+              const room = Math.max(0, 4 - props.attachments.length);
+              files.slice(0, room).forEach((f) => props.onPickFile(f));
+              if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
               e.target.value = "";
             }}
           />
@@ -74,7 +96,27 @@ export function ChatComposer(props: ChatComposerProps) {
             ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={draft.onKeyDown}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                draft.submit();
+                return;
+              }
+              if (e.key === "Escape" && props.running) {
+                e.preventDefault();
+                props.onCancel();
+                return;
+              }
+              draft.onKeyDown(e);
+            }}
+            onPaste={(e) => {
+              const files = Array.from(e.clipboardData?.files ?? []);
+              if (files.length === 0 || props.uploading || uploadDisabled) return;
+              e.preventDefault();
+              const room = Math.max(0, 4 - props.attachments.length);
+              files.slice(0, room).forEach((f) => props.onPickFile(f));
+              if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
+            }}
             onCompositionStart={() => draft.setImeComposing(true)}
             onCompositionEnd={() => draft.setImeComposing(false)}
             placeholder="Tulis pesan…"
@@ -104,6 +146,10 @@ export function ChatComposer(props: ChatComposerProps) {
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <VoiceButton
+                onTranscript={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
+                disabled={props.disabled || props.running}
+              />
               <ReasoningPicker reasoning={reasoning} />
               <ModelPicker model={model} scroll={scroll} />
               <ContextMeter

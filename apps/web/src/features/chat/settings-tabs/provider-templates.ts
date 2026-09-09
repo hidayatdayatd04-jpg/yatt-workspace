@@ -1,4 +1,4 @@
-export type SettingsTab = "provider" | "safemode" | "about";
+export type SettingsTab = "provider" | "safemode" | "monitoring" | "memory" | "about";
 
 export const DEFAULT_PROVIDER_TEMPLATES = [
   {

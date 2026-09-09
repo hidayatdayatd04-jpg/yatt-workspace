@@ -2,7 +2,7 @@ import type { Hono } from "hono";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { AppError } from "../../lib/errors";
 import type { Env } from "../../types";
-import { agentRuns, messages } from "../../db/schema";
+import { agentRuns, messageFeedback, messages } from "../../db/schema";
 import { requireConversation, requireWorkspace } from "./helpers";
 import type { ChatCtx } from "./types";
 
@@ -83,5 +83,43 @@ export function registerMessageRoutes(routes: Hono<Env>, ctx: ChatCtx) {
       })
       .where(eq(agentRuns.id, row.id));
     return c.json({ ok: true });
+  });
+
+  // POST /api/conversations/:id/messages/:msgId/feedback — nilai jawaban AI (1 | -1)
+  routes.post("/api/conversations/:id/messages/:msgId/feedback", async (c) => {
+    const workspace = requireWorkspace(c);
+    const conv = await requireConversation(ctx, workspace.userId, c.req.param("id"));
+    const msgId = c.req.param("msgId");
+    const body = (await c.req.json().catch(() => null)) as { rating?: unknown } | null;
+    const rating = body?.rating === 1 ? 1 : body?.rating === -1 ? -1 : null;
+    if (rating === null) throw new AppError("VALIDATION_FAILED", "Rating harus 1 atau -1.", 422);
+    const [msg] = await deps.db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(and(eq(messages.id, msgId), eq(messages.conversationId, conv.id)))
+      .limit(1);
+    if (!msg) throw new AppError("NOT_FOUND", "Pesan tidak ditemukan.", 404);
+    await deps.db.delete(messageFeedback).where(and(eq(messageFeedback.messageId, msgId), eq(messageFeedback.userId, workspace.userId)));
+    await deps.db.insert(messageFeedback).values({ userId: workspace.userId, messageId: msgId, conversationId: conv.id, rating });
+    return c.json({ ok: true, rating });
+  });
+
+  // DELETE — batalkan penilaian
+  routes.delete("/api/conversations/:id/messages/:msgId/feedback", async (c) => {
+    const workspace = requireWorkspace(c);
+    const conv = await requireConversation(ctx, workspace.userId, c.req.param("id"));
+    await deps.db.delete(messageFeedback).where(and(eq(messageFeedback.messageId, c.req.param("msgId")), eq(messageFeedback.userId, workspace.userId), eq(messageFeedback.conversationId, conv.id)));
+    return c.json({ ok: true });
+  });
+
+  // GET — peta penilaian user untuk satu percakapan
+  routes.get("/api/conversations/:id/feedback", async (c) => {
+    const workspace = requireWorkspace(c);
+    const conv = await requireConversation(ctx, workspace.userId, c.req.param("id"));
+    const rows = await deps.db
+      .select({ messageId: messageFeedback.messageId, rating: messageFeedback.rating })
+      .from(messageFeedback)
+      .where(and(eq(messageFeedback.conversationId, conv.id), eq(messageFeedback.userId, workspace.userId)));
+    return c.json({ feedback: Object.fromEntries(rows.map((r) => [r.messageId, r.rating])) });
   });
 }

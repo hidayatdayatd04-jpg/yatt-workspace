@@ -1,4 +1,5 @@
 import { ThinkingLogo } from "./ThinkingLogo";
+import { ReasoningBlock } from "./ReasoningBlock";
 import { buildRunTimeline } from "./run-timeline";
 import { RunPipeline, ResearchCard, type PipelineStep } from "./ToolActivity";
 import { LiveTextBlock } from "./LiveTextBlock";
@@ -7,15 +8,17 @@ import type { RunEventDTO } from "./chat-hooks";
 export function LiveTurn(props: {
   runLive: boolean;
   streamText: string;
+  reasoningText?: string;
   liveEvents?: RunEventDTO[];
   liveSteps: PipelineStep[];
   queueStatus?: string | null;
   txStatus?: string | null;
   onSendToTerminal?: (code: string) => void;
 }) {
-  const { runLive, streamText, liveEvents, liveSteps } = props;
-  const showTurn = runLive && (streamText || liveEvents?.some((e) => e.type.startsWith("tool.")) || liveSteps.length > 0);
-  const showThinking = runLive && !streamText && !liveEvents?.some((e) => e.type.startsWith("tool.")) && liveSteps.length === 0;
+  const { runLive, streamText, reasoningText, liveEvents, liveSteps } = props;
+  const hasTool = liveEvents?.some((e) => e.type.startsWith("tool.")) || liveSteps.length > 0;
+  const showTurn = runLive && (!!streamText || !!reasoningText || hasTool || (liveEvents?.length ?? 0) > 0);
+  const showThinking = runLive && !streamText && !reasoningText && !hasTool && (liveEvents?.length ?? 0) === 0;
   return (
     <>
       {/* Live in-flight assistant turn */}
@@ -25,6 +28,7 @@ export function LiveTurn(props: {
             <img src="/logo.png" alt="MikroTik AI" className="size-full object-contain p-0.5" />
           </div>
           <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl rounded-tl-xs border border-border/70 bg-card/80 px-4 py-3.5 shadow-xs">
+            {!!reasoningText && <ReasoningBlock text={reasoningText} live={runLive} />}
             {liveEvents?.length ? (
               (() => {
                 const blocks = buildRunTimeline(liveEvents, true);

@@ -1,9 +1,9 @@
 import type { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, like } from "drizzle-orm";
 import { AppError } from "../../lib/errors";
 import type { Env } from "../../types";
-import { agentRuns, conversations } from "../../db/schema";
+import { agentRuns, conversations, messages } from "../../db/schema";
 import { requireConversation, requireWorkspace, toConversationDTO } from "./helpers";
 import { CreateSchema, PatchSchema, type ChatCtx } from "./types";
 
@@ -29,7 +29,25 @@ export function registerConversationRoutes(routes: Hono<Env>, ctx: ChatCtx) {
     else if (archivedParam === "false" || archivedParam === null) filtered = filtered.filter((r) => !r.archivedAt);
     // archived=all => no filter
     if (archivedParam === "all") filtered = rows;
-    if (search) filtered = filtered.filter((r) => r.title.toLowerCase().includes(search));
+    if (search) {
+      const byTitle = new Set(filtered.filter((r) => r.title.toLowerCase().includes(search)).map((r) => r.id));
+      // Cari juga di isi pesan (kolom content JSON tersimpan sebagai teks).
+      try {
+        const escaped = search.replace(/[\\%_]/g, (m) => `\\${m}`);
+        const hits = await deps.db
+          .select({ conversationId: messages.conversationId })
+          .from(messages)
+          .where(like(messages.content, `%${escaped}%`))
+          .limit(200);
+        const mine = new Set(filtered.map((r) => r.id));
+        for (const h of hits) {
+          if (mine.has(h.conversationId as string)) byTitle.add(h.conversationId as string);
+        }
+      } catch {
+        /* pencarian isi non-fatal — hasil judul tetap dipakai */
+      }
+      filtered = filtered.filter((r) => byTitle.has(r.id));
+    }
     // Deterministic order: pinned first by pinnedAt desc, then updatedAt desc, id tie-breaker.
     filtered.sort((a, b) => {
       const ap = a.pinnedAt ? (a.pinnedAt as Date).getTime() : 0;

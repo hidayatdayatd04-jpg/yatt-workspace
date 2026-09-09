@@ -1,5 +1,7 @@
 import { stripAskBlocks } from "./ask-card";
 import { stripApprovalBlocks } from "./approval-card";
+import { stripSuggestions } from "./suggestion-card";
+import { stripConfidence } from "./AssistantBody";
 import { Markdown } from "./Markdown";
 import { useSmoothText } from "./use-smooth-text";
 
@@ -15,7 +17,7 @@ export function LiveTextBlock({
   onSendToTerminal?: (code: string) => void;
 }) {
   const { displayedText } = useSmoothText(text, live && isLatest);
-  const clean = stripApprovalBlocks(stripAskBlocks(displayedText));
+  const clean = stripConfidence(stripSuggestions(stripApprovalBlocks(stripAskBlocks(displayedText))));
   return (
     <div className="relative">
       {clean ? <Markdown text={clean} onSendToTerminal={onSendToTerminal} /> : null}

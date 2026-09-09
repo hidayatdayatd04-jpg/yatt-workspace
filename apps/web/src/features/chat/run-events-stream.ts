@@ -9,7 +9,7 @@ export function useRunEventStream(
   finishRef: { current: (immediate?: boolean) => void },
   lastSeqRef: { current: number },
 ) {
-  const { setEvents, setStreamText, setToolActivity, setTxStatus, setQueueStatus, setLive } = sink;
+  const { setEvents, setStreamText, setReasoningText, setToolActivity, setTxStatus, setQueueStatus, setLive } = sink;
   const { setRunError } = sink;
 
   useEffect(() => {
@@ -17,6 +17,7 @@ export function useRunEventStream(
     if (!runId) {
       setEvents([]);
       setStreamText("");
+      setReasoningText("");
       setToolActivity([]);
       setTxStatus(null);
       setQueueStatus(null);
@@ -27,6 +28,7 @@ export function useRunEventStream(
     }
     setEvents([]);
     setStreamText("");
+    setReasoningText("");
     setToolActivity([]);
     setTxStatus(null);
     setQueueStatus(null);

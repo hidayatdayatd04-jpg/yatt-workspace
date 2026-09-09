@@ -5,6 +5,8 @@ import { buildRunTimeline, type TimelineBlock } from "./run-timeline";
 import { RunPipeline, buildPipeline, ResearchCard } from "./ToolActivity";
 import { AssistantBody } from "./AssistantBody";
 import { CopyButton } from "./CopyButton";
+import { FeedbackButtons } from "./FeedbackButtons";
+import { ReasoningBlock } from "./ReasoningBlock";
 import { RunErrorCard } from "./RunErrorCard";
 import { splitLegacyFailureNotice, toRunErrorInfo } from "./run-error";
 
@@ -40,7 +42,12 @@ export function AssistantMessage(props: {
     message?: unknown;
     toolSucceeded?: unknown;
     toolFailed?: unknown;
+    fallbackReason?: unknown;
   } | null;
+  const partialFailures =
+    outcome?.status === "completed" && typeof outcome.toolFailed === "number" && outcome.toolFailed > 0
+      ? outcome.toolFailed
+      : 0;
   const strippedText = splitLegacyFailureNotice(m.content.text ?? "");
   let displayTimeline: TimelineBlock[] | null = timeline;
   let legacyNoticeFound = strippedText.hadNotice;
@@ -92,17 +99,29 @@ export function AssistantMessage(props: {
   return (
     <div>
       <div className="rounded-2xl rounded-tl-xs border border-border/70 bg-card/80 px-4 py-3.5 shadow-xs">
+        {typeof outcome?.fallbackReason === "string" && outcome.fallbackReason && (
+          <p className="mb-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] text-amber-700 dark:text-amber-300">
+            Dijawab model cadangan ({outcome.fallbackReason}).
+          </p>
+        )}
+        {!!m.content.reasoning && <ReasoningBlock text={m.content.reasoning} live={false} />}
         {m.content.attachments && m.content.attachments.length > 0 && (
           <div className="mb-2.5 flex flex-wrap gap-1">
-            {m.content.attachments.map((a) => (
-              <span
-                key={a.id}
-                className="flex items-center gap-1 rounded-md border border-border/80 bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-              >
-                <FileText className="size-3 text-cyan-500" />
-                {a.name}
-              </span>
-            ))}
+            {m.content.attachments.map((a) =>
+              a.kind === "image" ? (
+                <a key={a.id} href={`/api/attachments/files/${a.id}`} target="_blank" rel="noreferrer" title={a.name}>
+                  <img src={`/api/attachments/files/${a.id}`} alt={a.name} loading="lazy" className="h-20 w-20 rounded-lg border border-border/60 object-cover" />
+                </a>
+              ) : (
+                <span
+                  key={a.id}
+                  className="flex items-center gap-1 rounded-md border border-border/80 bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                >
+                  <FileText className="size-3 text-cyan-500" />
+                  {a.name}
+                </span>
+              ),
+            )}
           </div>
         )}
 
@@ -116,6 +135,8 @@ export function AssistantMessage(props: {
                   onSendToTerminal={props.onSendToTerminal}
                   activeConnectionId={props.activeConnectionId}
                   conversationId={props.conversationId}
+                  onSelectPrompt={props.onResendPrompt}
+                  suggestionsDisabled={props.actionsDisabled}
                 />
               ) : block.kind === "research" ? (
                 <ResearchCard research={block.research} status={block.status} />
@@ -138,6 +159,8 @@ export function AssistantMessage(props: {
                 onSendToTerminal={props.onSendToTerminal}
                 activeConnectionId={props.activeConnectionId}
                 conversationId={props.conversationId}
+                onSelectPrompt={props.onResendPrompt}
+                suggestionsDisabled={props.actionsDisabled}
               />
             ) : (
               !showErrorCard && (
@@ -163,10 +186,18 @@ export function AssistantMessage(props: {
             Status: {m.status === "failed" ? "Gagal" : m.status === "cancelled" ? "Dibatalkan" : m.status}
           </p>
         )}
+        {partialFailures > 0 && (
+          <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+            Sebagian pembacaan gagal ({partialFailures}) — jawaban mungkin tidak lengkap.
+          </p>
+        )}
       </div>
 
       <div className="mt-1 flex flex-wrap items-center justify-start gap-2 text-[11px] text-muted-foreground">
         {strippedText.chat && <CopyButton getText={() => strippedText.chat} label="Salin Jawaban" />}
+        {strippedText.chat && !showErrorCard && (
+          <FeedbackButtons messageId={m.id} conversationId={props.conversationId} disabled={props.actionsDisabled} />
+        )}
         {showRegenerate && prevUser && (
           <Button
             variant="ghost"

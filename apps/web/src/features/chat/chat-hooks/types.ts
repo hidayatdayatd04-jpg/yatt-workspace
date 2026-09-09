@@ -18,10 +18,11 @@ export interface MessageDTO {
   role: "user" | "assistant";
   content: {
     text?: string;
+    reasoning?: string;
     runId?: string;
     timeline?: RunEventDTO[];
     attachments?: { id: string; name: string; kind: string }[];
-    outcome?: { status: string; code?: string; reason?: string; toolSucceeded?: number; toolFailed?: number; succeededTools?: string[]; hasPartial?: boolean };
+    outcome?: { status: string; code?: string; reason?: string; toolSucceeded?: number; toolFailed?: number; succeededTools?: string[]; hasPartial?: boolean; fallbackReason?: string };
   };
   status: string;
   seq: number;
@@ -32,6 +33,7 @@ export interface RunEventDTO {
   type:
     | "run.started"
     | "message.delta"
+    | "reasoning.delta"
     | "tool.started"
     | "tool.completed"
     | "tool.failed"

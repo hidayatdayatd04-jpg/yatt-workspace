@@ -71,6 +71,7 @@ export function ResearchCard(props: { research: ResearchResult | null; status: "
               className="block rounded-lg border border-border/60 bg-background/70 px-2.5 py-2 transition-colors hover:border-indigo-500/40 hover:bg-background"
             >
               <span className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                <span className="flex size-4 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-[10px] font-bold">[{i + 1}]</span>
                 <Globe className="size-3 shrink-0" />
                 <span className="truncate">{s.title || domainOf(s.url)}</span>
                 <ExternalLink className="size-3 shrink-0 opacity-60" />

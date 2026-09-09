@@ -33,7 +33,7 @@ export function attachTerminalListeners(es: EventSource, confirmDone: (immediate
 
 export function createPayloadHandler(ctx: PayloadHandlerCtx) {
   const { runId, lastSeqRef, sink, addStreamLength } = ctx;
-  const { setEvents, setStreamText, setToolActivity, setTxStatus, setQueueStatus } = sink;
+  const { setEvents, setStreamText, setReasoningText, setToolActivity, setTxStatus, setQueueStatus } = sink;
 
   return function handlePayload(type: RunEventDTO["type"], data: string) {
     if (ctx.isConfirmed()) return;
@@ -43,7 +43,10 @@ export function createPayloadHandler(ctx: PayloadHandlerCtx) {
       if (ev.runId !== runId || !Number.isInteger(ev.seq) || ev.seq <= lastSeqRef.current) return;
       lastSeqRef.current = ev.seq;
       setEvents((prev) => [...prev, ev]);
-      if (ev.type === "message.delta") {
+      if (ev.type === "reasoning.delta") {
+        const chunk = String((ev.payload as { text?: string }).text ?? "");
+        setReasoningText((prev) => prev + chunk);
+      } else if (ev.type === "message.delta") {
         setQueueStatus(null);
         const chunk = String((ev.payload as { text?: string }).text ?? "");
         addStreamLength(chunk.length);
