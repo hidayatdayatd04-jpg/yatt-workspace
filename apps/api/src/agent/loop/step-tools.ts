@@ -2,6 +2,7 @@ import type { ChatMessage, ChatToolCall } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
 import type { EmitFn, RunCounters } from "./context";
 import { executeSingleTool, type SingleToolEnv, type SingleToolState } from "./single-tool";
+import { canonicalKey } from "./ranking";
 import { parseToolArgs } from "./tool-args";
 import type { StartRunInput } from "./types";
 
@@ -26,6 +27,46 @@ export async function runStepTools(
   state: SingleToolState,
 ): Promise<void> {
   const { stepToolCalls, catalog, chatHistory, toolCallCount } = args;
+  const providerNameOf = (call: ChatToolCall) =>
+    catalog.find((t) => t.fqName.replace(/[^A-Za-z0-9_-]/g, "_") === call.name)?.fqName ?? call.name;
+  const riskOf = (fq: string) => catalog.find((t) => t.fqName === fq)?.risk ?? "unknown";
+  const isBatchableRead = (fq: string) =>
+    riskOf(fq) === "read" && !fq.includes("find_tools") && !fq.includes("routeros_search");
+
+  interface Batched {
+    call: ChatToolCall;
+    fq: string;
+    parsedArgs: unknown;
+    i: number;
+  }
+  // Pembacaan independen yang berurutan dieksekusi PARALEL (satu batch =
+  // satu Promise.all); mutasi/discovery tetap serial demi urutan Safe Mode.
+  let readBatch: Batched[] = [];
+  const flushReads = async (): Promise<void> => {
+    if (readBatch.length === 0) return;
+    const batch = readBatch;
+    readBatch = [];
+    if (batch.length === 1 || hasDuplicateLoopKey(batch)) {
+      for (const b of batch) {
+        await executeSingleTool(env, input, b.call, b.fq, b.parsedArgs, catalog, b.i, emitSeq, counters, state, chatHistory);
+        if (counters.finalStatus !== "completed") break;
+      }
+      return;
+    }
+    await Promise.all(
+      batch.map((b) => executeSingleTool(env, input, b.call, b.fq, b.parsedArgs, catalog, b.i, emitSeq, counters, state, chatHistory)),
+    );
+  };
+  const hasDuplicateLoopKey = (batch: Batched[]): boolean => {
+    const seen = new Set<string>();
+    for (const b of batch) {
+      const k = canonicalKey(b.fq, b.parsedArgs);
+      if (seen.has(k)) return true;
+      seen.add(k);
+    }
+    return false;
+  };
+
   for (const [i, call] of stepToolCalls.entries()) {
     if (args.isCancelled()) {
       counters.finalStatus = "cancelled";
@@ -56,8 +97,15 @@ export async function runStepTools(
     const parsed = await parseToolArgs(env.db, input, call, chatHistory);
     if (!parsed.ok) continue;
     // map provider tool name back to fqName (dots replaced by _ in provider space)
-    const fq = catalog.find((t) => t.fqName.replace(/[^A-Za-z0-9_-]/g, "_") === call.name)?.fqName ?? call.name;
+    const fq = providerNameOf(call);
+    if (isBatchableRead(fq)) {
+      readBatch.push({ call, fq, parsedArgs: parsed.args, i });
+      continue;
+    }
+    await flushReads();
+    if (counters.finalStatus !== "completed") break;
     await executeSingleTool(env, input, call, fq, parsed.args, catalog, i, emitSeq, counters, state, chatHistory);
     if (counters.finalStatus !== "completed") break;
   }
+  await flushReads();
 }

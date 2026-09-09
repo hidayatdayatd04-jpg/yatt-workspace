@@ -34,12 +34,16 @@ export function estimateTokensFromChars(chars: number): number {
  * Dipakai untuk pre-check TPM; direkonsiliasi dengan token aktual setelahnya.
  */
 export function estimateRequestTokens(input: {
-  messages: { content: string | null }[];
+  messages: { content: string | null; images?: { dataUrl?: string }[] }[];
   tools?: unknown;
   maxTokens: number;
 }): number {
   let chars = 0;
-  for (const m of input.messages) chars += (m.content ?? "").length;
+  let imageCount = 0;
+  for (const m of input.messages) {
+    chars += (m.content ?? "").length;
+    imageCount += m.images?.length ?? 0;
+  }
   if (input.tools !== undefined) {
     try {
       chars += JSON.stringify(input.tools).length;
@@ -49,7 +53,7 @@ export function estimateRequestTokens(input: {
   }
   // overhead framing untuk role/tool-call JSON
   chars += input.messages.length * 24;
-  const inputEst = estimateTokensFromChars(chars);
+  const inputEst = estimateTokensFromChars(chars) + imageCount * 1000;
   const outputReserve = clampPositiveInt(input.maxTokens, 1);
   return inputEst + outputReserve;
 }

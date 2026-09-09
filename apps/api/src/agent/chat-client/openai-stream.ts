@@ -59,7 +59,7 @@ export function createOpenAiCompatibleClient(cfg: ProviderConfigWithKey, logger:
     async *stream(input) {
       // Estimasi token input+output SEBELUM request (rolling TPM pre-check).
       const estimated = estimateRequestTokens({
-        messages: input.messages.map((m) => ({ content: m.content })),
+        messages: input.messages.map((m) => ({ content: m.content, images: m.images })),
         tools: input.tools,
         maxTokens: input.maxTokens,
       });

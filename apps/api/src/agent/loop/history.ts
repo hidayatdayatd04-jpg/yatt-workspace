@@ -54,6 +54,23 @@ export async function assembleHistory(
     }
   }
 
+  // Gambar vision hanya untuk giliran user saat ini (lampiran yang baru
+  // diupload): tempel sebagai image part pada pesan user TERAKHIR agar
+  // provider multimodal benar-benar melihat isinya. Riwayat lama tetap teks
+  // agar payload tidak meledak.
+  const visionImages = (input.visionImages ?? [])
+    .filter((img) => typeof img.dataUrl === "string" && img.dataUrl.startsWith("data:image/"))
+    .slice(0, 3);
+  if (visionImages.length > 0) {
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      const msg = chatHistory[i];
+      if (msg?.role === "user") {
+        msg.images = visionImages.map((img) => ({ mime: img.mime, dataUrl: img.dataUrl, name: img.name }));
+        break;
+      }
+    }
+  }
+
   // Ensure history does not end with an assistant turn (strictly required by Gemini API)
   while (chatHistory.length > 1 && chatHistory[chatHistory.length - 1]?.role === "assistant") {
     chatHistory.pop();

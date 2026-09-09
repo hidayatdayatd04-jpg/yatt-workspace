@@ -14,11 +14,17 @@ export interface ChatToolCall {
 }
 
 export interface StreamEvent {
-  type: "text" | "tool_calls" | "done" | "usage";
+  type: "text" | "tool_calls" | "done" | "usage" | "reasoning";
   text?: string;
   toolCalls?: ChatToolCall[];
   finishReason?: string;
   usage?: { promptTokens: number; completionTokens: number };
+}
+
+export interface ChatImagePart {
+  mime: string;
+  dataUrl: string;
+  name?: string;
 }
 
 export interface ChatMessage {
@@ -26,6 +32,12 @@ export interface ChatMessage {
   content: string | null;
   toolCalls?: ChatToolCall[];
   toolCallId?: string;
+  /**
+   * Lampiran gambar untuk pesan user (data URI base64). Hanya dikirim ke
+   * provider bila model mendukung vision — wire.ts mengubahnya menjadi
+   * content block image_url OpenAI-compatible.
+   */
+  images?: ChatImagePart[];
 }
 
 /** Input satu turn assistant (dipakai ChatClient.stream dan konteks internal). */

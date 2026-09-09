@@ -47,7 +47,7 @@ export async function finalizeRun(
   const toolFailed = c.toolOutcomes.filter((t) => !t.ok).length;
   const outcome =
     c.finalStatus === "completed"
-      ? { status: "completed" as const, toolSucceeded, toolFailed }
+      ? { status: "completed" as const, toolSucceeded, toolFailed, ...(c.fallbackReason ? { fallbackReason: c.fallbackReason } : {}) }
       : {
           status: c.finalStatus as "failed" | "cancelled",
           code: c.failCode ?? "RUN_FAILED",
@@ -63,7 +63,13 @@ export async function finalizeRun(
   await env.db.insert(messages).values({
     conversationId: input.conversationId,
     role: "assistant",
-    content: { text: redactText(c.assistantText), runId: input.runId, timeline: redactObject(c.timeline), outcome },
+    content: {
+      text: redactText(c.assistantText),
+      ...(c.reasoningText.trim() ? { reasoning: redactText(c.reasoningText.slice(0, 20_000)) } : {}),
+      runId: input.runId,
+      timeline: redactObject(c.timeline),
+      outcome,
+    },
     status: c.finalStatus === "completed" ? "complete" : c.finalStatus,
     seq: maxSeq + 1,
   });
@@ -78,7 +84,13 @@ export async function finalizeRun(
     .where(eq(agentRuns.id, input.runId));
 
   if (c.finalStatus === "completed") {
-    await emitSeq({ type: "run.completed", payload: { usage: usageRecordOf(c, input.modelLabel) } });
+    await emitSeq({
+      type: "run.completed",
+      payload: {
+        usage: usageRecordOf(c, input.modelLabel),
+        ...(c.fallbackReason ? { fallbackReason: c.fallbackReason } : {}),
+      },
+    });
   } else if (c.finalStatus === "cancelled") {
     await emitSeq({ type: "run.cancelled", payload: { reason: c.failMessage ?? "dibatalkan pengguna" } });
   } else {

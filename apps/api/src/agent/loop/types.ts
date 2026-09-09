@@ -10,6 +10,7 @@ export interface RunEvent {
   type:
     | "run.started"
     | "message.delta"
+    | "reasoning.delta"
     | "tool.started"
     | "tool.completed"
     | "tool.failed"
@@ -39,6 +40,12 @@ export interface StartRunInput {
   connectionId: string | null;
   userMessageId: string;
   userText: string;
+  /**
+   * Gambar vision untuk pesan user saat ini (data URI base64). Diisi dari
+   * lampiran gambar yang sudah tervalidasi; dikirim ke provider hanya bila
+   * model mendukung vision (difilter di run-executor).
+   */
+  visionImages?: { mime: string; name: string; dataUrl: string }[];
   policy: PolicySnapshot;
   /** Per-run provider client (user-configured provider or mock). */
   client: ChatClient;

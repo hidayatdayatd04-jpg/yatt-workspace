@@ -80,7 +80,10 @@ export async function streamStepTurn(
       },
     })) {
       combinedController.signal.throwIfAborted();
-      if (ev.type === "text" && ev.text) {
+      if (ev.type === "reasoning" && ev.text) {
+        c.reasoningText += ev.text;
+        await emitSeq({ type: "reasoning.delta", payload: { text: ev.text } });
+      } else if (ev.type === "text" && ev.text) {
         if (!stepText && c.assistantText) {
           c.assistantText += "\n\n";
           await emitSeq({ type: "message.delta", payload: { text: "\n\n" } });
@@ -104,6 +107,13 @@ export async function streamStepTurn(
       c.lastRequestCompletionTokens = stepCompletionTokens;
       c.promptTokensTotal += stepPromptTokens;
       c.completionTokensTotal += stepCompletionTokens;
+      // Transparansi fallback: catat bila jawaban berasal dari model cadangan.
+      try {
+        const reason = (env.client as unknown as { getFallbackReason?: () => string | null }).getFallbackReason?.() ?? null;
+        if (reason && !c.fallbackReason) c.fallbackReason = reason;
+      } catch {
+        /* non-fatal */
+      }
       await env.db.update(agentRuns).set({ usage: usageRecordOf(c, env.client.modelLabel) }).where(eq(agentRuns.id, env.runId));
     }
     return { status: "ok", stepText, stepToolCalls, stepFinishReason };

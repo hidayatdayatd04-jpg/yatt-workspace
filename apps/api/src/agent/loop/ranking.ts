@@ -35,14 +35,38 @@ const CORE_ROUTER_READ_TOOLS = new Set([
   "system_identity",
 ]);
 
+/** Normalisasi token ringan: huruf kecil + singular sederhana (jamak Inggris). */
+function stemToken(w: string): string {
+  const t = w.toLowerCase();
+  if (t.length > 5 && t.endsWith("es")) return t.slice(0, -2);
+  if (t.length > 4 && t.endsWith("s")) return t.slice(0, -1);
+  return t;
+}
+
 /** Skor relevansi satu tool terhadap kata kunci (dipakai ranking + budget deskripsi). */
 export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): number {
   if (t.fqName === CONNECTION_CHECK_FQ) return 1_000_000;
   if (CORE_ROUTER_READ_TOOLS.has(t.rawName)) return 600_000;
   const hay = `${t.fqName} ${t.description} ${(t.capabilities ?? []).join(" ")}`.toLowerCase();
+  const hayTokens = new Set(hay.split(/[^a-z0-9]+/).filter(Boolean).map(stemToken));
   let s = 0;
-  for (const kw of keywords) {
-    if (hay.includes(kw)) s += kw.length >= 5 ? 200 : 100;
+  for (const rawKw of keywords) {
+    const kw = stemToken(rawKw);
+    if (!kw) continue;
+    if (hay.includes(rawKw.toLowerCase())) {
+      s += rawKw.length >= 5 ? 200 : 100;
+      continue;
+    }
+    // Kecocokan parsial semantik-lite: awalan kata atau sebaliknya (min 4 char)
+    // agar typo ringan/jamak ("interface", "addres") tetap menemukan tool.
+    if (kw.length >= 4) {
+      for (const ht of hayTokens) {
+        if (ht.length >= 4 && (ht.startsWith(kw) || kw.startsWith(ht))) {
+          s += 60;
+          break;
+        }
+      }
+    }
   }
   if (t.fqName.startsWith("docs:") || t.fqName.startsWith("web:")) s += 5_000;
   return s;

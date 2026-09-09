@@ -60,6 +60,10 @@ export async function* drainTurnStream(
     for await (const chunk of chunks) {
       const choice = chunk.choices?.[0];
       const delta = choice?.delta;
+      const reasoning = delta?.reasoning_content ?? delta?.reasoning;
+      if (typeof reasoning === "string" && reasoning) {
+        yield { type: "reasoning", text: reasoning };
+      }
       if (delta?.content) {
         yield { type: "text", text: delta.content };
       }

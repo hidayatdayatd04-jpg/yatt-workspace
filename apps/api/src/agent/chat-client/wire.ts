@@ -3,15 +3,25 @@ import type { ChatMessage, ChatToolDefinition } from "./types";
 
 /**
  * Bentuk wire OpenAI-compatible yang dikirim ke provider.
- * `content` SELALU string (tidak pernah null): endpoint OpenAI-compatible
+ * `content` SELALU string (tidak pernah null) untuk pesan teks biasa;
+ * pesan user bergambar memakai array multimodal OpenAI
+ * ([{type:"text"},{type:"image_url"}]) agar model vision benar-benar
+ * melihat isi gambar. Endpoint OpenAI-compatible
  * Gemini (`/v1beta/openai/`) menolak `content: null` pada giliran
  * assistant+tool_calls dengan 400 "Request contains an invalid argument".
  * Itulah akar 400 pada alur satu-tool: request pertama (tanpa tool turn)
  * lolos, request kedua (assistant null + tool result) ditolak.
  */
+export type ProviderWireContent =
+  | string
+  | (
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+    )[];
+
 export interface ProviderWireMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  content: ProviderWireContent;
   tool_calls?: { id: string; type: "function"; function: { name: string; arguments: string }; extra_content?: unknown }[];
   tool_call_id?: string;
 }
@@ -86,6 +96,17 @@ export function buildProviderMessages(
         };
       });
       out.push({ role: "assistant", content: m.content ?? "", tool_calls: calls });
+      return;
+    }
+    if (m.role === "user" && m.images?.length) {
+      const text = m.content ?? "";
+      out.push({
+        role: "user",
+        content: [
+          ...(text ? [{ type: "text" as const, text }] : []),
+          ...m.images.map((img) => ({ type: "image_url" as const, image_url: { url: img.dataUrl } })),
+        ],
+      });
       return;
     }
     out.push({ role: m.role as "user" | "assistant", content: m.content ?? "" });

@@ -72,3 +72,4 @@ export {
   supportsReasoning,
 } from "./reasoning";
 export type { ReasoningEffort, RunReasoningValue } from "./reasoning";
+export { MAX_VISION_BYTES_PER_IMAGE, MAX_VISION_IMAGES, supportsVision } from "./vision";

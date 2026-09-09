@@ -22,6 +22,8 @@ export interface RunCounters {
   failCode: string | null;
   failMessage: string | null;
   assistantText: string;
+  reasoningText: string;
+  fallbackReason: string | null;
   promptTokensTotal: number;
   completionTokensTotal: number;
   lastRequestPromptTokens: number;
@@ -42,6 +44,8 @@ export function createRunCounters(): RunCounters {
     failCode: null,
     failMessage: null,
     assistantText: "",
+    reasoningText: "",
+    fallbackReason: null,
     promptTokensTotal: 0,
     completionTokensTotal: 0,
     lastRequestPromptTokens: 0,
@@ -80,9 +84,9 @@ export function createEmitter(
   return async (e: Omit<RunEvent, "seq" | "runId">) => {
     counters.seqCounter += 1;
     const event: RunEvent = { ...e, runId, seq: counters.seqCounter };
-    if (e.type === "message.delta" || e.type.startsWith("tool.")) {
+    if (e.type === "message.delta" || e.type === "reasoning.delta" || e.type.startsWith("tool.")) {
       const previous = counters.timeline.at(-1);
-      if (e.type === "message.delta" && previous?.type === "message.delta") {
+      if ((e.type === "message.delta" || e.type === "reasoning.delta") && previous?.type === e.type) {
         previous.payload = { text: String(previous.payload.text ?? "") + String(e.payload.text ?? "") };
       } else counters.timeline.push({ ...event, payload: { ...event.payload } });
     }
