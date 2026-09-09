@@ -12,6 +12,7 @@ import {
   hub,
   makeRateLimitedClient,
   providerSettings,
+  visionSettingsService,
   type FallbackCandidate,
 } from "./ai";
 import { storage } from "./storage";
@@ -29,6 +30,7 @@ export function mountChatRoutes(app: Hono<HonoEnv>) {
     connectors,
     transactions: txCoordinator,
     getProvider: (userId, model, providerId) => providerSettings.resolveForRun(userId, { model, providerId }),
+    getVisionProvider: (userId) => visionSettingsService.getDecrypted(userId),
     getFallbackCandidates: (userId, model, providerId) =>
       providerSettings.listFallbackCandidates(userId, { model, providerId }) as Promise<FallbackCandidate[]>,
     makeClient: (cfg, fallbackCandidates, runContext) => makeRateLimitedClient(cfg, fallbackCandidates ?? [], runContext),

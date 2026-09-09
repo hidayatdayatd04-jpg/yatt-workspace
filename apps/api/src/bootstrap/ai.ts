@@ -8,6 +8,7 @@ import { RunEventHub } from "../agent/hub";
 import { createToolExecutor } from "../agent/tool-executor";
 import { executeWebSearchTool } from "../agent/web-search-tool";
 import { createWebSearchSettingsService } from "../agent/web-search-settings";
+import { createVisionSettingsService } from "../agent/vision-settings";
 import { globalCheckpoints, globalRateLimiter } from "../agent/rate-limiter";
 import { parseRateLimitOverrides } from "../lib/config";
 import { createFallbackChatClient, type FallbackCandidate } from "../agent/model-fallback";
@@ -26,6 +27,7 @@ export const providerSettings = createProviderSettingsService({ db, keyRing, log
 }
 
 export const webSearchSettingsService = createWebSearchSettingsService({ db, keyRing, logger });
+export const visionSettingsService = createVisionSettingsService({ db, keyRing, logger });
 
 /** Bungkus client OpenAI-compatible dengan fallback antar model (read-only safe). */
 export function makeRateLimitedClient(

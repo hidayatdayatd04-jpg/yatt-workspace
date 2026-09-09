@@ -18,6 +18,8 @@ export interface ChatRouteDeps {
   connectors: ConnectorService;
   /** Returns the user's decrypted provider config (or null when unconfigured). */
   getProvider: (userId: string, requestedModel?: string, requestedProviderId?: string) => Promise<ProviderConfigWithKey | null>;
+  /** Konfigurasi vision eksplisit milik user (Settings → Vision); null bila belum diatur. */
+  getVisionProvider?: (userId: string) => Promise<{ kind: string; baseUrl: string; model: string; apiKey: string } | null>;
   /** Kandidat fallback lintas provider/model (opsional; bila tak ada, tanpa fallback). */
   getFallbackCandidates?: (userId: string, requestedModel?: string, requestedProviderId?: string) => Promise<{ providerId: string; providerKind: string; model: string; enabled: boolean; baseUrl?: string; name?: string; apiKey?: string }[]>;
   /** Builds a real OpenAI-compatible client from a stored config (terpusat rate-limited; fallback bila disediakan). */

@@ -43,15 +43,29 @@ function candidateConfig(candidate: FallbackCandidate): ProviderConfigWithKey | 
   };
 }
 
-/** Pilih satu client vision: cfg primer run → kandidat fallback milik user. */
-function resolveVisionClient(
+/** Pilih satu client vision: konfigurasi eksplisit user → cfg primer → fallback. */
+async function resolveVisionClient(
   ctx: ChatCtx,
   args: { cfg: ProviderConfigWithKey | null; fallbacks: FallbackCandidate[]; userId: string; runId: string; conversationId: string; policyMode: "read-only" | "write" },
-): { client: ChatClient; label: string } | null {
+): Promise<{ client: ChatClient; label: string } | null> {
   const runContext = { runId: args.runId, conversationId: args.conversationId, userId: args.userId, userText: "(pembaca gambar lampiran)", policyMode: args.policyMode };
+  // 1. Konfigurasi vision eksplisit milik user (Settings → Provider → Vision):
+  // dipercaya apa adanya karena user sendiri yang mengisinya.
+  const explicit = (await ctx.deps.getVisionProvider?.(args.userId).catch(() => null)) ?? null;
+  if (explicit?.apiKey && explicit.baseUrl && explicit.model) {
+    const cfg: ProviderConfigWithKey = {
+      kind: explicit.kind as ProviderConfigWithKey["kind"],
+      baseUrl: explicit.baseUrl,
+      model: explicit.model,
+      apiKey: explicit.apiKey,
+    };
+    return { client: ctx.deps.makeClient(cfg, [], runContext), label: explicit.model };
+  }
+  // 2. Model primer run bila mendukung vision.
   if (args.cfg && supportsVision(args.cfg.model)) {
     return { client: ctx.deps.makeClient(args.cfg, [], runContext), label: args.cfg.model };
   }
+  // 3. Kandidat fallback milik user yang mendukung vision.
   for (const candidate of args.fallbacks) {
     const cfg = candidateConfig(candidate);
     if (cfg) return { client: ctx.deps.makeClient(cfg, [], runContext), label: cfg.model };
@@ -70,7 +84,7 @@ async function readVisionImages(
   args: { images: VisionImage[]; cfg: ProviderConfigWithKey | null; userId: string; runId: string; conversationId: string; policyMode: "read-only" | "write" },
 ): Promise<string | null> {
   const fallbacks = (await ctx.deps.getFallbackCandidates?.(args.userId).catch(() => [])) ?? [];
-  const resolved = resolveVisionClient(ctx, { ...args, fallbacks });
+  const resolved = await resolveVisionClient(ctx, { ...args, fallbacks });
   if (!resolved) return null;
   const messages: ChatMessage[] = [
     {

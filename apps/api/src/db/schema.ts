@@ -1,5 +1,5 @@
 export { workspaces, routerConnections, connectionPermissions } from "./schema-core";
-export { aiProviderSettings, webSearchSettings, aiProviders } from "./schema-providers";
+export { aiProviderSettings, webSearchSettings, visionSettings, aiProviders } from "./schema-providers";
 export { accounts, sessions, preferences } from "./schema-auth";
 export { conversations, messages, attachments, agentRuns, toolExecutions, userMemories, messageFeedback } from "./schema-chat";
 export { changeTransactions, auditEvents } from "./schema-transactions";
