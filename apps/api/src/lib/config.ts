@@ -54,6 +54,7 @@ export const EnvSchema = z.object({
   AGENT_MAX_STEPS: int(24, 1, 64),
   AGENT_MAX_TOOL_CALLS: int(30, 1, 128),
   AGENT_RUN_TIMEOUT_MS: int(180000, 5000, 600000),
+  MONITOR_WATCHER_INTERVAL_MS: int(180000, 60000, 900000),
   MAX_ACTIONS_PER_TRANSACTION: int(20, 1, 200),
   // Centralized AI rate limiter (aturan #1): default 15 RPM + 150.000 TPM per
   // model untuk seluruh provider (Gemini/OpenRouter/custom). RPD tidak

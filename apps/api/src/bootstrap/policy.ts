@@ -5,6 +5,7 @@ import { createConnectorService } from "../services/connector";
 import { createNetworkMapService } from "../services/network-map";
 import { createNotificationService } from "../services/notification";
 import { createMonitoringService } from "../services/monitoring";
+import { createMonitoringWatcher } from "../services/monitoring/watcher";
 import { createBackupService } from "../services/backup";
 import { createApprovalService } from "../services/approval";
 import { normalizeCustomTools } from "../policies/normalize";
@@ -28,6 +29,7 @@ export const connectors = createConnectorService({
 export const networkMap = createNetworkMapService({ connectors, targetPolicy: createTargetPolicy(config.routerAllowedCidrs) });
 export const notifications = createNotificationService({ db });
 export const monitoring = createMonitoringService({ db, connectors, notifications });
+export const monitoringWatcher = createMonitoringWatcher({ db, monitoring, logger, defaultIntervalMs: config.MONITOR_WATCHER_INTERVAL_MS });
 export const backups = createBackupService({ db, connectors });
 export const approvals = createApprovalService({ db, backups, notifications });
 

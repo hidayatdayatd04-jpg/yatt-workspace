@@ -9,7 +9,7 @@ import { ensureSeedAccount } from "./services/auth";
 import { AppError, errorBody, statusForCode } from "./lib/errors";
 import type { Env as HonoEnv } from "./types";
 import { config, db, logger, rosetta, supervisor } from "./bootstrap/foundation";
-import { dispatcher } from "./bootstrap/policy";
+import { dispatcher, monitoringWatcher } from "./bootstrap/policy";
 import "./bootstrap/ai";
 import { mountApiRoutes } from "./bootstrap/api-routes";
 import { mountChatRoutes } from "./bootstrap/chat-routes";
@@ -89,6 +89,10 @@ logger.info(`starting api server on :${port}`, {
   mockProvider: config.useMockProvider,
 });
 
+// Poller monitoring proaktif: cek ambang tiap interval selama proses aktif.
+// Berhenti bersih saat shutdown agar tidak ada timer zombie.
+monitoringWatcher.start();
+
 export default {
   port,
   hostname: "127.0.0.1",
@@ -102,6 +106,7 @@ export default {
 const shutdown = async (signal: string) => {
   logger.info("graceful shutdown started", { signal });
   try {
+    monitoringWatcher.stop();
     await supervisor.shutdownAll();
     await rosetta.shutdown();
   } catch (err) {
