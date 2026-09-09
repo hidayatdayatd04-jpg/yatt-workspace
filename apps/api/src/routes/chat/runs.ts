@@ -5,6 +5,7 @@ import { AppError } from "../../lib/errors";
 import type { Env } from "../../types";
 import { agentRuns, attachments, conversations, messages } from "../../db/schema";
 import { isGreetingOnly } from "../../agent/intent";
+import { MAX_VISION_BYTES_PER_IMAGE, MAX_VISION_IMAGES } from "@shared/index";
 import { requireConversation, requireWorkspace } from "./helpers";
 import { enforceRunRateLimit } from "./run-registry";
 import { executeBackgroundRun } from "./run-executor";
@@ -76,6 +77,7 @@ export function registerRunRoutes(routes: Hono<Env>, ctx: ChatCtx) {
     // Saat retry in-place, konteks dibangun ulang dari lampiran yang sudah
     // terikat pada pesan tersebut (tanpa upload baru).
     let attachmentBlocks: { id: string; kind: string; name: string; mime: string; text?: string }[] = []; // eslint-disable-line prefer-const
+    let visionImages: { mime: string; name: string; dataUrl: string }[] = []; // eslint-disable-line prefer-const
     const wantedIds = editedMsg
       ? (
           await deps.db
@@ -108,7 +110,15 @@ export function registerRunRoutes(routes: Hono<Env>, ctx: ChatCtx) {
         if (content.kind === "text") {
           const clipped = content.bytes.subarray(0, 24_000).toString("utf8");
           attachmentBlocks.push({ id, kind: "text", name: content.name, mime: content.mime, text: clipped });
-        } else if (content.kind === "image" || content.kind === "pdf") {
+        } else if (content.kind === "image") {
+          // Gambar dikirim sebagai image_url multimodal bila model mendukung
+          // vision; dibatasi jumlah & ukuran agar payload tidak meledak.
+          attachmentBlocks.push({ id, kind: content.kind, name: content.name, mime: content.mime });
+          if (visionImages.length < MAX_VISION_IMAGES && content.bytes.length <= MAX_VISION_BYTES_PER_IMAGE) {
+            const dataUrl = `data:${content.mime};base64,${content.bytes.toString("base64")}`;
+            visionImages.push({ mime: content.mime, name: content.name, dataUrl });
+          }
+        } else if (content.kind === "pdf") {
           // vision/multimodal content is sent by the provider adapter when the
           // configured model supports it; recorded here for the message + UI
           attachmentBlocks.push({ id, kind: content.kind, name: content.name, mime: content.mime });
@@ -201,6 +211,7 @@ export function registerRunRoutes(routes: Hono<Env>, ctx: ChatCtx) {
       cfg,
       userMessageId,
       attachmentNote,
+      visionImages,
       connectionId: connectionId ?? null,
       mode,
       modeVersion,

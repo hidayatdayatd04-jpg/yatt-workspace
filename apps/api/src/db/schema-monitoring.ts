@@ -63,3 +63,13 @@ export const notificationSettings = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
 );
+
+export const monitoringSettings = sqliteTable("monitoring_settings", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  watcherEnabled: integer("watcher_enabled", { mode: "boolean" }).notNull().default(true),
+  intervalMs: integer("interval_ms").notNull().default(180_000),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+});

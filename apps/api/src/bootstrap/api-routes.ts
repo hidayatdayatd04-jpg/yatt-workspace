@@ -28,6 +28,7 @@ import { createNetworkMapRoutes } from "../routes/network-map";
 import { createMonitoringRoutes } from "../routes/monitoring";
 import { createNotificationRoutes } from "../routes/notifications";
 import { createBackupRoutes } from "../routes/backups";
+import { createMemoryRoutes } from "../routes/memory";
 import { createApprovalRoutes } from "../routes/approvals";
 import { createWebSearchSettingsRoutes } from "../routes/web-search-settings";
 import { createOpenAiCompatibleClient } from "../agent/chat-client";
@@ -58,9 +59,10 @@ export function mountApiRoutes(app: Hono<HonoEnv>) {
   const terminalRoutes = createTerminalRoutes({ db, logger, connectors, transactions: txCoordinator });
   const preferencesRoutes = createPreferencesRoutes({ db, logger });
   const networkMapRoutes = createNetworkMapRoutes(networkMap);
-  const monitoringRoutes = createMonitoringRoutes({ monitoring });
+  const monitoringRoutes = createMonitoringRoutes({ monitoring, db });
   const notificationRoutes = createNotificationRoutes({ notifications });
   const backupRoutes = createBackupRoutes({ backups });
+  const memoryRoutes = createMemoryRoutes({ db });
   const approvalRoutes = createApprovalRoutes({ approvals, executeTool });
   app.route("/api/auth", authRoutes);
   app.route("/api/preferences", preferencesRoutes);
@@ -74,6 +76,7 @@ export function mountApiRoutes(app: Hono<HonoEnv>) {
   app.route("/api/monitoring", monitoringRoutes);
   app.route("/api/notifications", notificationRoutes);
   app.route("/api/backups", backupRoutes);
+  app.route("/api/memories", memoryRoutes);
   app.route("/api/approvals", approvalRoutes);
   app.route("/", activityRoutes);
   app.route("/", compactionRoutes);

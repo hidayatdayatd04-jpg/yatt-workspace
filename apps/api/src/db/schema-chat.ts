@@ -113,3 +113,39 @@ export const toolExecutions = sqliteTable(
   },
   (t) => [uniqueIndex("tool_executions_call_idx").on(t.runId, t.toolCallId)],
 );
+
+export const userMemories = sqliteTable(
+  "user_memories",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    sourceConversationId: text("source_conversation_id").references(() => conversations.id, {
+      onDelete: "set null",
+    }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("user_memories_user_idx").on(t.userId, t.updatedAt)],
+);
+
+export const messageFeedback = sqliteTable(
+  "message_feedback",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    messageId: text("message_id")
+      .notNull()
+      .references(() => messages.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("message_feedback_msg_idx").on(t.messageId, t.userId)],
+);

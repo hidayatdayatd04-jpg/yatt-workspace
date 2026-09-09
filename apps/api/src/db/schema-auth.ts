@@ -44,6 +44,7 @@ export const preferences = sqliteTable(
     sidebarCollapsed: integer("sidebar_collapsed", { mode: "boolean" }).notNull().default(false),
     autoCompact: integer("auto_compact", { mode: "boolean" }).notNull().default(true),
     compactThreshold: integer("compact_threshold").notNull().default(80),
+    aiInstructions: text("ai_instructions").notNull().default(""),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },

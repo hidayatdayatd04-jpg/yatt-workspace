@@ -26,4 +26,10 @@ CREATE TABLE IF NOT EXISTS "approval_operation_log" ("id" text PRIMARY KEY NOT N
 CREATE INDEX IF NOT EXISTS "approval_op_log_approval_idx" ON "approval_operation_log" ("approval_id","seq")`,
   // Migration 27: Web Search (Tavily) settings — API key per workspace (AES-256-GCM sealed)
   `CREATE TABLE IF NOT EXISTS "web_search_settings" ("user_id" text PRIMARY KEY NOT NULL, "provider" text NOT NULL DEFAULT 'tavily', "api_key_ciphertext" text NOT NULL, "api_key_nonce" text NOT NULL, "api_key_auth_tag" text NOT NULL, "key_version" integer NOT NULL DEFAULT 1, "created_at" integer NOT NULL, "updated_at" integer NOT NULL, FOREIGN KEY ("user_id") REFERENCES "workspaces" ("id") ON DELETE cascade);`,
+  `CREATE TABLE IF NOT EXISTS "monitoring_settings" ("user_id" text PRIMARY KEY NOT NULL, "watcher_enabled" integer NOT NULL DEFAULT 1, "interval_ms" integer NOT NULL DEFAULT 180000, "created_at" integer NOT NULL, "updated_at" integer NOT NULL, FOREIGN KEY ("user_id") REFERENCES "workspaces" ("id") ON DELETE cascade);`,
+  `CREATE TABLE IF NOT EXISTS "user_memories" ("id" text PRIMARY KEY NOT NULL, "user_id" text NOT NULL, "content" text NOT NULL, "source_conversation_id" text, "created_at" integer NOT NULL, "updated_at" integer NOT NULL, FOREIGN KEY ("user_id") REFERENCES "workspaces" ("id") ON DELETE cascade, FOREIGN KEY ("source_conversation_id") REFERENCES "conversations" ("id") ON DELETE set null);
+CREATE INDEX IF NOT EXISTS "user_memories_user_idx" ON "user_memories" ("user_id","updated_at");`,
+  `ALTER TABLE "preferences" ADD COLUMN "ai_instructions" text NOT NULL DEFAULT '';`,
+  `CREATE TABLE IF NOT EXISTS "message_feedback" ("id" text PRIMARY KEY NOT NULL, "user_id" text NOT NULL, "message_id" text NOT NULL, "conversation_id" text NOT NULL, "rating" integer NOT NULL, "created_at" integer NOT NULL, FOREIGN KEY ("user_id") REFERENCES "workspaces" ("id") ON DELETE cascade, FOREIGN KEY ("message_id") REFERENCES "messages" ("id") ON DELETE cascade, FOREIGN KEY ("conversation_id") REFERENCES "conversations" ("id") ON DELETE cascade);
+CREATE INDEX IF NOT EXISTS "message_feedback_msg_idx" ON "message_feedback" ("message_id","user_id");`,
 ];

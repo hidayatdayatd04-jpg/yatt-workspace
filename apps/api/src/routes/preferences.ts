@@ -13,6 +13,7 @@ const SaveSchema = z.object({
   sidebarCollapsed: z.boolean().optional(),
   autoCompact: z.boolean().optional(),
   compactThreshold: z.number().int().min(50).max(95).optional(),
+  aiInstructions: z.string().max(2000).optional(),
 });
 
 export function createPreferencesRoutes(deps: { db: Database; logger: Logger }) {
@@ -22,7 +23,7 @@ export function createPreferencesRoutes(deps: { db: Database; logger: Logger }) 
     const [row] = await deps.db.select().from(preferences).where(eq(preferences.accountId, account.id)).limit(1);
     if (!row) {
       await deps.db.insert(preferences).values({ accountId: account.id }).onConflictDoNothing();
-      return c.json({ preferences: { theme: "system", sidebarCollapsed: false, autoCompact: true, compactThreshold: 80 } });
+      return c.json({ preferences: { theme: "system", sidebarCollapsed: false, autoCompact: true, compactThreshold: 80, aiInstructions: "" } });
     }
     return c.json({
       preferences: {
@@ -30,6 +31,7 @@ export function createPreferencesRoutes(deps: { db: Database; logger: Logger }) 
         sidebarCollapsed: !!row.sidebarCollapsed,
         autoCompact: !!row.autoCompact,
         compactThreshold: row.compactThreshold,
+        aiInstructions: (row as { aiInstructions?: string }).aiInstructions ?? "",
       },
     });
   });
@@ -44,6 +46,7 @@ export function createPreferencesRoutes(deps: { db: Database; logger: Logger }) 
         ...(input.sidebarCollapsed !== undefined ? { sidebarCollapsed: input.sidebarCollapsed } : {}),
         ...(input.autoCompact !== undefined ? { autoCompact: input.autoCompact } : {}),
         ...(input.compactThreshold !== undefined ? { compactThreshold: input.compactThreshold } : {}),
+        ...(input.aiInstructions !== undefined ? { aiInstructions: input.aiInstructions.slice(0, 2000) } : {}),
         updatedAt: new Date(),
       })
       .where(eq(preferences.accountId, account.id));
@@ -54,6 +57,7 @@ export function createPreferencesRoutes(deps: { db: Database; logger: Logger }) 
         sidebarCollapsed: !!row!.sidebarCollapsed,
         autoCompact: !!row!.autoCompact,
         compactThreshold: row!.compactThreshold,
+        aiInstructions: (row as unknown as { aiInstructions?: string })!.aiInstructions ?? "",
       },
     });
   });

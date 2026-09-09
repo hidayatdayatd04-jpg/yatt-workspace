@@ -1,5 +1,5 @@
 import { isReadOnlyIntent } from "../../agent/intent";
-import { normalizeReasoningEffort, supportsReasoning } from "@shared/index";
+import { normalizeReasoningEffort, supportsReasoning, supportsVision } from "@shared/index";
 import type { RunEvent } from "../../agent/loop";
 import type { WorkspaceContext } from "../../lib/workspace";
 import type { ProviderConfigWithKey } from "../../agent/provider-settings";
@@ -7,7 +7,8 @@ import type { ChatCtx, ConversationRow, RunInput, RunRow } from "./types";
 import { createRunPublisher } from "./run-publish";
 import { createEnsureTransaction, createTxBox } from "./run-transaction";
 import { resolveRunMode } from "./run-mode";
-import { buildRunClient, loadMemorySummary } from "./run-client";
+import { buildRunClient, loadCustomInstructions, loadMemorySummary } from "./run-client";
+import { extractMemoriesAsync, loadCrossMemory } from "../../services/user-memory";
 import { settleBackgroundRun, type SettleState } from "./run-settle";
 
 /** Eksekusi background satu run: transaksi lazy, client, loop, settlement. */
@@ -21,6 +22,7 @@ export async function executeBackgroundRun(
     cfg: ProviderConfigWithKey | null;
     userMessageId: string;
     attachmentNote: string;
+    visionImages?: { mime: string; name: string; dataUrl: string }[];
     connectionId: string | null;
     mode: "read-only" | "write";
     modeVersion: number;
@@ -58,11 +60,23 @@ export async function executeBackgroundRun(
     const routerLabel = conn?.status === "connected" ? conn.routerIdentity ?? conn.host : null;
     // Memory summary (untrusted data, never authority): latest compacted context.
     const memorySummary = await loadMemorySummary(ctx, conv.id);
+    const crossMemory = await loadCrossMemory(deps.db, workspace.userId).catch(() => null);
+    const customInstructions = await loadCustomInstructions(ctx, workspace.userId).catch(() => null);
     // Reasoning hanya diteruskan bila model primer run ini mendukungnya;
     // nilai untuk model biasa diabaikan agar tak membakar request sia-sia.
     const requestedReasoning = normalizeReasoningEffort((input as { reasoningEffort?: unknown }).reasoningEffort);
     const modelForReasoning = input.model ?? cfg?.model ?? "";
     const reasoningEffort = requestedReasoning && supportsReasoning(modelForReasoning) ? requestedReasoning : undefined;
+    // Vision: gambar hanya dikirim bila model mendukung vision. Bila tidak,
+    // jangan bocor ke provider — model diinstruksikan menjawab jujur agar
+    // user ganti ke model vision (konsisten HONESTY_RULES).
+    const modelForVision = input.model ?? cfg?.model ?? "";
+    const visionSupported = supportsVision(modelForVision);
+    const visionImages = visionSupported ? (args.visionImages ?? []) : [];
+    const visionBlockedNote =
+      (args.visionImages?.length ?? 0) > 0 && !visionSupported
+        ? `\n\n[CATATAN SISTEM: pengguna melampirkan ${args.visionImages!.length} gambar, tetapi model "${modelForVision || "saat ini"}" tidak mendukung analisis gambar sehingga gambar TIDAK dikirim ke provider. Jawab jujur: katakan model saat ini tidak mendukung analisis gambar dan minta pengguna ganti ke model vision (mis. Gemini) di pemilih model. Jangan mengarang isi gambar.]`
+        : "";
     const result = await deps.loop.run(
       {
         runId: run.id,
@@ -70,7 +84,8 @@ export async function executeBackgroundRun(
         conversationId: conv.id,
         connectionId: connectionId ?? null,
         userMessageId: args.userMessageId,
-        userText: input.text + args.attachmentNote,
+        userText: input.text + args.attachmentNote + visionBlockedNote,
+        visionImages,
         reasoningEffort,
         policy: {
           userId: workspace.userId,
@@ -105,6 +120,10 @@ export async function executeBackgroundRun(
           writeBlockNote,
           memorySummary,
           reasoningEffort,
+          hasVisionImages: visionImages.length > 0,
+          visionSupported,
+          crossMemory,
+          customInstructions,
           rosVersion: (conn as any)?.rosVersion ?? null,
           boardName: (conn as any)?.boardName ?? null,
           architecture: (conn as any)?.architecture ?? null,
@@ -119,6 +138,31 @@ export async function executeBackgroundRun(
       },
     );
     state.status = result.status;
+    if (result.status === "completed") {
+      try {
+        const { messages } = await import("../../db/schema");
+        const { desc, eq } = await import("drizzle-orm");
+        const [last] = await deps.db
+          .select()
+          .from(messages)
+          .where(eq(messages.conversationId, conv.id))
+          .orderBy(desc(messages.seq))
+          .limit(1);
+        const content = (last?.role === "assistant" ? (last.content as { text?: string; runId?: string }) : null) ?? null;
+        if (content && content.runId === run.id && content.text) {
+          extractMemoriesAsync({
+            db: deps.db,
+            client,
+            userId: workspace.userId,
+            conversationId: conv.id,
+            userText: input.text,
+            assistantText: content.text,
+          });
+        }
+      } catch {
+        /* ekstraksi non-fatal */
+      }
+    }
   } catch (err) {
     deps.logger.error("background run crashed", { runId: run.id, message: err instanceof Error ? err.message : String(err) });
   } finally {

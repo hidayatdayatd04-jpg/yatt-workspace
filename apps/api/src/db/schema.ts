@@ -1,10 +1,10 @@
 export { workspaces, routerConnections, connectionPermissions } from "./schema-core";
 export { aiProviderSettings, webSearchSettings, aiProviders } from "./schema-providers";
 export { accounts, sessions, preferences } from "./schema-auth";
-export { conversations, messages, attachments, agentRuns, toolExecutions } from "./schema-chat";
+export { conversations, messages, attachments, agentRuns, toolExecutions, userMemories, messageFeedback } from "./schema-chat";
 export { changeTransactions, auditEvents } from "./schema-transactions";
 export { conversationSummaries, compactionJobs, activityEvents } from "./schema-compaction";
 export { terminalSessions, terminalCommands } from "./schema-terminal";
-export { monitoringSnapshots, notifications, notificationSettings } from "./schema-monitoring";
+export { monitoringSnapshots, notifications, notificationSettings, monitoringSettings } from "./schema-monitoring";
 export { configBackups, backupSettings } from "./schema-backups";
 export { approvalRequests, approvalOperationLog } from "./schema-approval";

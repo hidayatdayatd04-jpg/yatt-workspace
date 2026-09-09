@@ -33,6 +33,28 @@ export async function buildRunClient(
   });
 }
 
+/** Instruksi khusus pengguna (custom instructions per akun; kosong bila tak diatur). */
+export async function loadCustomInstructions(ctx: ChatCtx, workspaceUserId: string): Promise<string | null> {
+  try {
+    const { accounts, preferences } = await import("../../db/schema");
+    const [acc] = await ctx.deps.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.workspaceId, workspaceUserId))
+      .limit(1);
+    if (!acc) return null;
+    const [pref] = await ctx.deps.db
+      .select()
+      .from(preferences)
+      .where(eq(preferences.accountId, acc.id))
+      .limit(1);
+    const text = String((pref as { aiInstructions?: unknown } | undefined)?.aiInstructions ?? "").trim();
+    return text ? text.slice(0, 2000) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Memory summary (data tak tepercaya, bukan otoritas): konteks compact terakhir. */
 export async function loadMemorySummary(ctx: ChatCtx, conversationId: string): Promise<string | null> {
   try {
