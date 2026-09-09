@@ -1,5 +1,5 @@
 import { isReadOnlyIntent } from "../../agent/intent";
-import { normalizeReasoningEffort, supportsReasoning, supportsVision } from "@shared/index";
+import { normalizeReasoningEffort, supportsReasoning } from "@shared/index";
 import type { RunEvent } from "../../agent/loop";
 import type { WorkspaceContext } from "../../lib/workspace";
 import type { ProviderConfigWithKey } from "../../agent/provider-settings";
@@ -9,6 +9,7 @@ import { createEnsureTransaction, createTxBox } from "./run-transaction";
 import { resolveRunMode } from "./run-mode";
 import { buildRunClient, loadCustomInstructions, loadMemorySummary } from "./run-client";
 import { extractMemoriesAsync, loadCrossMemory } from "../../services/user-memory";
+import { buildVisionContext } from "./image-reader";
 import { settleBackgroundRun, type SettleState } from "./run-settle";
 
 /** Eksekusi background satu run: transaksi lazy, client, loop, settlement. */
@@ -67,16 +68,19 @@ export async function executeBackgroundRun(
     const requestedReasoning = normalizeReasoningEffort((input as { reasoningEffort?: unknown }).reasoningEffort);
     const modelForReasoning = input.model ?? cfg?.model ?? "";
     const reasoningEffort = requestedReasoning && supportsReasoning(modelForReasoning) ? requestedReasoning : undefined;
-    // Vision: gambar hanya dikirim bila model mendukung vision. Bila tidak,
-    // jangan bocor ke provider — model diinstruksikan menjawab jujur agar
-    // user ganti ke model vision (konsisten HONESTY_RULES).
-    const modelForVision = input.model ?? cfg?.model ?? "";
-    const visionSupported = supportsVision(modelForVision);
-    const visionImages = visionSupported ? (args.visionImages ?? []) : [];
-    const visionBlockedNote =
-      (args.visionImages?.length ?? 0) > 0 && !visionSupported
-        ? `\n\n[CATATAN SISTEM: pengguna melampirkan ${args.visionImages!.length} gambar, tetapi model "${modelForVision || "saat ini"}" tidak mendukung analisis gambar sehingga gambar TIDAK dikirim ke provider. Jawab jujur: katakan model saat ini tidak mendukung analisis gambar dan minta pengguna ganti ke model vision (mis. Gemini) di pemilih model. Jangan mengarang isi gambar.]`
-        : "";
+    // Vision: gambar dikirim langsung bila model mendukung; bila tidak,
+    // pembaca gambar menerjemahkannya menjadi teks via model vision milik
+    // user (primer/fallback) — semua model jadi bisa membaca gambar.
+    const visionCtx = await buildVisionContext(ctx, {
+      images: args.visionImages ?? [],
+      modelForVision: input.model ?? cfg?.model ?? "",
+      cfg,
+      userId: workspace.userId,
+      runId: run.id,
+      conversationId: conv.id,
+      policyMode: policyModeForCtx,
+    });
+    const visionImages = visionCtx.visionImages;
     const result = await deps.loop.run(
       {
         runId: run.id,
@@ -84,7 +88,7 @@ export async function executeBackgroundRun(
         conversationId: conv.id,
         connectionId: connectionId ?? null,
         userMessageId: args.userMessageId,
-        userText: input.text + args.attachmentNote + visionBlockedNote,
+        userText: input.text + args.attachmentNote + visionCtx.note,
         visionImages,
         reasoningEffort,
         policy: {
@@ -121,7 +125,7 @@ export async function executeBackgroundRun(
           memorySummary,
           reasoningEffort,
           hasVisionImages: visionImages.length > 0,
-          visionSupported,
+          visionSupported: visionCtx.visionSupportedForInstruction,
           crossMemory,
           customInstructions,
           rosVersion: (conn as any)?.rosVersion ?? null,
