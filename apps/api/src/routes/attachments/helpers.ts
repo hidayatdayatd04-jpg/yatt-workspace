@@ -3,6 +3,7 @@ import type { Database } from "../../db";
 import { AppError } from "../../lib/errors";
 import { conversations } from "../../db/schema";
 import type { StorageService } from "../../services/storage";
+import { TEXT_EXTENSIONS } from "../../services/file-extract/text";
 
 export interface AttachmentRouteDeps {
   db: Database;
@@ -36,10 +37,15 @@ const UPLOAD_EXT: Record<string, string> = {
   "application/octet-stream": "bin",
 };
 
+/** Ekstensi non-teks yang bisa diekstrak (gambar, PDF, dokumen, arsip). */
+const BUNDLED_EXTENSIONS = new Set([
+  "png", "jpg", "jpeg", "webp", "pdf", "docx", "xls", "xlsx", "pptx", "odt", "ods", "odp", "zip",
+]);
+
 /** Server-side ext from the ORIGINAL name, validated against the sniffed kind. */
 export function extForName(name: string, mimeType: string): string {
   const lower = name.toLowerCase();
   const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
-  if (["png", "jpg", "jpeg", "webp", "pdf", "txt", "csv", "log", "rsc"].includes(ext)) return ext;
+  if (BUNDLED_EXTENSIONS.has(ext) || TEXT_EXTENSIONS.has(ext)) return ext;
   return UPLOAD_EXT[mimeType] ?? "bin";
 }

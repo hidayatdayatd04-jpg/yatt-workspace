@@ -16,7 +16,13 @@ export function registerListingRoutes(
     return c.json({
       maxBytes: deps.limits.maxBytes,
       maxFilesPerMessage: deps.limits.maxFilesPerMessage,
-      accepted: ["png", "jpg", "jpeg", "webp", "pdf", "txt", "csv", "log", "rsc"],
+      accepted: [
+        "png", "jpg", "jpeg", "webp", "pdf", "docx", "xls", "xlsx", "pptx", "odt", "ods", "odp", "zip",
+        "txt", "md", "markdown", "csv", "tsv", "log", "rsc", "json", "yaml", "yml", "toml", "ini", "cfg", "conf", "env",
+        "xml", "html", "htm", "css", "scss", "js", "mjs", "cjs", "ts", "tsx", "jsx", "vue", "svelte",
+        "php", "py", "rb", "go", "rs", "java", "kt", "c", "h", "cpp", "hpp", "cs", "swift", "sql",
+        "sh", "bat", "ps1", "lua", "dart", "gradle", "patch", "diff",
+      ],
     });
   });
 

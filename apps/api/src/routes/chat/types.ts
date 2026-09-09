@@ -37,7 +37,7 @@ export interface ChatRouteDeps {
   /** Builds the system instruction for a run. */
   buildInstruction: typeof buildSystemInstruction;
   /** Loads attachment content for the AI context (ownership pre-checked). */
-  loadAttachmentContent: (input: { userId: string; attachmentId: string }) => Promise<{ kind: "image" | "pdf" | "text" | "unsupported"; name: string; mime: string; bytes: Buffer } | null>;
+  loadAttachmentContent: (input: { userId: string; attachmentId: string }) => Promise<{ kind: "image" | "pdf" | "text" | "doc" | "archive" | "unsupported"; name: string; mime: string; bytes: Buffer } | null>;
   /** Removes one attachment object from storage (B2). Non-fatal when missing. */
   removeAttachmentObject: (input: { userId: string; objectKey: string }) => Promise<void>;
   limits: { maxSteps: number; maxToolCalls: number; runTimeoutMs: number; maxTokens: number };
