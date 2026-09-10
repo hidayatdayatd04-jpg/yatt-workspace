@@ -32,7 +32,6 @@ export function ComposerInput(props: {
         type="file"
         multiple
         className="hidden"
-        accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.csv,.log,.rsc"
         onChange={(e) => {
           addFiles(Array.from(e.target.files ?? []));
           e.target.value = "";

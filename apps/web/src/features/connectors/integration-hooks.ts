@@ -41,7 +41,7 @@ export function useGoogleConfig() {
 
 export function useGoogleAuthUrl() {
   return useMutation({
-    mutationFn: (input: { clientId?: string; clientSecret?: string; redirectUri?: string }) =>
+    mutationFn: (input: { clientId?: string; clientSecret?: string; redirectUri?: string; service?: string }) =>
       apiFetch<{ url: string; redirectUri: string }>("/api/integrations/google/auth-url", { method: "POST", body: JSON.stringify(input) }),
   });
 }
@@ -50,6 +50,14 @@ export function useDisconnectGoogle() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => apiFetch<{ ok: boolean }>("/api/integrations/google", { method: "DELETE" }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["integrations"] }); qc.invalidateQueries({ queryKey: ["google-account"] }); },
+  });
+}
+
+export function useDisconnectService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (kind: IntegrationKind) => apiFetch<{ ok: boolean }>(`/api/integrations/${kind}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["integrations"] }); qc.invalidateQueries({ queryKey: ["google-account"] }); },
   });
 }

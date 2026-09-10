@@ -1,5 +1,5 @@
 import type { Buffer } from "node:buffer";
-import { looksTextualFile, decodeText } from "./text";
+import { decodeText } from "./text";
 import { extractPdfText } from "./pdf";
 import { extractOfficeText } from "./office";
 import { extractArchiveText } from "./zip";
@@ -18,7 +18,7 @@ export async function extractAttachmentText(input: {
   bytes: Buffer;
 }): Promise<string | null> {
   const { kind, bytes, name } = input;
-  if (kind === "text" && looksTextualFile(name)) {
+  if (kind === "text") {
     const text = decodeText(bytes);
     return text.trim() ? text : null;
   }

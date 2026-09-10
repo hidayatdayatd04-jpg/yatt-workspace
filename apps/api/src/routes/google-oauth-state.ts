@@ -3,6 +3,7 @@ export interface PendingAuth {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  targetService?: string;
   createdAt: number;
 }
 

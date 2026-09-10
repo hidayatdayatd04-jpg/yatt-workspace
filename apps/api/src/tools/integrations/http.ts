@@ -39,12 +39,12 @@ async function refreshAccessToken(clientId: string, clientSecret: string, refres
 }
 
 export async function googleToken(service: IntegrationService, userId: string, kind: GoogleKind, signal?: AbortSignal, opts: { forceRefresh?: boolean } = {}) {
-  const c = await service.credentials(userId, kind === "google" ? "google" : kind);
+  const targetKind = kind === "google" ? "google" : kind;
+  const c = await service.credentials(userId, targetKind);
   if (!opts.forceRefresh && c.accessToken && c.expiryMs && isFresh(c.expiryMs)) return c.accessToken;
   if (c.refreshToken && c.clientId && c.clientSecret && (opts.forceRefresh || !c.accessToken || !isFresh(c.expiryMs))) {
     const refreshed = await refreshAccessToken(c.clientId, c.clientSecret, c.refreshToken, signal);
-    // Persist agar panggilan berikutnya tidak refresh berulang; abaikan bila baris google belum ada (akun lama per-layanan).
-    try { await service.updateGoogleAccessToken(userId, refreshed.accessToken, refreshed.expiresIn); } catch { /* abaikan */ }
+    try { await service.updateGoogleAccessToken(userId, refreshed.accessToken, refreshed.expiresIn, targetKind); } catch { /* abaikan */ }
     return refreshed.accessToken;
   }
   if (!opts.forceRefresh && c.accessToken) return c.accessToken;

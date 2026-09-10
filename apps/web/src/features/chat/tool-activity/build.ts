@@ -55,12 +55,15 @@ export function buildPipeline(events: ActivityEventDTO[], live = false): { steps
         if (code) step.code = code;
         if (typeof p.durationMs === "number") step.durationMs = p.durationMs;
         if (typeof p.args === "string" && p.args) step.args = p.args;
+        // Perkaya label dengan argumen nyata ("Membaca file package.json").
+        if (step.args) step.label = humanizeTool(step.tool, step.args);
       } else {
         const tool = String(p.tool ?? "tool");
+        const args = typeof p.args === "string" && p.args ? p.args : undefined;
         steps.push({
           key: `${ev.id}`,
           index: steps.length + 1,
-          label: humanizeTool(tool),
+          label: humanizeTool(tool, args),
           tool,
           status: ev.type === "tool.completed" ? "completed" : "failed",
           durationMs: typeof p.durationMs === "number" ? p.durationMs : null,

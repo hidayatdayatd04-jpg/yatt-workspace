@@ -108,8 +108,8 @@ export function NewChatView({
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-card p-2 shadow-sm ring-1 ring-border/80">
-          <img src="/logo.png" alt="YATT Agent" className="size-full object-contain" />
+        <div className="mb-4 flex size-14 items-center justify-center">
+          <img src="/logo.png" alt="YATT Agent" className="size-full object-contain drop-shadow-md transition-transform hover:scale-105" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Apa yang ingin Anda kerjakan?</h1>
         <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">Tulis kode, olah file, cari informasi, atau bekerja dengan aplikasi yang Anda hubungkan.</p>

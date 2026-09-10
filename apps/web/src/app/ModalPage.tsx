@@ -37,7 +37,7 @@ export function ModalPage(props: {
           onClick={onClose}
           aria-label="Tutup"
           title="Tutup"
-          className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground backdrop-blur transition-all hover:bg-muted hover:text-foreground active:scale-95 cursor-pointer"
+          className="absolute right-3 top-3 z-30 flex size-8 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground backdrop-blur-md transition-all hover:bg-accent hover:text-foreground active:scale-95 cursor-pointer shadow-xs"
         >
           <X className="size-4" />
         </button>

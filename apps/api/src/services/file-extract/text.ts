@@ -30,7 +30,18 @@ export function looksTextualFile(name: string): boolean {
   return TEXT_EXTENSIONS.has(ext);
 }
 
-/** Dekode UTF-8 non-fatal: byte biner tak valid diganti U+FFFD, tidak melempar. */
+/** Recognize text without treating arbitrary binary as UTF-8. UTF-16 BOM is supported. */
+export function isTextBytes(bytes: Buffer): boolean {
+  if (bytes.length >= 2 && ((bytes[0] === 255 && bytes[1] === 254) || (bytes[0] === 254 && bytes[1] === 255))) return true;
+  if (bytes.some((b) => b < 32 && ![9, 10, 12, 13].includes(b))) return false;
+  try { new TextDecoder("utf-8", { fatal: true }).decode(bytes, { stream: true }); return true; } catch { return false; }
+}
+
 export function decodeText(bytes: Buffer): string {
+  if (bytes[0] === 255 && bytes[1] === 254) return bytes.subarray(2).toString("utf16le");
+  if (bytes[0] === 254 && bytes[1] === 255) {
+    const even = Buffer.from(bytes.subarray(2, bytes.length - bytes.length % 2));
+    return even.swap16().toString("utf16le");
+  }
   return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
 }

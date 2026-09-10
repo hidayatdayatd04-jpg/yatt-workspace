@@ -23,6 +23,7 @@ export function ChatHeader(props: {
   onToggleSidebar?: () => void;
   onOpenTerminal: () => void;
   onExport: () => void;
+  onViewFiles: () => void;
   onRename: () => void;
   onPin: () => void;
   pinned: boolean;
@@ -63,6 +64,9 @@ export function ChatHeader(props: {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-border/60 bg-popover/95 p-1.5 shadow-xl backdrop-blur-md">
+            <DropdownMenuItem onClick={props.onViewFiles} className="gap-2.5 px-2.5 py-2 text-xs font-medium rounded-xl cursor-pointer">
+              <Archive className="size-4 text-muted-foreground" /><span>View files in chat</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={props.onRename} className="gap-2.5 px-2.5 py-2 text-xs font-medium rounded-xl cursor-pointer">
               <Pencil className="size-4 text-muted-foreground" />
               <span>Rename</span>

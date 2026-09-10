@@ -3,16 +3,6 @@ import { toast } from "sonner";
 import type { ConnectorDTO } from "@shared/index";
 import { useSetConnectorMode, useWriteReadiness } from "@/features/connectors/connector-hooks";
 
-/** Ekstensi file yang diterima server (selaras routes/attachments). */
-const FILE_ACCEPT = [
-  ".pdf", ".docx", ".xls", ".xlsx", ".pptx", ".odt", ".ods", ".odp", ".zip",
-  ".txt", ".md", ".markdown", ".csv", ".tsv", ".log", ".rsc", ".json", ".yaml", ".yml",
-  ".toml", ".ini", ".cfg", ".conf", ".env", ".xml", ".html", ".htm", ".css", ".scss",
-  ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".php", ".py", ".rb",
-  ".go", ".rs", ".java", ".kt", ".c", ".h", ".cpp", ".hpp", ".cs", ".swift", ".sql",
-  ".sh", ".bat", ".ps1", ".lua", ".dart", ".patch", ".diff",
-].join(",");
-
 export function useComposerActions(opts: {
   connector?: ConnectorDTO | null;
   disabled?: boolean;
@@ -28,7 +18,7 @@ export function useComposerActions(opts: {
 
   function pickFile(images: boolean) {
     if (!fileInputRef.current) return;
-    fileInputRef.current.accept = images ? ".png,.jpg,.jpeg,.webp" : FILE_ACCEPT;
+    fileInputRef.current.accept = images ? "image/*" : "";
     fileInputRef.current.click();
   }
 

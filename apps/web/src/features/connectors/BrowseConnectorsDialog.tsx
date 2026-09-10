@@ -71,7 +71,7 @@ export function BrowseConnectorsDialog(props: {
   return (
     <>
       <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-        <DialogContent className="max-h-[88svh] max-w-4xl overflow-y-auto rounded-2xl p-5 sm:p-7" aria-describedby={undefined}>
+        <DialogContent className="max-h-[88svh] max-w-4xl overflow-y-auto rounded-2xl p-4 sm:p-7" aria-describedby={undefined}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <DialogTitle className="text-base font-semibold">Directory</DialogTitle>
             <Button

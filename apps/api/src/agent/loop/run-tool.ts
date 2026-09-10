@@ -24,7 +24,8 @@ export async function runTool(
   toolIndex: number,
 ): Promise<ToolMsg> {
   const started = Date.now();
-  await emit({ type: "tool.started", payload: { callId: call.id, name: fqName, index: toolIndex } });
+  const startedArgsPreview = JSON.stringify(redactObject(args ?? {})).slice(0, 500);
+  await emit({ type: "tool.started", payload: { callId: call.id, name: fqName, index: toolIndex, args: startedArgsPreview } });
   // Backend-owned probe: answered from live server rows, no dispatcher needed
   // (read-only metadata, no secrets, ownership-checked inside).
   if (fqName === CONNECTION_CHECK_FQ) {

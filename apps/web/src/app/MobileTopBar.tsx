@@ -24,9 +24,12 @@ export function MobileTopBar(props: {
               <Menu className="size-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0">
+          <SheetContent side="left" className="w-[85vw] max-w-xs sm:w-80 p-0">
             <SheetHeader className="flex flex-row items-center justify-between border-b border-border/60 px-4 py-3 text-left">
-              <SheetTitle className="text-sm font-semibold">YATT Agent</SheetTitle>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="YATT Agent" className="size-5 shrink-0 object-contain" />
+                <SheetTitle className="text-sm font-semibold">YATT Agent</SheetTitle>
+              </div>
               <NotificationBell onNavigate={() => props.setMobileOpen(false)} />
             </SheetHeader>
             <div className="flex h-[calc(100svh-4rem)] flex-col overflow-hidden">
@@ -42,7 +45,10 @@ export function MobileTopBar(props: {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="truncate text-sm font-semibold">YATT Agent</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <img src="/logo.png" alt="YATT Agent" className="size-6 shrink-0 object-contain drop-shadow-xs" />
+          <span className="truncate text-sm font-semibold">YATT Agent</span>
+        </div>
       </div>
       <ThemeToggle />
     </header>

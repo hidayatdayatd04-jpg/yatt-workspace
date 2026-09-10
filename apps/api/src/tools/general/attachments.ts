@@ -12,10 +12,10 @@ export function createAttachmentTool(deps: { db: Database; dataDir: string; read
     execute: async (args, run) => {
       const [row] = await deps.db.select().from(attachments).where(and(eq(attachments.id, args.attachmentId), eq(attachments.userId, run.userId), eq(attachments.conversationId, run.conversationId), eq(attachments.status, "ready"))).limit(1);
       if (!row) throw new Error("Lampiran tidak tersedia pada percakapan ini.");
-      if (row.sizeBytes > 10_000_000) throw new Error("Lampiran maksimal 10 MB untuk workspace.");
+      if (row.sizeBytes > 25_000_000) throw new Error("Lampiran maksimal 25 MB untuk workspace.");
       const file = await workspacePath(await workspaceRoot(deps.dataDir, run.userId), args.path);
       const bytes = await deps.readObject(row.objectKey);
-      if (bytes.length > 10_000_000) throw new Error("Lampiran melebihi batas workspace.");
+      if (bytes.length > 25_000_000) throw new Error("Lampiran melebihi batas workspace.");
       await mkdir(dirname(file), { recursive: true });
       await writeFile(file, bytes, { flag: "wx" });
       return { path: args.path, bytes: bytes.length };

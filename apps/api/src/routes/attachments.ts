@@ -1,3 +1,4 @@
+import { registerContentRoutes } from "./attachments/content";
 import { Hono } from "hono";
 import type { Env } from "../types";
 import type { Database } from "../db";
@@ -17,6 +18,7 @@ export function createAttachmentRoutes(deps: {
 
   registerListingRoutes(routes, deps);
   registerFileRoutes(routes, deps);
+  registerContentRoutes(routes, deps);
 
   return routes;
 }

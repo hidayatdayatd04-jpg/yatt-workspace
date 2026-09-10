@@ -62,8 +62,8 @@ export function ChatComposer(props: ChatComposerProps) {
         <ComposerAttachments attachments={props.attachments} onRemoveAttachment={props.onRemoveAttachment} previewUrls={props.previewUrls} />
         <div className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border">
           <ComposerInput composer={props} draft={draft} actions={actions} uploadDisabled={uploadDisabled} text={text} setText={setText} textareaRef={textareaRef} />
-          <div className="mt-1 flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5 pt-1">
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
               <ComposerMenu
                 uploading={props.uploading}
                 running={props.running}
@@ -79,7 +79,7 @@ export function ChatComposer(props: ChatComposerProps) {
                   type="button"
                   onClick={() => actions.toggleWrite(!writeEnabled)}
                   disabled={!props.connector || props.connector.status !== "connected" || setMode.isPending || props.running}
-                  className={`flex h-9 items-center gap-2 rounded-xl px-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${writeEnabled ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+                  className={`flex h-9 items-center gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${writeEnabled ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
                   aria-label="Izinkan perubahan MikroTik"
                   title={writeEnabled ? "Perubahan via Safe Mode aktif" : "Read-only — klik untuk izinkan perubahan"}
                 >
@@ -88,7 +88,7 @@ export function ChatComposer(props: ChatComposerProps) {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5 ml-auto">
               <VoiceButton
                 onTranscript={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
                 disabled={props.disabled || props.running}

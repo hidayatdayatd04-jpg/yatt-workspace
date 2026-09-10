@@ -8,6 +8,7 @@ export interface Profile {
   username: string;
   displayName: string;
   loginAlias: string | null;
+  email: string | null;
 }
 
 interface AuthState {

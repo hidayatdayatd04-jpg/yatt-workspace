@@ -1,4 +1,4 @@
-import { unzipSync } from "fflate";
+import { readZipEntries } from "./zip-entries";
 import { decodeText, looksTextualFile } from "./text";
 import { extractPdfText } from "./pdf";
 import { extractOfficeText } from "./office";
@@ -30,15 +30,15 @@ function isBinaryEntry(name: string): boolean {
 export async function extractArchiveText(name: string, bytes: Buffer, depth: number): Promise<string | null> {
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(new Uint8Array(bytes));
-  } catch {
-    return null;
+    files = readZipEntries(bytes).files;
+  } catch (error) {
+    return `[ZIP gagal dibaca: ${error instanceof Error ? error.message : "arsip rusak atau terenkripsi"}]`;
   }
   const entries = Object.entries(files).filter(
     ([n, data]) => !n.endsWith("/") && data.length > 0 && !n.startsWith("__MACOSX/") && !n.split("/").pop()?.startsWith("._"),
   );
   const readable = entries.filter(([n]) => !isBinaryEntry(n)).slice(0, MAX_ZIP_ENTRIES);
-  const lines: string[] = [`Arsip "${name}": ${entries.length} entri, ${readable.length} dibaca (maks ${MAX_ZIP_ENTRIES}).`];
+  const lines: string[] = [`Arsip "${name}": ${entries.length} entri. Daftar file:\n${entries.map(([n]) => n).join("\n")}\nCuplikan isi berikut dibatasi. Gunakan general:read_attachment dengan entryPath untuk membaca file tertentu.`];
   let total = 0;
   let written = 0;
   for (const [entryName, data] of readable) {
@@ -62,6 +62,6 @@ export async function extractArchiveText(name: string, bytes: Buffer, depth: num
     total += clipped.length;
     written += 1;
   }
-  if (written === 0) return null;
+  if (written === 0) lines.push("Tidak ada isi teks yang berhasil diekstrak. Daftar nama bukan bukti isi file.");
   return lines.join("\n\n");
 }

@@ -36,10 +36,6 @@ export function usePendingFiles() {
   }, [previewUrls]);
 
   function pickFile(file: File) {
-    if (file.size <= 0) {
-      toast.error("File kosong.");
-      return;
-    }
     if (file.size > MAX_BYTES) {
       toast.error("File melebihi 10 MiB.");
       return;

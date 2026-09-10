@@ -5,13 +5,9 @@ export const conversations = sqliteTable(
   "conversations",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text("user_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
     title: text("title").notNull().default("Percakapan baru"),
-    activeConnectionId: text("active_connection_id").references(() => routerConnections.id, {
-      onDelete: "set null",
-    }),
+    activeConnectionId: text("active_connection_id").references(() => routerConnections.id, { onDelete: "set null" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
@@ -29,9 +25,7 @@ export const messages = sqliteTable(
   "messages",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
     role: text("role").notNull(),
     content: text("content", { mode: "json" }).notNull(),
     status: text("status").notNull().default("complete"),
@@ -47,12 +41,8 @@ export const attachments = sqliteTable(
   "attachments",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text("user_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id").references(() => conversations.id, {
-      onDelete: "cascade",
-    }),
+    userId: text("user_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").references(() => conversations.id, { onDelete: "cascade" }),
     messageId: text("message_id").references(() => messages.id, { onDelete: "set null" }),
     objectKey: text("object_key").notNull().unique(),
     originalName: text("original_name").notNull(),
@@ -69,15 +59,9 @@ export const agentRuns = sqliteTable(
   "agent_runs",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text("user_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
-    connectionId: text("connection_id").references(() => routerConnections.id, {
-      onDelete: "set null",
-    }),
+    userId: text("user_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+    connectionId: text("connection_id").references(() => routerConnections.id, { onDelete: "set null" }),
     idempotencyKey: text("idempotency_key"),
     status: text("status").notNull().default("queued"),
     model: text("model"),
@@ -98,9 +82,7 @@ export const toolExecutions = sqliteTable(
   "tool_executions",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    runId: text("run_id")
-      .notNull()
-      .references(() => agentRuns.id, { onDelete: "cascade" }),
+    runId: text("run_id").notNull().references(() => agentRuns.id, { onDelete: "cascade" }),
     toolCallId: text("tool_call_id").notNull(),
     toolName: text("tool_name").notNull(),
     risk: text("risk").notNull(),
@@ -118,13 +100,9 @@ export const userMemories = sqliteTable(
   "user_memories",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text("user_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    sourceConversationId: text("source_conversation_id").references(() => conversations.id, {
-      onDelete: "set null",
-    }),
+    sourceConversationId: text("source_conversation_id").references(() => conversations.id, { onDelete: "set null" }),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
@@ -135,15 +113,9 @@ export const messageFeedback = sqliteTable(
   "message_feedback",
   {
     id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    userId: text("user_id")
-      .notNull()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
-    messageId: text("message_id")
-      .notNull()
-      .references(() => messages.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    messageId: text("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
     rating: integer("rating").notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },

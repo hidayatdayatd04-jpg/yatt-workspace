@@ -12,6 +12,7 @@ export function ProviderCard(props: {
   modelLimit: ModelLimitStatus | undefined;
   onToggle: (p: DisplayProvider) => void;
   onEdit: (p: DisplayProvider) => void;
+  onDelete?: () => void;
 }) {
   const { p } = props;
   const isEnabled = !!p.enabled;
@@ -90,6 +91,7 @@ export function ProviderCard(props: {
       {/* Bottom Action: Konfigurasi Button */}
       <div className="mt-4 flex items-center justify-between pt-3 border-t border-border/60">
         <span className="text-[11px] text-muted-foreground truncate max-w-[160px] font-mono">{p.baseUrl || "Default endpoint"}</span>
+        {props.onDelete && <Button variant="ghost" size="sm" onClick={props.onDelete}>Hapus</Button>}
         <Button type="button" variant="secondary" size="sm" onClick={() => props.onEdit(p)} className="h-8 gap-1.5 text-xs font-medium">
           <Settings2 className="size-3.5" />
           Konfigurasi

@@ -7,7 +7,7 @@ import {
   useSaveIntegration,
   useTestIntegration,
   useGoogleAccount,
-  useDisconnectGoogle,
+  useDisconnectService,
   useIntegrations,
 } from "./integration-hooks";
 import { GoogleLoginBlock, type GoogleServiceKind } from "./GoogleLoginBlock";
@@ -24,14 +24,13 @@ export function GoogleServiceConfig({ integration: item }: { integration: Integr
   const kind = item.kind as GoogleServiceKind;
   const text = SERVICE_TEXT[kind];
   const account = useGoogleAccount();
-  const disconnect = useDisconnectGoogle();
+  const disconnect = useDisconnectService();
   const integrations = useIntegrations();
   const save = useSaveIntegration();
   const test = useTestIntegration();
   const [permissions, setPermissions] = useState({ allowWrite: item.allowWrite, allowSend: item.allowSend });
 
-  const connected = account.data?.account.connected ?? false;
-  const email = account.data?.account.email;
+  const email = item.accountEmail ?? account.data?.services[kind]?.accountEmail;
   const busy = save.isPending || test.isPending || disconnect.isPending;
 
   async function handleSave() {
@@ -57,7 +56,7 @@ export function GoogleServiceConfig({ integration: item }: { integration: Integr
     return <p className="py-6 text-sm text-muted-foreground">Memuat status akun Google…</p>;
   }
 
-  if (!connected) {
+  if (!item.configured) {
     return (
       <div className="space-y-5">
         <p className="text-sm leading-relaxed text-muted-foreground">{text.desc}</p>
@@ -69,7 +68,7 @@ export function GoogleServiceConfig({ integration: item }: { integration: Integr
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm leading-relaxed">
-        Terhubung sebagai <strong>{email ?? "akun Google"}</strong> — Drive, Gmail, dan Kalender aktif via satu login. Token di-refresh otomatis.
+        Terhubung sebagai <strong>{email ?? "akun Google"}</strong> — {text.name} aktif. Token di-refresh otomatis.
       </div>
       <div className="flex items-center justify-between gap-4 rounded-2xl border border-border px-4 py-3">
         <span><span className="block text-sm font-medium">Aktifkan {text.name}</span><span className="mt-0.5 block text-xs text-muted-foreground">Agent dapat memakai layanan ini di chat.</span></span>
@@ -102,9 +101,9 @@ export function GoogleServiceConfig({ integration: item }: { integration: Integr
         </Button>
         <Button
           type="button" variant="ghost" className="text-destructive sm:ml-auto" disabled={busy}
-          onClick={() => disconnect.mutate(undefined, { onSuccess: () => toast.success("Akun Google diputus."), onError: (err) => toast.error(err.message) })}
+          onClick={() => disconnect.mutate(kind, { onSuccess: () => { toast.success(`${text.name} diputuskan.`); void integrations.refetch(); }, onError: (err) => toast.error(err.message) })}
         >
-          {disconnect.isPending ? "Memutus…" : "Putuskan akun Google"}
+          {disconnect.isPending ? "Memutus…" : `Putuskan ${text.name}`}
         </Button>
       </div>
     </div>

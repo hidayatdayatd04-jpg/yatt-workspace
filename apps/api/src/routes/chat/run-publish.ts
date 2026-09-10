@@ -25,6 +25,7 @@ export function createRunPublisher(ctx: ChatCtx, runId: string, conversationId: 
       persist("tool.started", "ai", String(p.callId ?? `tool-${eventSeq}`), `run-${runId}`, {
         tool: String(p.name ?? "tool"),
         callId: String(p.callId ?? ""),
+        args: typeof p.args === "string" ? p.args.slice(0, 500) : null,
       });
     else if (event.type === "tool.completed" || event.type === "tool.failed")
       persist(event.type === "tool.completed" ? "tool.completed" : "tool.failed", "ai", String(p.callId ?? `tool-${eventSeq}`), `run-${runId}`, {

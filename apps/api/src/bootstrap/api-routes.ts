@@ -80,7 +80,7 @@ export function mountApiRoutes(app: Hono<HonoEnv>) {
   app.route("/api/transactions", transactionRoutes);
   app.route("/api/ai-provider", aiProviderRoutes);
   app.route("/api/web-search-settings", createWebSearchSettingsRoutes({ settings: webSearchSettingsService }));
-  app.route("/api/vision-settings", createVisionSettingsRoutes({ settings: visionSettingsService }));
+  app.route("/api/vision-settings", createVisionSettingsRoutes({ settings: visionSettingsService, logger }));
   app.route("/api/attachments", attachmentRoutes);
   app.route("/api/network-map", networkMapRoutes);
   app.route("/api/monitoring", monitoringRoutes);

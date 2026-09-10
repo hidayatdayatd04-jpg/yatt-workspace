@@ -1,4 +1,4 @@
-import { Server, Clock } from "@/components/icons";
+import { MikrotikIcon, Clock } from "@/components/icons";
 import type { ConnectorDTO } from "@shared/index";
 import { StatusBadge } from "./StatusBadge";
 import { ConnectorRowActions } from "./ConnectorRowActions";
@@ -11,10 +11,10 @@ export function ConnectorRow({ connector }: { connector: ConnectorDTO }) {
       <div className="flex min-w-0 items-start gap-3.5">
         <div
           className={`mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl ${
-            connected ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+            connected ? "bg-emerald-500/10" : "bg-muted"
           }`}
         >
-          <Server className="size-5" />
+          <MikrotikIcon className="size-5" />
         </div>
 
         <div className="min-w-0 space-y-1">

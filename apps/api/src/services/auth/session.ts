@@ -67,6 +67,7 @@ export async function verifySessionToken(db: Database, token: string): Promise<S
       workspaceId: acc.workspaceId,
       username: acc.username,
       loginAlias: acc.loginAlias,
+      email: acc.email,
       displayName: acc.displayName,
     },
     expiresAt: sess.expiresAt,

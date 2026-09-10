@@ -4,6 +4,7 @@
  */
 import humanResponseSkill from "./skills/human-response/SKILL.md" with { type: "text" };
 import { POLA_INTERAKSI, DEEP_RESEARCH_PROTOCOL, SECURITY_RULES, HONESTY_RULES, TOOL_ERROR_RULES, SUPER_INTELLIGENCE, VISION_RULES, SUGGESTION_RULES, CITATION_RULES, CONFIDENCE_RULES, CLARIFY_RULES, PLAN_RULES, VERIFY_RULES } from "./instructions-blocks";
+import { TOOL_REASONING_RULES } from "./instructions-tool-reasoning";
 import type { ReasoningEffort } from "@shared/index";
 
 export function buildSystemInstruction(input: {
@@ -36,6 +37,7 @@ export function buildSystemInstruction(input: {
     humanResponseSkill.replace(/^---[\s\S]*?---\s*/, ""),
     "",
     ...SUPER_INTELLIGENCE,    "",
+    ...TOOL_REASONING_RULES,    "",
     ...(input.mikrotikEnabled === false ? [] : POLA_INTERAKSI),
     ...DEEP_RESEARCH_PROTOCOL,    "",
     ...SECURITY_RULES,    "",

@@ -26,33 +26,27 @@ export function createIntegrationService(deps: { db: Database; keyRing: KeyRing 
     // Workspace = tools default agent: aktif bila belum pernah diatur.
     if (kind === "workspace") {
       return { kind, enabled: r?.enabled ?? true, configured: true, allowWrite: r?.allowWrite ?? true, allowSend: false, allowShell: r?.allowShell ?? false,
-        status: r?.lastError ? "error" : "ready",
+        status: r?.lastError ? "error" : "ready", accountEmail: null,
         lastCheckedAt: r?.lastCheckedAt?.toISOString() ?? null, lastError: r?.lastError ?? null };
     }
-    let configured = kind === "mikrotik" || !!r?.ciphertext;
-    // Drive/Gmail/Calendar ikut terkonfigurasi begitu akun Google pusat terhubung.
-    if (isGoogleService(kind) && !configured) {
-      const g = await googleRow(userId);
-      configured = !!g?.ciphertext && !!g.enabled;
-    }
+    const creds = r?.ciphertext ? readSecret(userId, kind, r) : null;
+    const configured = kind === "mikrotik" || !!(creds && (creds.accessToken || (creds.clientId && creds.refreshToken) || creds.botToken));
     const enabled = r?.enabled ?? false;
     return { kind, enabled, configured, allowWrite: r?.allowWrite ?? false, allowSend: r?.allowSend ?? false, allowShell: false,
       status: !enabled ? "disabled" : r?.lastError ? "error" : r?.lastCheckedAt ? "connected" : configured && kind === "mikrotik" ? "ready" : "unverified",
+      accountEmail: creds?.accountEmail ?? null,
       lastCheckedAt: r?.lastCheckedAt?.toISOString() ?? null, lastError: r?.lastError ?? null };
   }
 
   async function credentials(userId: string, kind: IntegrationKind): Promise<GoogleCreds> {
     const own = readSecret(userId, kind, await row(userId, kind));
     if (own && (own.accessToken || (own.clientId && own.clientSecret && own.refreshToken))) return own;
-    // Fallback terpusat: layanan Google membaca token akun Google yang sama.
-    if (isGoogleService(kind) || kind === "google") {
+    if (kind === "google") {
       const shared = readSecret(userId, "google", await googleRow(userId));
-      if (shared && (shared.accessToken || (shared.clientId && shared.clientSecret && shared.refreshToken))) {
-        return { ...shared, ...Object.fromEntries(Object.entries(own ?? {}).filter(([, v]) => v !== undefined && v !== "")) };
-      }
+      if (shared && (shared.accessToken || (shared.clientId && shared.clientSecret && shared.refreshToken))) return shared;
     }
     if (own) return own;
-    throw new AppError("PROVIDER_NOT_CONFIGURED", "Hubungkan akun Google di halaman Connectors.", 400);
+    throw new AppError("PROVIDER_NOT_CONFIGURED", `Hubungkan connector ${kind} di halaman Connectors.`, 400);
   }
 
   function validateGoogleCreds(kind: IntegrationKind, next: GoogleCreds) {
@@ -88,7 +82,7 @@ export function createIntegrationService(deps: { db: Database; keyRing: KeyRing 
   async function assertAllowed(userId: string, kind: IntegrationKind, permission: "read" | "write" | "send" | "shell" = "read") {
     const s = await status(userId, kind);
     if (!s.enabled) throw new AppError("FORBIDDEN", `Connector ${kind} nonaktif. Aktifkan di Connectors atau menu chat.`, 403);
-    if (!s.configured) throw new AppError("PROVIDER_NOT_CONFIGURED", isGoogleService(kind) ? "Hubungkan akun Google di halaman Connectors (satu login untuk Drive, Gmail, Kalender)." : "Connector belum dikonfigurasi di halaman Connectors.", 400);
+    if (!s.configured) throw new AppError("PROVIDER_NOT_CONFIGURED", isGoogleService(kind) ? `Izin akun Google untuk ${kind} belum aktif. Hubungkan ${kind} di halaman Connectors.` : "Connector belum dikonfigurasi di halaman Connectors.", 400);
     if ((permission === "write" && !s.allowWrite) || (permission === "send" && !s.allowSend) || (permission === "shell" && !s.allowShell)) throw new AppError("FORBIDDEN", "Izin tindakan ini belum aktif di halaman Connectors.", 403);
     return s;
   }
@@ -101,6 +95,7 @@ export function createIntegrationService(deps: { db: Database; keyRing: KeyRing 
     list: (userId: string) => Promise.all(INTEGRATION_CATALOG.map((x) => status(userId, x.kind))),
     remove: async (userId: string, kind: IntegrationKind) => {
       if (kind === "google") { await google.disconnectGoogle(userId); return; }
+      if (isGoogleService(kind)) { await google.disconnectGoogle(userId, kind); }
       await deps.db.insert(integrations).values({ userId, kind, enabled: false }).onConflictDoUpdate({ target: [integrations.userId, integrations.kind], set: { enabled: false, allowWrite: false, allowSend: false, allowShell: false, ciphertext: null, nonce: null, authTag: null, lastCheckedAt: null, lastError: null, updatedAt: new Date() } });
     },
   };

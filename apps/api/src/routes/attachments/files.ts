@@ -23,18 +23,15 @@ export function registerFileRoutes(
     const form = await c.req.formData();
     const file = form.get("file");
     if (!(file instanceof File)) throw new AppError("VALIDATION_FAILED", "Field \"file\" wajib berupa file.", 422);
-    if (file.size <= 0) throw new AppError("VALIDATION_FAILED", "File kosong.", 422);
     if (file.size > deps.limits.maxBytes) {
       throw new AppError("FILE_TOO_LARGE", `File melebihi batas ${Math.floor(deps.limits.maxBytes / (1024 * 1024))} MiB.`, 413);
     }
     if (file.name.length > 255) throw new AppError("VALIDATION_FAILED", "Nama file terlalu panjang.", 422);
 
-    const mimeType = file.type || "application/octet-stream";
+    let mimeType = file.type || "application/octet-stream";
     const buf = Buffer.from(await file.arrayBuffer());
     const sniff = detectContentKind({ mimeType, originalName: file.name, head: buf.subarray(0, 512) });
-    if (!sniff.ok) {
-      throw new AppError("VALIDATION_FAILED", sniff.reason ?? "Tipe file tidak didukung.", 422);
-    }
+    mimeType = sniff.mimeType ?? "application/octet-stream";
 
     const objectKey = storage.buildObjectKey(s.userId, conversationId, extForName(file.name, mimeType));
     const stored = await storage.put({ objectKey, body: buf, contentType: mimeType, contentLength: buf.length });
@@ -62,6 +59,7 @@ export function registerFileRoutes(
         sizeBytes: row?.sizeBytes,
         status: row?.status,
         contentKind: sniff.kind,
+        readWarning: sniff.reason,
       },
     });
   });
@@ -82,7 +80,8 @@ export function registerFileRoutes(
       headers: {
         "Content-Type": row.contentType,
         "Content-Length": String(obj.body.length),
-        "Content-Disposition": `attachment; filename="${row.originalName.replace(/["\\]/g, "")}"`,
+        "Content-Disposition": `attachment; filename="download"; filename*=UTF-8''${encodeURIComponent(row.originalName)}`,
+        "X-Content-Type-Options": "nosniff",
         "Cache-Control": "private, no-store",
       },
     });

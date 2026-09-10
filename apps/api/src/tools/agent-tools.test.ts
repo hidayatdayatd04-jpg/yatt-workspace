@@ -9,6 +9,7 @@ import { workspaces, integrations, conversations, agentRuns, messages, toolExecu
 import { createIntegrationService } from "../services/integrations";
 import { createConnectorService } from "../services/connector";
 import { createAgentToolRegistry } from "./registry";
+import { createWorkspaceProcessManager } from "../services/workspace-processes";
 import { createAgentLoop, type StartRunInput } from "../agent/loop";
 import { buildRunCatalog } from "../agent/loop/catalog";
 import { createFileTools, workspacePath, workspaceRoot } from "./general/files";
@@ -34,7 +35,9 @@ async function fixture() {
   const connectors = createConnectorService({ db, keyRing, targetPolicy: { check: async () => ({ allowed: true as const, ip: "192.168.88.1" }) }, sshTimeoutMs: 1000, log: () => {}, probe: async () => ({ ok: true, kind: "ok", fingerprint: "SHA256:test", routerIdentity: "Lab", message: "ok" }) });
   const supervisor = { stop: async () => {} } as unknown as McpSupervisor;
   const transactions = { activeTransactionsForRouter: async () => [] } as unknown as TransactionCoordinator;
-  const registry = createAgentToolRegistry({ db, integrations: service, connectors, supervisor, transactions, dataDir: base, shellAvailable: false });
+  const testLogger = { info() {}, warn() {}, error() {}, debug() {} };
+  const processes = createWorkspaceProcessManager({ maxPerUser: 2, maxTotal: 4, idleMs: 60_000 }, testLogger as never);
+  const registry = createAgentToolRegistry({ db, integrations: service, connectors, supervisor, transactions, dataDir: base, shellAvailable: false, logger: testLogger as never, processes });
   const conversationId = crypto.randomUUID(), runId = crypto.randomUUID(), userMessageId = crypto.randomUUID();
   await db.insert(conversations).values({ id: conversationId, userId });
   await db.insert(agentRuns).values({ id: runId, userId, conversationId });

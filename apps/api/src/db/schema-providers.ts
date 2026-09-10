@@ -35,23 +35,32 @@ export const webSearchSettings = sqliteTable("web_search_settings", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
-// Vision provider settings: konfigurasi model vision eksplisit per workspace
-// (base URL, model, dan API key diisi sendiri oleh user di Settings → Provider)
-// yang dipakai pembaca gambar. API key disimpan terenkripsi dengan keyRing sama.
-export const visionSettings = sqliteTable("vision_settings", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => workspaces.id, { onDelete: "cascade" }),
-  kind: text("kind").notNull().default("gemini"), // gemini | openrouter | custom
-  baseUrl: text("base_url").notNull(),
-  model: text("model").notNull(),
-  apiKeyCiphertext: text("api_key_ciphertext").notNull(),
-  apiKeyNonce: text("api_key_nonce").notNull(),
-  apiKeyAuthTag: text("api_key_auth_tag").notNull(),
-  keyVersion: integer("key_version").notNull().default(1),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-});
+// Vision providers: beberapa konfigurasi provider khusus gambar per workspace
+// (mirip ai_providers). Tiap provider punya daftar models + activeModel dalam
+// urutan fallback — model pertama dicoba dulu, gagal/error/limit lanjut ke
+// berikutnya. Idealnya hanya model yang mendukung gambar (supportsVision).
+export const visionProviders = sqliteTable(
+  "vision_providers",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // gemini | openrouter | custom
+    name: text("name").notNull(),
+    baseUrl: text("base_url").notNull(),
+    apiKeyCiphertext: text("api_key_ciphertext").notNull(),
+    apiKeyNonce: text("api_key_nonce").notNull(),
+    apiKeyAuthTag: text("api_key_auth_tag").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+    models: text("models", { mode: "json" }).notNull().$defaultFn(() => []),
+    activeModel: text("active_model").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("vision_providers_user_idx").on(t.userId)],
+);
 
 export const aiProviders = sqliteTable(
   "ai_providers",

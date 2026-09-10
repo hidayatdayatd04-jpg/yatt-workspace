@@ -34,7 +34,7 @@ export function mountChatRoutes(app: Hono<HonoEnv>) {
     agentTools,
     transactions: txCoordinator,
     getProvider: (userId, model, providerId) => providerSettings.resolveForRun(userId, { model, providerId }),
-    getVisionProvider: (userId) => visionSettingsService.getDecrypted(userId),
+    getVisionCandidates: (userId) => visionSettingsService.listVisionCandidates(userId),
     getFallbackCandidates: (userId, model, providerId) =>
       providerSettings.listFallbackCandidates(userId, { model, providerId }) as Promise<FallbackCandidate[]>,
     makeClient: (cfg, fallbackCandidates, runContext) => makeRateLimitedClient(cfg, fallbackCandidates ?? [], runContext),
@@ -54,7 +54,7 @@ export function mountChatRoutes(app: Hono<HonoEnv>) {
       try {
         const obj = await storage.get(row.objectKey);
         const sniff = detectContentKind({ mimeType: row.contentType, originalName: row.originalName, head: obj.body.subarray(0, 512) });
-        return { kind: sniff.ok ? sniff.kind : "unsupported", name: row.originalName, mime: row.contentType, bytes: obj.body };
+        return { kind: sniff.ok ? sniff.kind : "unsupported", name: row.originalName, mime: sniff.mimeType ?? row.contentType, bytes: obj.body };
       } catch {
         return null;
       }

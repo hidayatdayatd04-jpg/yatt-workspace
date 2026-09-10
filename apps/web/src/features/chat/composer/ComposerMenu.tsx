@@ -81,7 +81,7 @@ export function ComposerMenu(props: {
                 <span className="mr-1 rounded-full bg-indigo-500/12 px-2 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">{totalRegistered}</span>
               )}
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent sideOffset={10} className="w-80 rounded-2xl border border-border/70 bg-popover/95 p-2 shadow-2xl backdrop-blur-xl">
+            <DropdownMenuSubContent sideOffset={10} className="w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border/70 bg-popover/95 p-2 shadow-2xl backdrop-blur-xl">
               <ConnectorSubmenu
                 running={props.running}
                 connectors={props.connectors}

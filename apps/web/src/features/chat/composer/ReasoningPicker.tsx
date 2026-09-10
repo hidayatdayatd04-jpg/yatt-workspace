@@ -32,10 +32,10 @@ export function ReasoningPicker(props: { reasoning: ComposerReasoning }) {
           aria-label="Pilih upaya penalaran"
         >
           <Brain className="size-3.5 shrink-0" />
-          <span className="text-[11px] font-medium">{active ? reasoningEffortLabel(current) : "Reasoning"}</span>
+          <span className="hidden xs:inline text-[11px] font-medium">{active ? reasoningEffortLabel(current) : "Reasoning"}</span>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-64 rounded-2xl border border-border/60 bg-popover bg-clip-padding p-1.5 shadow-xl ring-0">
+      <DropdownMenuContent align="start" side="top" sideOffset={8} className="w-[calc(100vw-1.5rem)] max-w-xs sm:w-64 rounded-2xl border border-border/60 bg-popover bg-clip-padding p-1.5 shadow-xl ring-0">
         <p className="px-2.5 pt-1.5 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground">
           Upaya penalaran
         </p>

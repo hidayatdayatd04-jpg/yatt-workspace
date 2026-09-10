@@ -11,12 +11,13 @@ export interface AgentTool extends NormalizedTool {
 }
 export function defineTool<T extends z.ZodType>(input: {
   name: string; description: string; connector: IntegrationKind; permission?: AgentTool["permission"];
+  tags?: string[];
   schema: T; parameters: Record<string, unknown>;
   execute: (args: z.infer<T>, input: StartRunInput, signal?: AbortSignal) => Promise<unknown>;
 }): AgentTool {
   const permission = input.permission ?? "read";
   return { fqName: input.name, rawName: input.name.split(":")[1]!, origin: "custom", risk: permission === "read" ? "read" : "write",
-    classificationProvenance: "custom-manifest", capabilities: [input.connector], inputSchema: input.parameters,
+    classificationProvenance: "custom-manifest", capabilities: [input.connector, ...(input.tags ?? [])], inputSchema: input.parameters,
     description: input.description, isGateway: permission === "shell", connector: input.connector, permission, schema: input.schema,
     execute: (args, run, signal) => input.execute(input.schema.parse(args), run, signal) };
 }

@@ -51,14 +51,14 @@ export function handleStepFinish(
     }
 
     // Guard anti-berhenti prematur: bila model hanya mengeluarkan kalimat rencana/pengantar
-    // pemeriksaan di step awal tanpa memanggil tool pada giliran ini dan belum ada
+    // tindakan di step awal tanpa memanggil tool pada giliran ini dan belum ada
     // tool/kartu yang dijalankan, jangan matikan loop!
     const isPreambleWithoutTool =
       counters.toolCallsTotal === 0 &&
       args.step < 2 &&
       !args.greetingOnly &&
       args.providerToolsLength > 0 &&
-      /(?:saya akan|akan saya|mari kita|sebentar saya|izinkan saya|saya periksa|saya cek|akan kami)\b/i.test(stepText) &&
+      /(?:saya akan|akan saya|mari kita|sebentar saya|izinkan saya|saya periksa|saya cek|akan kami|saya bantu|saya carikan|saya buatkan|saya tulis|saya baca|saya jalankan|saya coba|coba saya|biar saya|akan segera|saya telusuri|let me|i will)\b/i.test(stepText) &&
       !/```(?:approval|ask)\b/.test(stepText);
 
     if (isPreambleWithoutTool) {

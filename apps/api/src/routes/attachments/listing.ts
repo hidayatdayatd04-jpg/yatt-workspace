@@ -14,10 +14,11 @@ export function registerListingRoutes(
   routes.get("/limits", (c) => {
     requireWorkspace(c);
     return c.json({
+      acceptsAnyFile: true,
       maxBytes: deps.limits.maxBytes,
       maxFilesPerMessage: deps.limits.maxFilesPerMessage,
       accepted: [
-        "png", "jpg", "jpeg", "webp", "pdf", "docx", "xls", "xlsx", "pptx", "odt", "ods", "odp", "zip",
+        "png", "jpg", "jpeg", "webp", "gif", "pdf", "docx", "xls", "xlsx", "pptx", "odt", "ods", "odp", "zip",
         "txt", "md", "markdown", "csv", "tsv", "log", "rsc", "json", "yaml", "yml", "toml", "ini", "cfg", "conf", "env",
         "xml", "html", "htm", "css", "scss", "js", "mjs", "cjs", "ts", "tsx", "jsx", "vue", "svelte",
         "php", "py", "rb", "go", "rs", "java", "kt", "c", "h", "cpp", "hpp", "cs", "swift", "sql",
@@ -38,6 +39,8 @@ export function registerListingRoutes(
     return c.json({
       attachments: rows.map((r) => ({
         id: r.id,
+        messageId: r.messageId,
+        createdAt: r.createdAt.toISOString(),
         originalName: r.originalName,
         contentType: r.contentType,
         sizeBytes: r.sizeBytes,

@@ -8,7 +8,7 @@ const baseUrl = process.env.UI_CHECK_BASE_URL || 'http://127.0.0.1:3000';
 fs.mkdirSync(output, { recursive: true });
 const states = ['mikrotik','workspace','drive','gmail','calendar','telegram'].map(kind => ({ kind, enabled: ['mikrotik','workspace'].includes(kind), configured: ['mikrotik','workspace'].includes(kind), allowWrite: false, allowSend: false, allowShell: false, status: ['mikrotik','workspace'].includes(kind) ? 'ready' : 'disabled', lastCheckedAt: null, lastError: null }));
 const preferences = { theme: 'light', sidebarCollapsed: false, compactEnabled: true, compactThreshold: 80, aiInstructions: '' };
-const profile = { id: 'fixture', username: 'workspace', displayName: 'Demo Workspace', loginAlias: 'demo' };
+const profile = { id: 'fixture', username: 'workspace', displayName: 'Demo Workspace', loginAlias: 'demo', email: null };
 const errors = [];
 (async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });
@@ -28,13 +28,14 @@ const errors = [];
       else if (url.pathname === '/api/conversations') body = { conversations: [] };
       else if (url.pathname === '/api/memories') body = { memories: [] };
       else if (url.pathname.includes('/monitoring/settings/watcher')) body = { watcherEnabled: false, intervalMs: 180000 };
-      else if (url.pathname.includes('vision-settings') || url.pathname.includes('web-search-settings')) body = { configured: false };
+      else if (url.pathname.includes('vision-settings')) body = { providers: [] };
+      else if (url.pathname.includes('web-search-settings')) body = { configured: false };
       else if (url.pathname.includes('notifications')) body = { notifications: [], unreadCount: 0 };
       else if (url.pathname.includes('rate-limit')) body = { buckets: [], blockedModels: [], checkpoints: [] };
       await route.fulfill({ json: body });
     });
     await page.route('**/health/**', route => route.fulfill({ json: { status: 'ok', checks: { database: 'ok' } } }));
-    for (const section of ['providers','appearance','memory','context','profile','security','archive','monitoring','web-search','about','help']) {
+    for (const section of ['providers','vision','appearance','memory','context','profile','security','archive','monitoring','web-search','about','help']) {
       await page.goto(`${baseUrl}/settings/${section}`);
       await page.getByRole('navigation', { name: 'Pengaturan' }).waitFor();
       await page.waitForTimeout(250);
@@ -57,7 +58,7 @@ const errors = [];
     await page.screenshot({ path: path.join(output, 'composer-desktop.png'), fullPage: true });
     await page.keyboard.press('Escape');
     await page.setViewportSize({ width: 390, height: 844 });
-    for (const url of ['/connectors','/settings/providers','/settings/appearance','/settings/security']) {
+    for (const url of ['/connectors','/settings/providers','/settings/vision','/settings/appearance','/settings/security']) {
       await page.goto(`${baseUrl}${url}`); await page.waitForTimeout(400);
       if (await page.locator('body').evaluate(el => el.scrollWidth > window.innerWidth)) throw new Error(`Mobile overflow: ${url}`);
       await page.screenshot({ path: path.join(output, `${url.split('/').pop()}-mobile.png`), fullPage: true });
@@ -68,6 +69,6 @@ const errors = [];
     await page.waitForTimeout(200);
     await page.screenshot({ path: path.join(output, 'appearance-dark.png'), fullPage: true });
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log(JSON.stringify({ passed: true, settingsPages: 11, connectors: 4, mobileLayouts: 4, screenshots: output }));
+    console.log(JSON.stringify({ passed: true, settingsPages: 12, connectors: 4, mobileLayouts: 5, screenshots: output }));
   } finally { await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

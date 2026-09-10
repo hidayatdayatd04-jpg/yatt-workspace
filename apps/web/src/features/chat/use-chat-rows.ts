@@ -8,6 +8,7 @@ export interface ToolActivityLike {
   id?: string;
   name: string;
   status: "running" | "done" | "failed";
+  args?: string;
 }
 
 export function useChatRows(messages: MessageDTO[], persistedActivities: ActivityEventDTO[], toolActivity: ToolActivityLike[]) {
@@ -48,7 +49,7 @@ export function useChatRows(messages: MessageDTO[], persistedActivities: Activit
     .map((t, i) => ({
       key: t.id ?? `live-${i}`,
       index: i + 1,
-      label: humanizeTool(t.name),
+      label: humanizeTool(t.name, t.args),
       tool: t.name,
       status: t.status === "done" ? "completed" : t.status,
       durationMs: null,

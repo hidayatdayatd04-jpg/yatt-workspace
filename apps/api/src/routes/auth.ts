@@ -14,26 +14,16 @@ import {
   loginWithPassword,
   revokeSession,
   revokeAllForAccount,
-  revokeOtherSessions,
   verifySessionToken,
-  changePassword,
   ensureSeedAccount,
 } from "../services/auth";
-import { accounts, preferences } from "../db/schema";
+import { preferences } from "../db/schema";
 import { requireAuth } from "../middleware/session";
+import { createAuthProfileRoutes, profilePayload } from "./auth-profile";
 
 const LoginSchema = z.object({
   identifier: z.string().min(1, "Username atau email wajib diisi").max(256),
   password: z.string().min(1, "Password wajib diisi").max(256),
-});
-
-const ProfileSchema = z.object({
-  displayName: z.string().min(1).max(100).optional(),
-});
-
-const PasswordSchema = z.object({
-  oldPassword: z.string().min(1).max(256),
-  newPassword: z.string().min(8, "Password baru minimal 8 karakter").max(256),
 });
 
 function cookieSecure(c: { req: { url: string; header: (n: string) => string | undefined } }): boolean {
@@ -67,9 +57,7 @@ export function createAuthRoutes(deps: { db: Database; logger: Logger }) {
       secure,
       maxAge: Math.floor(SESSION_TTL_MS / 1000),
     });
-    return c.json({
-      profile: { id: account.id, username: account.username, displayName: account.displayName, loginAlias: account.loginAlias },
-    });
+    return c.json({ profile: profilePayload(account) });
   });
 
   routes.get("/me", async (c) => {
@@ -79,12 +67,7 @@ export function createAuthRoutes(deps: { db: Database; logger: Logger }) {
     if (!rec) throw new AppError("UNAUTHORIZED", "Session habis atau tidak valid.", 401);
     const [pref] = await deps.db.select().from(preferences).where(eq(preferences.accountId, rec.account.id)).limit(1);
     return c.json({
-      profile: {
-        id: rec.account.id,
-        username: rec.account.username,
-        displayName: rec.account.displayName,
-        loginAlias: rec.account.loginAlias,
-      },
+      profile: profilePayload(rec.account),
       preferences: pref
         ? { theme: pref.theme, sidebarCollapsed: !!pref.sidebarCollapsed, autoCompact: !!pref.autoCompact, compactThreshold: pref.compactThreshold }
         : null,
@@ -115,28 +98,7 @@ export function createAuthRoutes(deps: { db: Database; logger: Logger }) {
     return c.json({ ok: true });
   });
 
-  routes.patch("/profile", zValidator("json", ProfileSchema), async (c) => {
-    const { account } = requireAuth(c as never);
-    const input = c.req.valid("json");
-    if (input.displayName !== undefined) {
-      const name = input.displayName.trim();
-      if (!name) throw new AppError("VALIDATION_FAILED", "Display name tidak boleh kosong.", 422);
-      await deps.db.update(accounts).set({ displayName: name, updatedAt: new Date() }).where(eq(accounts.id, account.id));
-    }
-    const [row] = await deps.db.select().from(accounts).where(eq(accounts.id, account.id)).limit(1);
-    return c.json({
-      profile: { id: row!.id, username: row!.username, displayName: row!.displayName, loginAlias: row!.loginAlias },
-    });
-  });
-
-  routes.post("/password", zValidator("json", PasswordSchema), async (c) => {
-    const { account, sessionId } = requireAuth(c as never);
-    const input = c.req.valid("json");
-    await changePassword(deps.db, account.id, input.oldPassword, input.newPassword);
-    // Revoke other sessions; keep current.
-    await revokeOtherSessions(deps.db, account.id, sessionId);
-    return c.json({ ok: true });
-  });
+  routes.route("/", createAuthProfileRoutes(deps));
 
   routes.post("/logout-all", async (c) => {
     const { account } = requireAuth(c as never);

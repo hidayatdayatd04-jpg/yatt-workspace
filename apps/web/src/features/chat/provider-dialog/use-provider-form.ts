@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PRESET_RECOMMENDATIONS, type DialogProviderConfig } from "./provider-presets";
 
-export function useProviderForm(provider: DialogProviderConfig | null, open: boolean) {
+export function useProviderForm(provider: DialogProviderConfig | null, open: boolean, validateModel?: (model: string) => boolean) {
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -29,16 +29,21 @@ export function useProviderForm(provider: DialogProviderConfig | null, open: boo
       setShowKey(false);
       const initialModels =
         provider.models && provider.models.length > 0 ? [...provider.models] : (PRESET_RECOMMENDATIONS[provider.kind]?.slice(0, 1) ?? []);
-      setModels(initialModels);
-      setActiveModel(provider.activeModel || initialModels[0] || "");
+      const accepted = validateModel ? initialModels.filter(validateModel) : initialModels;
+      setModels(accepted);
+      setActiveModel(accepted.includes(provider.activeModel ?? "") ? provider.activeModel! : accepted[0] || "");
       setNewModelInput("");
       setRemoteModels(null);
     }
-  }, [provider, open]);
+  }, [provider, open, validateModel]);
 
   function handleAddModel(modelToAdd: string) {
     const trimmed = modelToAdd.trim();
     if (!trimmed) return;
+    if (validateModel && !validateModel(trimmed)) {
+      toast.error(`Model "${trimmed}" tidak mendukung gambar dan ditolak.`);
+      return;
+    }
     if (models.includes(trimmed)) {
       toast.info(`Model "${trimmed}" sudah ada di daftar.`);
       return;

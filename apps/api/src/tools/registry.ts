@@ -1,21 +1,61 @@
+import { createAttachmentReadTools } from "./general/attachment-read";
 import type { Database } from "../db";
 import type { IntegrationService } from "../services/integrations";
 import type { ConnectorService } from "../services/connector";
 import type { McpSupervisor } from "../mcp/supervisor";
 import type { TransactionCoordinator } from "../transactions/coordinator";
 import type { StartRunInput } from "../agent/loop/types";
+import type { Logger } from "../lib/logger";
 import { createConnectionTools } from "./mikrotik/connection";
 import { createFileTools } from "./general/files";
 import { createShellTool } from "./general/shell";
+import { createSearchTools } from "./general/search";
+import { createPatchTools } from "./general/patch";
+import { createProjectTools } from "./general/project";
+import { createProcessTools } from "./general/process";
+import { createGitReadTools } from "./git/git-read";
+import { createGitWriteTools } from "./git/git-write";
+import { createWebFetchTool } from "./general/web-fetch";
+import { createDataTools } from "./general/data";
+import { createCsvTools } from "./general/csv";
+import { createTextTools } from "./general/text";
+import { createSystemTools } from "./general/system";
+import { createComputeTools } from "./general/compute";
+import { createArchiveTools } from "./general/archive";
 import { createDriveTools } from "./integrations/drive";
 import { createGmailTools } from "./integrations/gmail";
 import { createCalendarTools } from "./integrations/calendar";
 import { createTelegramTools } from "./integrations/telegram";
 import { AppError } from "../lib/errors";
+import { toolErrorBody } from "./errors";
 import { createAttachmentTool } from "./general/attachments";
+import type { WorkspaceProcessManager } from "../services/workspace-processes";
 
-export function createAgentToolRegistry(deps: { db: Database; integrations: IntegrationService; connectors: ConnectorService; supervisor: McpSupervisor; transactions: TransactionCoordinator; dataDir: string; shellAvailable: boolean; readObject?: (key: string) => Promise<Buffer> }) {
-  const tools = [...createConnectionTools(deps), ...createFileTools(deps.dataDir), ...(deps.readObject ? [createAttachmentTool({ ...deps, readObject: deps.readObject })] : []), createShellTool(deps.dataDir, deps.shellAvailable), ...createDriveTools(deps.integrations), ...createGmailTools(deps.integrations), ...createCalendarTools(deps.integrations), ...createTelegramTools(deps.integrations)];
+export function createAgentToolRegistry(deps: { db: Database; integrations: IntegrationService; connectors: ConnectorService; supervisor: McpSupervisor; transactions: TransactionCoordinator; dataDir: string; shellAvailable: boolean; logger: Logger; processes: WorkspaceProcessManager; readObject?: (key: string) => Promise<Buffer>; describeImage?: Parameters<typeof createAttachmentReadTools>[0]["describeImage"] }) {
+  const { processes } = deps;
+  const tools = [
+    ...createConnectionTools(deps),
+    ...createFileTools(deps.dataDir, deps.describeImage),
+    ...(deps.readObject ? [createAttachmentTool({ ...deps, readObject: deps.readObject }), ...createAttachmentReadTools({ ...deps, readObject: deps.readObject })] : []),
+    createShellTool(deps.dataDir, deps.shellAvailable),
+    ...createSearchTools(deps.dataDir),
+    ...createPatchTools(deps.dataDir),
+    ...createProjectTools(deps.dataDir, deps.shellAvailable),
+    ...createProcessTools(deps.dataDir, deps.shellAvailable, processes),
+    ...createGitReadTools(deps.dataDir),
+    ...createGitWriteTools(deps.dataDir),
+    createWebFetchTool(),
+    ...createDataTools(deps.dataDir),
+    ...createCsvTools(deps.dataDir),
+    ...createTextTools(),
+    ...createSystemTools(deps.shellAvailable),
+    ...createComputeTools(deps.shellAvailable),
+    ...createArchiveTools(deps.dataDir),
+    ...createDriveTools(deps.integrations),
+    ...createGmailTools(deps.integrations),
+    ...createCalendarTools(deps.integrations),
+    ...createTelegramTools(deps.integrations),
+  ];
   const byName = new Map(tools.map((tool) => [tool.fqName, tool]));
   return {
     async catalog(userId: string) {
@@ -33,10 +73,16 @@ export function createAgentToolRegistry(deps: { db: Database; integrations: Inte
       signal?.throwIfAborted();
       const parsed = tool.schema.safeParse(args);
       if (!parsed.success) throw new AppError("VALIDATION_FAILED", "Argumen tool tidak sesuai skema.", 422);
-      const result = await tool.execute(parsed.data, run, signal);
-      if (name === "general:execute_shell") {
+      let result: unknown;
+      try {
+        result = await tool.execute(parsed.data, run, signal);
+      } catch (err) {
+        // Taksonomi error terstandar: {ok:false, error:{code,message,retryable,guidance}}
+        return { ok: false, output: JSON.stringify(toolErrorBody(err)), errorCode: (toolErrorBody(err).error as { code: string }).code };
+      }
+      if (name === "general:execute_shell" || name === "project:run_script" || name === "compute:execute_python") {
         const shell = result as { exitCode: number | null; timedOut: boolean; cancelled: boolean };
-        if (shell.timedOut || shell.cancelled || shell.exitCode !== 0) return { ok: false, output: JSON.stringify(result), errorCode: shell.timedOut ? "TOOL_TIMEOUT" : shell.cancelled ? "CANCELLED" : "TOOL_FAILED" };
+        if (shell.timedOut || shell.cancelled || shell.exitCode !== 0) return { ok: false, output: JSON.stringify(result), errorCode: shell.timedOut ? "TOOL_TIMEOUT" : shell.cancelled ? "CANCELLED" : "COMMAND_FAILED" };
       }
       return { ok: true, output: JSON.stringify(result) };
     },

@@ -71,13 +71,18 @@ export interface AuthAccount {
   workspaceId: string;
   username: string;
   loginAlias: string | null;
+  email: string | null;
   displayName: string;
 }
 
 export async function findAccountByIdentifier(db: Database, identifier: string): Promise<(AuthAccount & { passwordHash: string }) | null> {
   const id = identifier.trim();
   if (!id) return null;
-  const rows = await db.select().from(accounts).where(or(eq(accounts.username, id), eq(accounts.loginAlias, id))).limit(1);
+  const rows = await db
+    .select()
+    .from(accounts)
+    .where(or(eq(accounts.username, id), eq(accounts.loginAlias, id), eq(accounts.email, id.toLowerCase())))
+    .limit(1);
   const row = rows[0];
   if (!row) return null;
   return {
@@ -85,6 +90,7 @@ export async function findAccountByIdentifier(db: Database, identifier: string):
     workspaceId: row.workspaceId,
     username: row.username,
     loginAlias: row.loginAlias,
+    email: row.email,
     displayName: row.displayName,
     passwordHash: row.passwordHash,
   };
@@ -126,13 +132,13 @@ export async function loginWithPassword(
   const ok = await verifyPassword(password, acc.passwordHash);
   if (!ok) throw invalid;
   clearLoginRateLimit(rateKey);
-  return { id: acc.id, workspaceId: acc.workspaceId, username: acc.username, loginAlias: acc.loginAlias, displayName: acc.displayName };
+  return { id: acc.id, workspaceId: acc.workspaceId, username: acc.username, loginAlias: acc.loginAlias, email: acc.email, displayName: acc.displayName };
 }
 
 export async function changePassword(
   db: Database,
   accountId: string,
-  oldPassword: string,
+  oldPassword: string | null,
   newPassword: string,
 ): Promise<void> {
   if (newPassword.length < 8) throw new AppError("VALIDATION_FAILED", "Password baru minimal 8 karakter.", 422);
@@ -140,8 +146,11 @@ export async function changePassword(
   const rows = await db.select().from(accounts).where(eq(accounts.id, accountId)).limit(1);
   const acc = rows[0];
   if (!acc) throw new AppError("UNAUTHORIZED", "Session tidak valid.", 401);
-  const ok = await verifyPassword(oldPassword, acc.passwordHash);
-  if (!ok) throw new AppError("UNAUTHORIZED", "Password lama salah.", 401);
+  // Verifikasi password lama hanya bila disertakan (form profil boleh tanpa password lama).
+  if (oldPassword !== null) {
+    const ok = await verifyPassword(oldPassword, acc.passwordHash);
+    if (!ok) throw new AppError("UNAUTHORIZED", "Password lama salah.", 401);
+  }
   const hash = await hashPassword(newPassword);
   await db.update(accounts).set({ passwordHash: hash, updatedAt: new Date() }).where(eq(accounts.id, accountId));
 }

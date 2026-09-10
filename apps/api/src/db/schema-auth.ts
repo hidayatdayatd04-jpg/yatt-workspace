@@ -10,6 +10,7 @@ export const accounts = sqliteTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     username: text("username").notNull().unique(),
     loginAlias: text("login_alias").unique(),
+    email: text("email").unique(),
     displayName: text("display_name").notNull(),
     passwordHash: text("password_hash").notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),

@@ -1,3 +1,4 @@
+import { ChatFilesPanel } from "./ChatFilesPanel";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ export function ChatScreenHeader(props: {
   const updateConversation = useUpdateConversation(props.conversationId);
   const startCompaction = useStartCompaction(props.conversationId);
   const actions = useConversationActions(props.conversationId);
+  const [filesOpen, setFilesOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
 
@@ -60,6 +62,7 @@ export function ChatScreenHeader(props: {
         title={title}
         onToggleSidebar={props.onToggleSidebar}
         onOpenTerminal={props.onOpenTerminal}
+        onViewFiles={() => setFilesOpen(true)}
         onExport={() => void actions.exportMd()}
         onRename={() => {
           setRenameValue(title);
@@ -94,6 +97,7 @@ export function ChatScreenHeader(props: {
         onDelete={() => void handleDelete()}
         compactBusy={props.compactBusy || startCompaction.isPending}
       />
+      <ChatFilesPanel key={props.conversationId} conversationId={props.conversationId} open={filesOpen} onOpenChange={setFilesOpen} />
       {renaming && (
         <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
           <input

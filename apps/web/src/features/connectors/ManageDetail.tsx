@@ -14,9 +14,14 @@ export function ManageDetail({ manage }: { manage: ManageState }) {
       <Button variant="ghost" size="sm" className="mb-5 -ml-3" onClick={() => manage.setSelected(null)}>
         <ArrowLeft className="size-4" /> Semua connectors
       </Button>
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold tracking-tight">{def.name}</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{def.desc}</p>
+      <div className="mb-6 flex items-center gap-3.5">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/40 p-2 shadow-xs">
+          <def.Icon className="size-7" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">{def.name}</h2>
+          <p className="mt-0.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{def.desc}</p>
+        </div>
       </div>
       {selected === "mikrotik" ? (
         <ConnectorsPanel />

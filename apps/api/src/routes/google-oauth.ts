@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { GOOGLE_SCOPES } from "@shared/index";
+import { GOOGLE_SCOPES, GOOGLE_BASE_SCOPES, GOOGLE_SERVICE_SCOPES } from "@shared/index";
 import type { Env } from "../types";
 import type { IntegrationService } from "../services/integrations";
 import { requireWorkspace } from "../middleware/session";
@@ -13,6 +13,7 @@ const AuthUrlSchema = z.object({
   clientId: z.string().trim().max(512).optional(),
   clientSecret: z.string().trim().max(512).optional(),
   redirectUri: z.string().trim().url().max(1024).optional(),
+  service: z.enum(["drive", "gmail", "calendar", "google"]).optional(),
 }).strict();
 
 export function createGoogleOAuthRoutes(service: IntegrationService, opts: { clientId?: string; clientSecret?: string; redirectUri?: string; appUrl?: string }) {
@@ -45,15 +46,21 @@ export function createGoogleOAuthRoutes(service: IntegrationService, opts: { cli
     if (!clientId || !clientSecret) throw new AppError("VALIDATION_FAILED", "Isi OAuth Client ID dan Client Secret Google (buat di Google Cloud Console → Credentials → OAuth client ID).", 422);
     const redirectUri = resolveRedirectUri(body.redirectUri, opts.redirectUri, c.req.url, opts.appUrl);
     try { new URL(redirectUri); } catch { throw new AppError("VALIDATION_FAILED", "Redirect URI tidak valid.", 422); }
-    const state = pending.issue({ userId, clientId, clientSecret, redirectUri });
+    const targetService = body.service;
+    const scopes: string[] = [...GOOGLE_BASE_SCOPES];
+    if (targetService && targetService in GOOGLE_SERVICE_SCOPES) {
+      scopes.push(...GOOGLE_SERVICE_SCOPES[targetService as keyof typeof GOOGLE_SERVICE_SCOPES]);
+    } else {
+      scopes.push(...GOOGLE_SERVICE_SCOPES.drive, ...GOOGLE_SERVICE_SCOPES.gmail, ...GOOGLE_SERVICE_SCOPES.calendar);
+    }
+    const state = pending.issue({ userId, clientId, clientSecret, redirectUri, targetService });
     const url = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
-      scope: [...GOOGLE_SCOPES].join(" "),
+      scope: scopes.join(" "),
       access_type: "offline",
-      prompt: "consent",
-      include_granted_scopes: "true",
+      prompt: "select_account consent",
       state,
     })}`;
     return c.json({ url, redirectUri });
@@ -92,16 +99,17 @@ export function createGoogleOAuthRoutes(service: IntegrationService, opts: { cli
         const profile = await boundedJson("https://www.googleapis.com/oauth2/v2/userinfo", { headers: { Authorization: `Bearer ${accessToken}` } }) as { email?: unknown };
         if (typeof profile.email === "string" && profile.email.includes("@")) accountEmail = profile.email;
       } catch { /* abaikan */ }
-      await service.saveGoogleTokens(auth.userId, { accessToken, expiryMs: typeof expiresIn === "number" ? Date.now() + expiresIn * 1000 : undefined, accountEmail, scopes: grantedScopes, clientId: auth.clientId, clientSecret: auth.clientSecret, refreshToken });
-      if (!refreshToken) {
+      await service.saveGoogleTokens(auth.userId, { accessToken, expiryMs: typeof expiresIn === "number" ? Date.now() + expiresIn * 1000 : undefined, accountEmail, scopes: grantedScopes, clientId: auth.clientId, clientSecret: auth.clientSecret, refreshToken, targetService: auth.targetService });
+      if (!refreshToken && auth.targetService) {
         try {
-          const existing = await service.credentials(auth.userId, "google");
+          const targetKind = auth.targetService as "drive" | "gmail" | "calendar" | "google";
+          const existing = await service.credentials(auth.userId, targetKind);
           if (existing.refreshToken && !existing.accessToken) {
-            await service.updateGoogleAccessToken(auth.userId, accessToken, expiresIn);
+            await service.updateGoogleAccessToken(auth.userId, accessToken, expiresIn, targetKind);
           }
         } catch { /* abaikan */ }
       }
-      const qp = new URLSearchParams({ google: "connected", ...(accountEmail ? { email: accountEmail } : {}) }).toString();
+      const qp = new URLSearchParams({ google: "connected", ...(auth.targetService ? { service: auth.targetService } : {}), ...(accountEmail ? { email: accountEmail } : {}) }).toString();
       return toConnectors(qp);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Login Google gagal.";

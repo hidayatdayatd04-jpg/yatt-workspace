@@ -1,3 +1,4 @@
+import { buildVisionContext } from "../routes/chat/image-reader";
 import { config, db, keyRing, logger, rosetta, supervisor } from "./foundation";
 import { catalogSource, connectors, dispatcher, networkMap, txCoordinator } from "./policy";
 import { createProviderSettingsService } from "../agent/provider-settings";
@@ -14,10 +15,32 @@ import { parseRateLimitOverrides } from "../lib/config";
 import { createFallbackChatClient, type FallbackCandidate } from "../agent/model-fallback";
 import { createIntegrationService } from "../services/integrations";
 import { createAgentToolRegistry } from "../tools/registry";
+import { createWorkspaceProcessManager } from "../services/workspace-processes";
 import { storage } from "./storage";
 
 export const integrationService = createIntegrationService({ db, keyRing });
-export const agentTools = createAgentToolRegistry({ db, integrations: integrationService, connectors, supervisor, transactions: txCoordinator, dataDir: config.DATA_DIR, shellAvailable: config.AGENT_SHELL_ENABLED, readObject: async (key) => (await storage.get(key)).body });
+/** Manajer proses workspace (dev server/watch): ring buffer + limit + idle sweep. */
+export const workspaceProcesses = createWorkspaceProcessManager({
+  maxPerUser: config.WORKSPACE_MAX_PROCESSES_PER_USER,
+  maxTotal: config.WORKSPACE_MAX_PROCESSES_TOTAL,
+  idleMs: config.WORKSPACE_PROCESS_IDLE_MS,
+}, logger);
+const stopProcessSweep = workspaceProcesses.startSweep();
+export { stopProcessSweep };
+export const agentTools = createAgentToolRegistry({ db, integrations: integrationService, connectors, supervisor, transactions: txCoordinator, dataDir: config.DATA_DIR, shellAvailable: config.AGENT_SHELL_ENABLED, logger, processes: workspaceProcesses, readObject: async (key) => (await storage.get(key)).body,
+  describeImage: async (image, run) => {
+    if (image.bytes.length > 20 * 1024 * 1024) return "Gambar melebihi batas pembacaan vision 20 MiB.";
+    const cfg = await providerSettings.resolveForRun(run.userId);
+    const result = await buildVisionContext({ deps: {
+      getVisionCandidates: (userId) => visionSettingsService.listVisionCandidates(userId),
+      getFallbackCandidates: (userId) => providerSettings.listFallbackCandidates(userId),
+      makeClient: (config) => makeRateLimitedClient(config),
+    } }, { images: [{ name: image.name, mime: image.mime, dataUrl: `data:${image.mime};base64,${image.bytes.toString("base64")}` }],
+      cfg, modelForVision: cfg?.model ?? "", userId: run.userId, runId: run.runId,
+      conversationId: run.conversationId, policyMode: "read-only" });
+    return result.note;
+  },
+});
 
 // M7: AI provider (multi-provider OpenAI-compatible; Gemini/OpenRouter/custom
 // per user; mock deterministik bila belum dikonfigurasi).

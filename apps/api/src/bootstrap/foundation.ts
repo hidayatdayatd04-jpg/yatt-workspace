@@ -9,6 +9,9 @@ import { McpSupervisor } from "../mcp/supervisor";
 import { makeSpawnPlan } from "../mcp/spawn-plan";
 import { RosettaProcess } from "../mcp/rosetta";
 
+import { ensureRootEnvLoaded } from "./env";
+
+ensureRootEnvLoaded();
 export const config = loadConfig();
 export const logger = createLogger(config.LOG_LEVEL);
 export const db = createDb(resolve(config.DATA_DIR, "agent.sqlite"));

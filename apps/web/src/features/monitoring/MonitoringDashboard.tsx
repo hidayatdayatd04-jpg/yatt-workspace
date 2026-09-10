@@ -29,25 +29,25 @@ export default function MonitoringDashboard({ initialConnectionId }: { initialCo
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground monitoring-container">
       {/* Top Header */}
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 bg-background/80 px-6 py-3.5 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-background/80 px-4 sm:px-6 py-3 backdrop-blur-md">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
             <BarChart3 className="size-5" />
           </div>
-          <div>
-            <h1 className="text-base font-bold leading-tight">Monitoring Dashboard</h1>
-            <p className="text-xs text-muted-foreground">Telemetri langsung dan performa router MikroTik</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm sm:text-base font-bold leading-tight">Monitoring Dashboard</h1>
+            <p className="truncate text-[11px] sm:text-xs text-muted-foreground">Telemetri langsung performa router</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 pr-12 sm:pr-6 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <RouterSelector connectors={availableConnectors} selectedId={activeId} onSelect={(id) => setSelectedConnectionId(id)} />
           <Button
             variant="outline"
             size="sm"
             onClick={() => void live.refetch()}
             disabled={live.isFetching}
-            className="gap-1.5 text-xs h-9 rounded-xl cursor-pointer"
+            className="gap-1.5 text-xs h-9 rounded-xl cursor-pointer shrink-0"
           >
             <RefreshCw className={`size-3.5 ${live.isFetching ? "animate-spin" : ""}`} />
             <span>Segarkan</span>
@@ -56,7 +56,7 @@ export default function MonitoringDashboard({ initialConnectionId }: { initialCo
       </header>
 
       {/* Main Scrollable Dashboard */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto w-full">
         {!activeId ? (
           <div className="flex flex-col items-center justify-center h-80 text-center">
             <Server className="size-10 text-muted-foreground/50 mb-3" />

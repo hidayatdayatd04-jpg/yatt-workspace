@@ -13,7 +13,10 @@ export function useChatTarget(conversationId: string) {
   const upload = useUploadAttachment(conversationId);
   const removeAttachment = useDeleteAttachment(conversationId);
   const updateConversation = useUpdateConversation(conversationId);
+  const currentConversation = useRef(conversationId);
+  currentConversation.current = conversationId;
   const [attachments, setAttachments] = useState<AttachmentDTO[]>([]);
+  const [pendingUploads, setPendingUploads] = useState(0);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [terminalDraft, setTerminalDraft] = useState<string>("");
   const runLiveRef = useRef(false);
@@ -51,10 +54,10 @@ export function useChatTarget(conversationId: string) {
       toast.error("File melebihi 10 MiB.");
       return;
     }
-    upload.mutate(file, {
-      onSuccess: (res) => setAttachments((prev) => [...prev, res.attachment]),
-      onError: (err) => toast.error(err.message),
-    });
+    setPendingUploads((n) => n + 1);
+    void upload.mutateAsync(file).then((res) => {
+      if (currentConversation.current === conversationId) setAttachments((prev) => [...prev, res.attachment]);
+    }).catch((err) => toast.error(err.message)).finally(() => setPendingUploads((n) => n - 1));
   }
 
   function handleRemoveAttachment(id: string) {
@@ -72,7 +75,7 @@ export function useChatTarget(conversationId: string) {
 
   return {
     attachments,
-    uploading: upload.isPending,
+    uploading: pendingUploads > 0,
     terminalOpen,
     setTerminalOpen,
     terminalDraft,

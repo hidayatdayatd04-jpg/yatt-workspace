@@ -61,6 +61,10 @@ export const EnvSchema = z.object({
   AGENT_MAX_STEPS: int(24, 1, 64),
   AGENT_MAX_TOOL_CALLS: int(30, 1, 128),
   AGENT_RUN_TIMEOUT_MS: int(180000, 5000, 600000),
+  // Proses workspace (dev server/watch) — batas per user, total, dan idle.
+  WORKSPACE_MAX_PROCESSES_PER_USER: int(5, 1, 32),
+  WORKSPACE_MAX_PROCESSES_TOTAL: int(20, 1, 256),
+  WORKSPACE_PROCESS_IDLE_MS: int(600000, 60000, 3600000),
   MONITOR_WATCHER_INTERVAL_MS: int(180000, 60000, 900000),
   MAX_ACTIONS_PER_TRANSACTION: int(20, 1, 200),
   // Centralized AI rate limiter (aturan #1): default 15 RPM + 150.000 TPM per

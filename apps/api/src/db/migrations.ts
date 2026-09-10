@@ -37,4 +37,12 @@ CREATE INDEX IF NOT EXISTS "message_feedback_msg_idx" ON "message_feedback" ("me
 INSERT OR IGNORE INTO integrations (user_id, kind, enabled, updated_at) SELECT DISTINCT user_id, 'mikrotik', 1, strftime('%s','now')*1000 FROM router_connections;`,
   `CREATE TABLE IF NOT EXISTS custom_connectors (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, name text NOT NULL, server_url text NOT NULL, last_checked_at integer, last_error text, created_at integer NOT NULL, updated_at integer NOT NULL);
 CREATE INDEX IF NOT EXISTS custom_connectors_user_idx ON custom_connectors (user_id);`,
+  // Migration: identitas akun — kolom email untuk edit profil (username/email).
+  `ALTER TABLE "accounts" ADD COLUMN "email" text;
+CREATE UNIQUE INDEX IF NOT EXISTS "accounts_email_idx" ON "accounts"("email");`,
+  // Migration: vision multi-provider + multi-model (mirip ai_providers).
+  // Migrasi baris tunggal lama (vision_settings) menjadi satu baris vision_providers.
+  `CREATE TABLE IF NOT EXISTS "vision_providers" ("id" text PRIMARY KEY NOT NULL, "user_id" text NOT NULL, "kind" text NOT NULL, "name" text NOT NULL, "base_url" text NOT NULL, "api_key_ciphertext" text NOT NULL, "api_key_nonce" text NOT NULL, "api_key_auth_tag" text NOT NULL, "key_version" integer NOT NULL DEFAULT 1, "models" text NOT NULL DEFAULT '[]', "active_model" text NOT NULL, "enabled" integer NOT NULL DEFAULT 1, "created_at" integer NOT NULL, "updated_at" integer NOT NULL, FOREIGN KEY ("user_id") REFERENCES "workspaces" ("id") ON DELETE cascade);
+CREATE INDEX IF NOT EXISTS "vision_providers_user_idx" ON "vision_providers" ("user_id");
+INSERT OR IGNORE INTO "vision_providers" ("id", "user_id", "kind", "name", "base_url", "api_key_ciphertext", "api_key_nonce", "api_key_auth_tag", "key_version", "models", "active_model", "enabled", "created_at", "updated_at") SELECT 'vision-' || "user_id", "user_id", "kind", CASE "kind" WHEN 'gemini' THEN 'Vision Gemini' WHEN 'openrouter' THEN 'Vision OpenRouter' ELSE 'Vision Custom' END, "base_url", "api_key_ciphertext", "api_key_nonce", "api_key_auth_tag", "key_version", '["' || "model" || '"]', "model", 1, "created_at", "updated_at" FROM "vision_settings";`,
 ];

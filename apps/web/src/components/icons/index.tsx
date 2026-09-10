@@ -44,4 +44,4 @@ export { MoreHorizontal, MoreVertical, Palette, PanelLeftClose, Pencil, Pin, Pin
 export { RefreshCw, RotateCcw, Scissors, Search, Send, Server, Settings, Settings2, ShieldCheck, Square, Sun } from "./icons-d";
 export { TerminalSquare, Trash2, User, Wifi, X, XCircle, OctagonXIcon, TriangleAlertIcon, CheckIcon, ChevronRightIcon, XIcon } from "./icons-e";
 export { Network, Bell, BarChart3, Shield, FileDiff, Users, HardDrive, Brain } from "./icons-f";
-export { Folder, Mail, ArrowRight, Calendar, GoogleG } from "./integrations";
+export { Folder, Mail, ArrowRight, Calendar, GoogleG, GmailIcon, GoogleDriveIcon, GoogleCalendarIcon, MikrotikIcon } from "./integrations";

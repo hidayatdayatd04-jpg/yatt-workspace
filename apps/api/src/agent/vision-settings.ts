@@ -1,107 +1,67 @@
-import { eq } from "drizzle-orm";
-import type { Database } from "../db";
-import { visionSettings } from "../db/schema";
-import { sealSecret, openSecret, type KeyRing } from "../lib/crypto";
+import { and, asc, eq } from "drizzle-orm";
+import { visionProviders } from "../db/schema";
+import { openSecret } from "../lib/crypto";
 import { AppError } from "../lib/errors";
-import type { Logger } from "../lib/logger";
-import { PROVIDER_KINDS, type ProviderKind } from "./provider-settings-types";
+import { supportsVision } from "@shared/index";
+import { parseModelsList } from "./provider-settings-helpers";
+import type { ProviderKind, ProviderSettingsDeps, SaveProviderInput } from "./provider-settings-types";
+import { assertVisionModels, toDTO, type VisionCandidate } from "./vision-settings-utils";
+import { saveVisionProvider } from "./vision-settings-save";
 
-/**
- * Per-workspace Vision provider settings: konfigurasi eksplisit model vision
- * (base URL + model + API key) yang dipakai pembaca gambar. API key disimpan
- * terenkripsi AES-256-GCM dengan keyRing yang sama dipakai kredensial router
- * dan provider AI; tidak pernah dikembalikan dalam bentuk plaintext.
- */
-const AAD_ID = "vision";
-
-export interface VisionProviderSecret {
-  kind: ProviderKind;
-  baseUrl: string;
-  model: string;
-  apiKey: string;
-}
-
-export function createVisionSettingsService(deps: { db: Database; keyRing: KeyRing; logger: Logger }) {
-  async function getStatus(userId: string): Promise<{ configured: boolean; kind: string | null; baseUrl: string | null; model: string | null; updatedAt: string | null }> {
-    const [row] = await deps.db.select().from(visionSettings).where(eq(visionSettings.userId, userId)).limit(1);
-    return {
-      configured: !!row,
-      kind: row?.kind ?? null,
-      baseUrl: row?.baseUrl ?? null,
-      model: row?.model ?? null,
-      updatedAt: row?.updatedAt.toISOString() ?? null,
-    };
+export function createVisionSettingsService(deps: ProviderSettingsDeps) {
+  const scope = (userId: string, id: string) => and(eq(visionProviders.userId, userId), eq(visionProviders.id, id));
+  async function list(userId: string) {
+    const rows = await deps.db.select().from(visionProviders).where(eq(visionProviders.userId, userId))
+      .orderBy(asc(visionProviders.createdAt), asc(visionProviders.id));
+    return rows.map(toDTO);
   }
-
-  /** Dipakai pembaca gambar — null bila belum dikonfigurasi. */
-  async function getDecrypted(userId: string): Promise<VisionProviderSecret | null> {
-    const [row] = await deps.db.select().from(visionSettings).where(eq(visionSettings.userId, userId)).limit(1);
+  async function get(userId: string, id: string) {
+    const [row] = await deps.db.select().from(visionProviders).where(scope(userId, id)).limit(1);
+    return row ? toDTO(row) : null;
+  }
+  async function requireProvider(userId: string, id: string) {
+    const row = await get(userId, id);
+    if (!row) throw new AppError("NOT_FOUND", "Provider vision tidak ditemukan.", 404);
+    return row;
+  }
+  async function getSavedKey(userId: string, id: string) {
+    const [row] = await deps.db.select().from(visionProviders).where(scope(userId, id)).limit(1);
     if (!row) return null;
-    const apiKey = openSecret(
-      deps.keyRing,
-      { ciphertext: row.apiKeyCiphertext, nonce: row.apiKeyNonce, authTag: row.apiKeyAuthTag, keyVersion: row.keyVersion },
-      userId,
-      AAD_ID,
-    );
-    if (apiKey === null) {
-      deps.logger.error("vision api key decrypt failed", { userId });
-      return null;
-    }
-    return { kind: row.kind as ProviderKind, baseUrl: row.baseUrl, model: row.model, apiKey };
+    const apiKey = openSecret(deps.keyRing, { ciphertext: row.apiKeyCiphertext, nonce: row.apiKeyNonce,
+      authTag: row.apiKeyAuthTag, keyVersion: row.keyVersion }, userId, "vision");
+    if (apiKey === null) throw new AppError("INTERNAL_ERROR", "Dekripsi API key vision gagal.", 500);
+    return { kind: row.kind as ProviderKind, baseUrl: row.baseUrl, apiKey };
   }
-
-  /** apiKey opsional: bila kosong, kunci yang tersimpan dipakai ulang. */
-  async function save(userId: string, input: { kind: string; baseUrl: string; model: string; apiKey?: string }): Promise<{ configured: true; updatedAt: string }> {
-    const kind = (PROVIDER_KINDS as readonly string[]).includes(input.kind) ? (input.kind as ProviderKind) : null;
-    if (!kind) throw new AppError("VALIDATION_FAILED", "Jenis provider vision tidak dikenal.", 422);
-    let baseUrl: URL;
-    try {
-      baseUrl = new URL(input.baseUrl.trim());
-    } catch {
-      throw new AppError("VALIDATION_FAILED", "Base URL vision tidak valid (harus URL lengkap).", 422);
-    }
-    const model = input.model.trim();
-    if (!model || model.length > 255) throw new AppError("VALIDATION_FAILED", "Nama model vision wajib diisi (maks 255 karakter).", 422);
-
-    const [existing] = await deps.db.select().from(visionSettings).where(eq(visionSettings.userId, userId)).limit(1);
-    let sealed: ReturnType<typeof sealSecret>;
-    if (input.apiKey !== undefined && input.apiKey !== "") {
-      const trimmed = input.apiKey.trim();
-      if (trimmed.length < 8 || trimmed.length > 256) {
-        throw new AppError("VALIDATION_FAILED", "API key vision tidak valid (panjang tidak wajar).", 422);
+  async function listVisionCandidates(userId: string): Promise<VisionCandidate[]> {
+    const out: VisionCandidate[] = [];
+    for (const row of await list(userId)) {
+      if (!row.enabled) continue;
+      const opened = await getSavedKey(userId, row.id).catch(() => null);
+      if (!opened?.apiKey) continue;
+      const models = [row.activeModel, ...parseModelsList(row.models, row.activeModel)];
+      for (const model of new Set(models)) {
+        if (supportsVision(model)) out.push({ providerId: row.id, providerKind: row.kind,
+          baseUrl: row.baseUrl, model, apiKey: opened.apiKey });
       }
-      sealed = sealSecret(deps.keyRing, trimmed, userId, AAD_ID);
-    } else {
-      if (!existing) throw new AppError("VALIDATION_FAILED", "API key vision wajib diisi saat konfigurasi pertama.", 422);
-      sealed = { ciphertext: existing.apiKeyCiphertext, nonce: existing.apiKeyNonce, authTag: existing.apiKeyAuthTag, keyVersion: existing.keyVersion };
     }
-    const now = new Date();
-    await deps.db
-      .insert(visionSettings)
-      .values({
-        userId,
-        kind,
-        baseUrl: baseUrl.toString(),
-        model,
-        apiKeyCiphertext: sealed.ciphertext,
-        apiKeyNonce: sealed.nonce,
-        apiKeyAuthTag: sealed.authTag,
-        keyVersion: sealed.keyVersion,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoUpdate({
-        target: visionSettings.userId,
-        set: { kind, baseUrl: baseUrl.toString(), model, apiKeyCiphertext: sealed.ciphertext, apiKeyNonce: sealed.nonce, apiKeyAuthTag: sealed.authTag, keyVersion: sealed.keyVersion, updatedAt: now },
-      });
-    return { configured: true, updatedAt: now.toISOString() };
+    return out;
   }
-
-  async function remove(userId: string): Promise<void> {
-    await deps.db.delete(visionSettings).where(eq(visionSettings.userId, userId));
+  async function toggle(userId: string, id: string, enabled: boolean) {
+    await requireProvider(userId, id);
+    await deps.db.update(visionProviders).set({ enabled, updatedAt: new Date() }).where(scope(userId, id));
+    return requireProvider(userId, id);
   }
-
-  return { getStatus, getDecrypted, save, remove };
+  async function setActiveModel(userId: string, id: string, model: string) {
+    const row = await requireProvider(userId, id);
+    assertVisionModels([model]);
+    if (!row.models.includes(model)) throw new AppError("VALIDATION_FAILED", "Model belum terdaftar pada provider vision.", 422);
+    await deps.db.update(visionProviders).set({ activeModel: model, updatedAt: new Date() }).where(scope(userId, id));
+    return requireProvider(userId, id);
+  }
+  async function remove(userId: string, id?: string) {
+    await deps.db.delete(visionProviders).where(id ? scope(userId, id) : eq(visionProviders.userId, userId));
+  }
+  return { list, get, getSavedKey, listVisionCandidates, toggle, setActiveModel, remove,
+    save: (userId: string, input: SaveProviderInput) => saveVisionProvider(deps, userId, input) };
 }
-
 export type VisionSettingsService = ReturnType<typeof createVisionSettingsService>;

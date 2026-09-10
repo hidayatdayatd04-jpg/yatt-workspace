@@ -10,29 +10,13 @@ import type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
 
 export type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
 export { MAX_TOOL_RESULT_CHARS } from "./loop/types";
-export { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL, readConnectionStatus } from "../tools/mikrotik/status";
-export type { ConnectionLiveStatus } from "../tools/mikrotik/status";
-export {
-  MAX_PROVIDER_TOOLS,
-  MAX_PROVIDER_SCHEMA_CHARS,
-  selectRelevantTools,
-  canonicalKey,
-  findDirectToolsForQuery,
-} from "./loop/ranking";
+export { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL, readConnectionStatus, type ConnectionLiveStatus } from "../tools/mikrotik/status";
+export { MAX_PROVIDER_TOOLS, MAX_PROVIDER_SCHEMA_CHARS, selectRelevantTools, canonicalKey, findDirectToolsForQuery } from "./loop/ranking";
 export { extractResearchPayload } from "./loop/research";
 
 /**
- * Agent loop (M7): user message → provider stream → validate COMPLETE tool
- * calls → policy dispatch → tool result → next request → final answer.
- *
- * Invariants:
- *  - partial JSON arguments are never executed (wait for the full call);
- *  - every tool call goes through the PolicyDispatcher at execution time;
- *  - write-mode mutations run inside a Safe Mode transaction (M6) — the loop
- *    never enables/commits safe mode itself; the backend coordinator does;
- *  - router output is redacted before it reaches provider/browser/storage;
- *  - limits: max agent steps, max tool calls, run deadline;
- *  - cancellation stops new work server-side.
+ * Agent loop (M7): user message → provider stream → validate COMPLETE tool calls → dispatch → final answer.
+ * Invariants: partial args never run; policy dispatch at execution; Safe Mode for writes; limits enforced.
  */
 export function createAgentLoop(deps: AgentRunDeps) {
   const activeRuns = new Map<string, { cancelled: boolean; controller: AbortController }>();
@@ -46,10 +30,7 @@ export function createAgentLoop(deps: AgentRunDeps) {
     if (entry) { entry.cancelled = true; entry.controller.abort(); }
   }
 
-  /**
-   * Runs the whole agent loop. Emits SSE events via `emit`. Persists partial
-   * assistant output even on failure. Never re-executes mutations on retry.
-   */
+  /** Runs the whole agent loop. Emits SSE events. Persists partial output on failure. */
   async function run(
     input: StartRunInput,
     emit: (e: RunEvent) => Promise<void>,
@@ -70,11 +51,8 @@ export function createAgentLoop(deps: AgentRunDeps) {
       const { chatHistory } = await assembleHistory(deps.db, input);
       const { greetingOnly, catalog, providerTools } = await buildRunCatalog(deps.catalog, input);
       let catalogTarget = `${input.connectionId}:${input.policy.mode}`;
-      const toolCallCount = new Map<string, number>(); // dedup tool call ids
-      // Guard anti-loop: tool sama + argumen identik yang diulang tanpa
-      // kemajuan → pakai cache / hentikan run (hemat kuota + eksekusi).
+      const toolCallCount = new Map<string, number>();
       const identicalCalls = new Map<string, { count: number; content: string; note: string; ok: boolean; errorCode?: string; risk: string }>();
-      // Temuan 6: check deadline + finalization buffer (4s for production runs)
       const finalizationBufferMs = deps.limits.runTimeoutMs >= 10_000 ? 4_000 : 0;
       const toolDeadlineBufferMs = deps.limits.runTimeoutMs >= 10_000 ? 2_000 : 0;
 
@@ -121,9 +99,6 @@ export function createAgentLoop(deps: AgentRunDeps) {
           counters,
           isCancelled: cancelledNow,
         });
-        // "end" = jawaban final sudah ditulis (setara `break` asli): berhenti
-        // agar request berikutnya tidak diawali history berujung assistant
-        // (provider, khususnya Gemini, menolaknya dengan 400).
         if (stepResult === "end" || counters.finalStatus !== "completed") break;
       }
 

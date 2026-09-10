@@ -3,9 +3,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SafeModeTab } from "@/features/chat/settings-tabs/SafeModeTab";
+import { useAuth } from "@/features/auth/auth";
 import { apiFetch } from "@/lib/api";
 
 export function SecuritySection() {
+  const { logout } = useAuth();
   const [oldPw, setOldPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [busy, setBusy] = useState(false);
@@ -13,12 +15,11 @@ export function SecuritySection() {
     setBusy(true);
     try {
       await apiFetch("/api/auth/password", { method: "POST", body: JSON.stringify({ oldPassword: oldPw, newPassword: newPw }) });
-      toast.success("Password diubah; sesi lain direvokasi.");
-      setOldPw("");
-      setNewPw("");
+      toast.success("Password diubah. Silakan login kembali dengan password baru.");
+      // Semua sesi sudah dicabut server; paksa kembali ke halaman login.
+      await logout();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah password.");
-    } finally {
       setBusy(false);
     }
   }

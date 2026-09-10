@@ -1,66 +1,29 @@
-import { looksTextualFile } from "./text";
+import { looksTextualFile, isTextBytes } from "./text";
 
-/** Jenis konten lampiran yang dikenali server. */
 export type SniffedKind = "image" | "pdf" | "text" | "doc" | "archive" | "unsupported";
-export interface DetectResult {
-  ok: boolean;
-  kind: SniffedKind;
-  reason?: string;
-}
-
+export interface DetectResult { ok: boolean; kind: SniffedKind; mimeType?: string; reason?: string }
+export const normalizeMime = (mime: string) => mime.split(";")[0]!.trim().toLowerCase();
 const DOC_EXTENSIONS = new Set(["docx", "xlsx", "xls", "pptx", "odt", "ods", "odp"]);
-const ARCHIVE_EXTENSIONS = new Set(["zip"]);
-const ACCEPTED_TEXT_MIME =
-  (m: string) => m === "" || m.startsWith("text/") || /^(application\/(json|xml|javascript|typescript|x-yaml|x-sh|x-httpd-php|sql|octet-stream|pdf))$/.test(m) || m.includes("+xml");
 
-/** Magic-byte sniffing: klaim ekstensi/MIME tidak dipercaya. */
+/** MIME parameters and browser aliases never override the actual file signature. */
 export function detectContentKind(input: { mimeType: string; originalName: string; head: Buffer }): DetectResult {
   const name = input.originalName.toLowerCase();
-  const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : "";
+  const ext = name.split(".").pop() ?? "";
   const head = input.head;
-
-  if (head.length >= 4 && head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) {
-    return input.mimeType === "image/png" ? { ok: true, kind: "image" } : { ok: false, kind: "unsupported", reason: "MIME tidak cocok dengan isi PNG." };
+  const mime = normalizeMime(input.mimeType);
+  const image = (mimeType: string): DetectResult => ({ ok: true, kind: "image", mimeType });
+  if (head.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return image("image/png");
+  if (head.length >= 3 && head[0] === 255 && head[1] === 216 && head[2] === 255) return image("image/jpeg");
+  if (/^GIF8[79]a$/.test(head.subarray(0, 6).toString("ascii"))) return image("image/gif");
+  if (head.subarray(0, 4).toString() === "RIFF" && head.subarray(8, 12).toString() === "WEBP") return image("image/webp");
+  if (head.subarray(0, 5).toString() === "%PDF-") return { ok: true, kind: "pdf", mimeType: "application/pdf" };
+  const zip = head.length >= 4 && head[0] === 80 && head[1] === 75 && [3, 5, 7].includes(head[2]!);
+  const ole = head.subarray(0, 4).equals(Buffer.from([208, 207, 17, 224]));
+  if ((zip || ole) && DOC_EXTENSIONS.has(ext)) return { ok: true, kind: "doc" };
+  if (zip) return { ok: true, kind: "archive", mimeType: "application/zip" };
+  const textMime = mime.startsWith("text/") || /(?:json|xml|yaml|javascript|typescript|sql)/.test(mime);
+  if (isTextBytes(head) && (looksTextualFile(name) || textMime || !mime || mime === "application/octet-stream" || mime === "application/rtf")) {
+    return { ok: true, kind: "text", mimeType: textMime ? mime : "text/plain" };
   }
-  if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
-    return input.mimeType === "image/jpeg" ? { ok: true, kind: "image" } : { ok: false, kind: "unsupported", reason: "MIME tidak cocok dengan isi JPEG." };
-  }
-  if (head.length >= 12 && head.slice(0, 4).toString("ascii") === "RIFF" && head.slice(8, 12).toString("ascii") === "WEBP") {
-    return input.mimeType === "image/webp" ? { ok: true, kind: "image" } : { ok: false, kind: "unsupported", reason: "MIME tidak cocok dengan isi WebP." };
-  }
-  if (head.length >= 5 && head.slice(0, 5).toString("ascii") === "%PDF-") {
-    return { ok: true, kind: "pdf" };
-  }
-  const zipMagic = head.length >= 4 && head[0] === 0x50 && head[1] === 0x4b && (head[2] === 0x03 || head[2] === 0x05 || head[2] === 0x07);
-  const oleMagic = head.length >= 4 && head[0] === 0xd0 && head[1] === 0xcf && head[2] === 0x11 && head[3] === 0xe0;
-  if (zipMagic || oleMagic) {
-    if (DOC_EXTENSIONS.has(ext)) return { ok: true, kind: "doc" };
-    if (oleMagic) {
-      return { ok: false, kind: "unsupported", reason: `Dokumen .${ext} (format lama) tidak didukung; simpan ulang sebagai .docx/.xlsx/.pptx.` };
-    }
-    if (ARCHIVE_EXTENSIONS.has(ext)) return { ok: true, kind: "archive" };
-    return { ok: false, kind: "unsupported", reason: `Isi ZIP dengan ekstensi .${ext || "?"} tidak dikenal.` };
-  }
-  if (looksTextualFile(name)) {
-    const sample = head.subarray(0, 512);
-    let textual = sample.length === 0;
-    for (const b of sample) {
-      if (b === 9 || b === 10 || b === 13 || (b >= 32 && b < 127) || b >= 128) {
-        textual = true;
-      } else {
-        textual = false;
-        break;
-      }
-    }
-    if (!textual) return { ok: false, kind: "unsupported", reason: "File teks berisi byte biner." };
-    if (!ACCEPTED_TEXT_MIME(input.mimeType)) {
-      return { ok: false, kind: "unsupported", reason: `MIME ${input.mimeType} tidak cocok untuk file teks .${ext}.` };
-    }
-    return { ok: true, kind: "text" };
-  }
-  return {
-    ok: false,
-    kind: "unsupported",
-    reason: `Tipe file .${ext || "?"} (${input.mimeType}) tidak didukung. Gunakan gambar, PDF, dokumen (docx/xlsx/pptx/odt), ZIP, atau file teks/kode (txt, md, tsx, html, php, py, json, dll.).`,
-  };
+  return { ok: false, kind: "unsupported", reason: `File .${ext} tersimpan, tetapi format ini belum memiliki pembaca. Jangan menyimpulkan isi dari nama file.` };
 }

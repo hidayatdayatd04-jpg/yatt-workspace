@@ -20,7 +20,7 @@ export function ModelPicker(props: { model: ComposerModel; scroll: ModelScroll }
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-8 items-center gap-1.5 rounded-xl border border-border/70 bg-muted/40 px-2.5 py-1 text-xs text-foreground hover:bg-muted focus-visible:outline-none transition-colors max-w-[190px] cursor-pointer"
+          className="flex h-8 items-center gap-1.5 rounded-xl border border-border/70 bg-muted/40 px-2 sm:px-2.5 py-1 text-xs text-foreground hover:bg-muted focus-visible:outline-none transition-colors max-w-[110px] xs:max-w-[140px] sm:max-w-[190px] cursor-pointer"
           title={`${effectiveProvider?.name ?? ""} / ${effectiveModel}`}
           aria-label="Pilih model AI"
         >
@@ -34,7 +34,7 @@ export function ModelPicker(props: { model: ComposerModel; scroll: ModelScroll }
           <ChevronDown className="size-3 text-muted-foreground shrink-0 opacity-70" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="top" sideOffset={8} className="w-80 overflow-hidden rounded-2xl border border-border/60 bg-popover bg-clip-padding p-0 shadow-xl ring-0">
+      <DropdownMenuContent align="end" side="top" sideOffset={8} className="w-[calc(100vw-1.5rem)] max-w-xs sm:w-80 overflow-hidden rounded-2xl border border-border/60 bg-popover bg-clip-padding p-0 shadow-xl ring-0">
         <div className="p-2 pb-1.5">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/70" />

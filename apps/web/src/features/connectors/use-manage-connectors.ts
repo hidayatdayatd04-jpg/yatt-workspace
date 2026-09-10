@@ -22,15 +22,17 @@ export function useManageConnectors(props: { initialSelected?: VisibleKind | nul
     const flag = params.get("google");
     if (flag === "connected") {
       const email = params.get("email");
-      toast.success(email ? `Akun Google ${email} terhubung. Drive, Gmail, Kalender aktif.` : "Akun Google terhubung. Drive, Gmail, Kalender aktif.");
+      const service = params.get("service");
+      const sName = service === "drive" ? "Google Drive" : service === "gmail" ? "Gmail" : service === "calendar" ? "Google Calendar" : "Akun Google";
+      toast.success(email ? `${sName} (${email}) berhasil terhubung.` : `${sName} berhasil terhubung.`);
       void data.refetch();
       void googleAccount.refetch();
-      params.delete("google"); params.delete("email"); params.delete("message");
+      params.delete("google"); params.delete("email"); params.delete("service"); params.delete("message");
       const rest = params.toString();
       window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`);
     } else if (flag === "error") {
       toast.error(params.get("message") || "Login Google gagal. Coba lagi.");
-      params.delete("google"); params.delete("message");
+      params.delete("google"); params.delete("service"); params.delete("message");
       const rest = params.toString();
       window.history.replaceState(null, "", `${window.location.pathname}${rest ? `?${rest}` : ""}`);
     }

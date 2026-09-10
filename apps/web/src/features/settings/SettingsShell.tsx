@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft, Plug, Key, User, Palette, Database, ShieldCheck, Archive, Info, HelpCircle, Globe, Brain, Bell, Search } from "@/components/icons";
+import { ArrowLeft, Plug, Key, User, Palette, Database, ShieldCheck, Archive, Info, HelpCircle, Globe, Brain, Bell, Search, Eye } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { navigate } from "@/lib/router";
 import { ProvidersSection } from "./sections/ProvidersSection";
+import { VisionSection } from "./sections/VisionSection";
 import { ProfileSection } from "./sections/ProfileSection";
 import { AppearanceSection } from "./sections/AppearanceSection";
 import { ContextSection } from "./sections/ContextSection";
@@ -18,7 +20,8 @@ import { ConnectorsManagePanel } from "@/features/connectors/ConnectorsManagePan
 import "./settings.css";
 
 const NAV = [
-  { id: "providers", group: "Settings", label: "Model & vision", description: "Pilih model untuk percakapan, penalaran, dan pemahaman gambar.", icon: Key },
+  { id: "providers", group: "Settings", label: "Model AI", description: "Kelola provider dan pilih model untuk percakapan serta penalaran.", icon: Key },
+  { id: "vision", group: "Settings", label: "Vision", description: "Atur provider khusus untuk memahami lampiran gambar.", icon: Eye },
   { id: "profile", group: "Settings", label: "Profil", description: "Kelola identitas akun dan nama yang ditampilkan di workspace.", icon: User },
   { id: "security", group: "Settings", label: "Keamanan", description: "Lindungi akun dan pahami izin tindakan agent serta Safe Mode MikroTik.", icon: ShieldCheck },
   { id: "memory", group: "Settings", label: "Memori & instruksi", description: "Atur bagaimana agent memahami preferensi dan cara kerja Anda.", icon: Brain },
@@ -54,12 +57,20 @@ export function SettingsShell(props: { section: string; autoAdd?: boolean; onBac
           return <div key={group} className="mb-4"><p className="px-3 pb-1.5 text-xs text-muted-foreground">{group}</p><div className="space-y-0.5">{items.map((n) => { const Icon = n.icon; const active = n.id === section; return <button key={n.id} type="button" onClick={() => open(n.id)} aria-current={active ? "page" : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring ${active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}><Icon className="size-4 shrink-0" /><span className="flex-1">{n.label}</span></button>; })}</div></div>;
         })}
       </nav>
-      <div className="border-t border-border/70 px-6 py-4 text-xs text-muted-foreground">YATT Agent <span className="float-right font-mono">v0.1</span></div>
+      <div className="border-t border-border/70 px-6 py-4 text-xs text-muted-foreground">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="YATT Agent" className="size-4 shrink-0 object-contain" />
+            <span>YATT Agent</span>
+          </div>
+          <span className="font-mono">v0.1</span>
+        </div>
+      </div>
     </aside>
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b border-border bg-card px-3 py-3 md:hidden"><Button variant="ghost" size="sm" onClick={props.onBack} aria-label="Kembali ke chat"><ArrowLeft className="size-4" /></Button><select value={section} onChange={(e) => open(e.target.value)} className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm" aria-label="Halaman pengaturan">{NAV.map((n) => <option key={n.id} value={n.id}>{n.label}</option>)}</select></div>
+      <div className="flex items-center gap-2 border-b border-border bg-card px-3 py-3 pr-14 md:hidden"><Button variant="ghost" size="sm" onClick={props.onBack} aria-label="Kembali ke chat"><ArrowLeft className="size-4" /></Button><Select value={section} onValueChange={(v) => open(v)}><SelectTrigger aria-label="Halaman pengaturan" className="h-10 min-w-0 flex-1 rounded-lg bg-background"><SelectValue /></SelectTrigger><SelectContent>{NAV.map((n) => <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>)}</SelectContent></Select></div>
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1060px] px-5 py-8 sm:px-10 sm:py-10 lg:px-14">
+        <div className="mx-auto max-w-[1060px] px-4 py-6 sm:px-10 sm:py-10 lg:px-14">
           {section === "connectors" ? (
             <div className="settings-content" key={section}>
               <ConnectorsManagePanel autoBrowse={props.autoAdd} />
@@ -69,6 +80,7 @@ export function SettingsShell(props: { section: string; autoAdd?: boolean; onBac
               <header className="mb-8 border-b border-border/70 pb-7"><p className="mb-3 text-xs font-medium text-muted-foreground">Pengaturan <span className="mx-2 opacity-50">/</span> {current.group}</p><h2 className="text-3xl font-semibold tracking-tight">{current.label}</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{current.description}</p></header>
               <div className="settings-content" key={section}>
                 {section === "providers" && <ProvidersSection />}
+                {section === "vision" && <VisionSection />}
                 {section === "web-search" && <WebSearchSection />}
                 {section === "memory" && <MemoryTab />}
                 {section === "monitoring" && <MonitoringTab />}

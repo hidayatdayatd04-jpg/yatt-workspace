@@ -30,39 +30,41 @@ export default function NotificationsPage() {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       {/* Top Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-background/80 px-6 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-background/80 px-4 sm:px-6 backdrop-blur-md">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
             <Bell className="size-5" />
           </div>
-          <div>
-            <h1 className="text-base font-bold leading-tight">Pusat Notifikasi</h1>
-            <p className="text-xs text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} notifikasi belum dibaca` : "Semua notifikasi telah dibaca"}
+          <div className="min-w-0">
+            <h1 className="truncate text-sm sm:text-base font-bold leading-tight">Pusat Notifikasi</h1>
+            <p className="truncate text-[11px] sm:text-xs text-muted-foreground">
+              {unreadCount > 0 ? `${unreadCount} belum dibaca` : "Semua dibaca"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 pr-12 sm:pr-6 shrink-0">
           {unreadCount > 0 && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => markAll.mutate()}
-              className="gap-1.5 text-xs h-8 rounded-lg cursor-pointer"
+              className="gap-1.5 text-xs h-8 rounded-lg cursor-pointer px-2 sm:px-3"
             >
               <Check className="size-3.5" />
-              Tandai Semua Dibaca
+              <span className="hidden sm:inline">Tandai Semua Dibaca</span>
+              <span className="sm:hidden">Tandai</span>
             </Button>
           )}
           <Button
             variant={showSettings ? "default" : "outline"}
             size="sm"
             onClick={() => setShowSettings(!showSettings)}
-            className="gap-1.5 text-xs h-8 rounded-lg cursor-pointer"
+            className="gap-1.5 text-xs h-8 rounded-lg cursor-pointer px-2 sm:px-3"
           >
             <Settings className="size-3.5" />
-            Pengaturan Alert
+            <span className="hidden sm:inline">Pengaturan Alert</span>
+            <span className="sm:hidden">Alert</span>
           </Button>
         </div>
       </header>
@@ -70,7 +72,7 @@ export default function NotificationsPage() {
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Notifications List Area */}
-        <div className="flex flex-1 flex-col overflow-hidden p-6 max-w-5xl mx-auto w-full">
+        <div className="flex flex-1 flex-col overflow-hidden p-3.5 sm:p-6 max-w-5xl mx-auto w-full">
           <NotificationFilters
             filterType={filter.filterType}
             onFilterType={filter.setFilterType}

@@ -30,8 +30,8 @@ export function LoginPage() {
     <div className="flex min-h-svh items-center justify-center bg-background px-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-card ring-1 ring-cyan-500/40">
-            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain p-0.5" />
+          <div className="flex size-11 shrink-0 items-center justify-center">
+            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain drop-shadow-md" />
           </div>
           <div>
             <h1 className="text-base font-bold">YATT Agent</h1>

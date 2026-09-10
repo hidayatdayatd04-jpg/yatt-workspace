@@ -15,7 +15,7 @@ const SETTINGS_SECTIONS = new Set([
   "connectors",
   "memory",
   "monitoring",
-  "providers",
+  "providers", "vision",
   "web-search",
   "profile",
   "appearance",

@@ -2,14 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "@/components/icons";
 import { ProviderConfigDialog } from "../ProviderConfigDialog";
 import { ProviderCard } from "./ProviderCard";
-import { VisionSettingsCard } from "./VisionSettingsCard";
 import type { ProviderList } from "./use-provider-list";
 
 export function ProviderTab(props: { page: ProviderList }) {
   const { page } = props;
   return (
     <div className="space-y-6">
-      <VisionSettingsCard />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold">Daftar Provider Model AI</h2>

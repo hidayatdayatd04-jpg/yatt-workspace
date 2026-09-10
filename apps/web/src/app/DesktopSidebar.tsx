@@ -24,11 +24,11 @@ export function DesktopSidebar(props: {
         <button
           type="button"
           onClick={props.onExpand}
-          className="group relative flex size-9 items-center justify-center rounded-xl bg-card p-1 shadow-xs ring-1 ring-border/80 transition-all hover:scale-105 hover:ring-cyan-500/60 active:scale-95 cursor-pointer"
+          className="group relative flex size-9 items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer"
           aria-label="Buka sidebar"
           title="Buka sidebar (YATT Agent)"
         >
-          <img src="/logo.png" alt="YATT Agent" className="size-full object-contain transition-transform group-hover:scale-105" />
+          <img src="/logo.png" alt="YATT Agent" className="size-8 object-contain drop-shadow-sm transition-transform group-hover:scale-105" />
           <span className="sr-only">Buka sidebar</span>
         </button>
 
@@ -68,8 +68,8 @@ export function DesktopSidebar(props: {
     <aside className="hidden w-[272px] shrink-0 flex-col border-r border-border/60 bg-sidebar/95 md:flex" aria-label="Sidebar chat">
       <div className="flex items-center justify-between border-b border-border/50 px-3.5 py-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center overflow-hidden rounded-xl bg-card p-1 shadow-xs ring-1 ring-cyan-500/30">
-            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain" />
+          <div className="flex size-7 items-center justify-center">
+            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain drop-shadow-sm" />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tracking-tight text-foreground">YATT Agent</span>

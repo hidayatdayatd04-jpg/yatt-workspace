@@ -58,9 +58,9 @@ export function requireWorkspace(c: { get: (k: "workspace") => unknown }): Works
 /** Require a valid session; throws 401 when missing. Returns account+workspace. */
 export function requireAuth(c: {
   get: (k: "workspace" | "account" | "sessionId") => unknown;
-}): { userId: string; account: { id: string; workspaceId: string; username: string; displayName: string; loginAlias: string | null }; sessionId: string } {
+}): { userId: string; account: { id: string; workspaceId: string; username: string; displayName: string; loginAlias: string | null; email: string | null }; sessionId: string } {
   const workspace = requireWorkspace(c);
-  const account = c.get("account") as { id: string; workspaceId: string; username: string; displayName: string; loginAlias: string | null } | null;
+  const account = c.get("account") as { id: string; workspaceId: string; username: string; displayName: string; loginAlias: string | null; email: string | null } | null;
   const sessionId = c.get("sessionId") as string | null;
   if (!account || !sessionId) {
     throw new AppError("UNAUTHORIZED", "Session habis atau belum login. Silakan login kembali.", 401);

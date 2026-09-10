@@ -1,6 +1,7 @@
 import type { NormalizedTool } from "../../policies/normalize";
 import { CONNECTION_CHECK_FQ } from "../../tools/mikrotik/status";
 import { extractQueryKeywords } from "./ranking-synonyms";
+import { intentBoostPrefixes } from "./intent-routing";
 
 /**
  * Batas tool per request agar payload tidak membengkak. Di bawah batas,
@@ -43,11 +44,38 @@ function stemToken(w: string): string {
   return t;
 }
 
+function hasAny(set: Set<string>, list: string[]): boolean {
+  for (const item of list) if (set.has(item)) return true;
+  return false;
+}
+
 /** Skor relevansi satu tool terhadap kata kunci (dipakai ranking + budget deskripsi). */
 export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): number {
   if (t.fqName === CONNECTION_CHECK_FQ) return 1_000_000;
-  if (/^(general|mikrotik|drive|gmail|calendar|telegram):/.test(t.fqName)) return 700_000;
-  if (CORE_ROUTER_READ_TOOLS.has(t.rawName)) return 600_000;
+  let base = 0;
+  if (/^(general|mikrotik|drive|gmail|calendar|telegram|web|git|data|text|project|compute|archive|system|browser):/.test(t.fqName)) {
+    base = 700_000;
+  } else if (CORE_ROUTER_READ_TOOLS.has(t.rawName)) {
+    base = 600_000;
+  } else if (t.fqName.startsWith("docs:")) {
+    base = 10_000;
+  }
+
+  let domainBoost = 0;
+  if (t.fqName.startsWith("general:") && hasAny(keywords, ["code", "file", "workspace", "shell", "execute", "test", "zip", "read", "write"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("gmail:") && hasAny(keywords, ["mail", "gmail", "inbox", "draft", "send", "message"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("calendar:") && hasAny(keywords, ["calendar", "schedule", "event", "meeting"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("drive:") && hasAny(keywords, ["drive", "document", "doc"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("telegram:") && hasAny(keywords, ["telegram", "bot", "chat"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("web:") && hasAny(keywords, ["web", "search", "research", "news", "price", "query"])) {
+    domainBoost += 150_000;
+  }
+
   const hay = `${t.fqName} ${t.description} ${(t.capabilities ?? []).join(" ")}`.toLowerCase();
   const hayTokens = new Set(hay.split(/[^a-z0-9]+/).filter(Boolean).map(stemToken));
   let s = 0;
@@ -58,8 +86,6 @@ export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): num
       s += rawKw.length >= 5 ? 200 : 100;
       continue;
     }
-    // Kecocokan parsial semantik-lite: awalan kata atau sebaliknya (min 4 char)
-    // agar typo ringan/jamak ("interface", "addres") tetap menemukan tool.
     if (kw.length >= 4) {
       for (const ht of hayTokens) {
         if (ht.length >= 4 && (ht.startsWith(kw) || kw.startsWith(ht))) {
@@ -69,18 +95,24 @@ export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): num
       }
     }
   }
-  if (t.fqName.startsWith("docs:") || t.fqName.startsWith("web:")) s += 5_000;
-  return s;
+  return base + domainBoost + s;
 }
 
 export function selectRelevantTools(catalog: NormalizedTool[], userText: string): NormalizedTool[] {
   const totalSchema = catalog.reduce((n, t) => n + schemaChars(t), 0);
   if (catalog.length <= MAX_PROVIDER_TOOLS && totalSchema <= MAX_PROVIDER_SCHEMA_CHARS) return catalog;
   const keywords = extractQueryKeywords(userText);
+  // Pre-routing intent (soft boost, bukan exclude): tool yang cocok intent
+  // pengguna didahulukan saat katalog melebihi budget 48 tool / 60k skema.
+  const boosts = intentBoostPrefixes(userText);
+  const intentBoostOf = (t: NormalizedTool): number => {
+    for (const prefix of boosts) if (t.fqName === prefix || t.fqName.startsWith(prefix)) return 120_000;
+    return 0;
+  };
   // Rangking menurun, isi rakus sampai batas jumlah ATAU ukuran schema —
   // probe koneksi selalu ikut walau budget ketat.
   const ranked = [...catalog]
-    .map((t, i) => ({ t, s: scoreToolForQuery(t, keywords), i }))
+    .map((t, i) => ({ t, s: scoreToolForQuery(t, keywords) + intentBoostOf(t), i }))
     .sort((a, b) => b.s - a.s || a.i - b.i);
   const picked: typeof ranked = [];
   let chars = 0;

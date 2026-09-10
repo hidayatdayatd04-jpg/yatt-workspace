@@ -10,6 +10,7 @@ export interface AccountContext {
   username: string;
   displayName: string;
   loginAlias: string | null;
+  email: string | null;
 }
 
 export interface Env {

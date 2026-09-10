@@ -1,3 +1,4 @@
+import { readZipEntries } from "./zip-entries";
 import { unzipSync, strFromU8 } from "fflate";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
@@ -82,6 +83,7 @@ function extractOpenDocument(bytes: Buffer): string | null {
 /** Dispatcher dokumen Office/OpenDocument berdasarkan ekstensi. Null = gagal. */
 export async function extractOfficeText(name: string, bytes: Buffer): Promise<string | null> {
   const ext = extOf(name);
+  if (ext !== "xls") readZipEntries(bytes, "");
   let text: string | null = null;
   if (ext === "docx") text = await extractDocx(bytes);
   else if (ext === "xlsx" || ext === "xls") text = extractSpreadsheet(bytes);

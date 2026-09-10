@@ -10,6 +10,7 @@ import { AppError, errorBody, statusForCode } from "./lib/errors";
 import type { Env as HonoEnv } from "./types";
 import { config, db, logger, rosetta, supervisor } from "./bootstrap/foundation";
 import { dispatcher, monitoringWatcher } from "./bootstrap/policy";
+import { stopProcessSweep, workspaceProcesses } from "./bootstrap/ai";
 import "./bootstrap/ai";
 import { mountApiRoutes } from "./bootstrap/api-routes";
 import { mountChatRoutes } from "./bootstrap/chat-routes";
@@ -103,6 +104,9 @@ export default {
   hostname: "127.0.0.1",
   fetch: app.fetch,
   app,
+  // SSE run-events bertahan melewati jeda provider (antre limiter, tunggu
+  // reasoning panjang) tanpa diputus socket: idleTimeout harus > heartbeat.
+  idleTimeout: 60,
   // graceful shutdown (Docker SIGTERM): stop supervised MCP children so no
   // orphan ssh processes survive the container; in-flight SSE writes drain.
 };
@@ -113,6 +117,8 @@ const shutdown = async (signal: string) => {
   try {
     monitoringWatcher.stop();
     stopRunWatchdog();
+    stopProcessSweep();
+    workspaceProcesses.disposeAll();
     await supervisor.shutdownAll();
     await rosetta.shutdown();
   } catch (err) {

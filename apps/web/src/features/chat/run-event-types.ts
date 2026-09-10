@@ -5,6 +5,7 @@ export interface LiveToolItem {
   id: string;
   name: string;
   status: "running" | "done" | "failed";
+  args?: string;
 }
 
 /** Error run yang ditangkap live dari event run.failed (kartu, bukan chat). */

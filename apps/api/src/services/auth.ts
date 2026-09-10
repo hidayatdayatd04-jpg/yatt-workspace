@@ -24,4 +24,5 @@ export {
   changePassword,
 } from "./auth/account";
 export type { AuthAccount } from "./auth/account";
+export { updateIdentity } from "./auth/identity";
 export type { Logger } from "../lib/logger";

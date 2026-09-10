@@ -1,55 +1,27 @@
 import type { PipelineStep } from "./types";
+import { HUMAN_TOOL_LABELS } from "./humanize-labels";
 
-const HUMAN_TOOL_LABELS: [RegExp, string][] = [
-  [/general:list_files/, "Melihat file workspace"],
-  [/general:read_file/, "Membaca file"],
-  [/general:write_file/, "Menyimpan perubahan file"],
-  [/general:extract_zip/, "Mengekstrak ZIP"],
-  [/general:import_attachment/, "Menyalin lampiran ke workspace"],
-  [/general:execute_shell/, "Menjalankan command workspace"],
-  [/mikrotik:list_routers/, "Mencari router tersimpan"],
-  [/mikrotik:connect_router/, "Menghubungkan router"],
-  [/drive:search_files/, "Mencari file Google Drive"],
-  [/drive:get_file|drive:read_document/, "Membaca dokumen Drive"],
-  [/drive:create_text_file/, "Membuat file di Drive"],
-  [/gmail:search_messages/, "Mencari email"],
-  [/gmail:read_message/, "Membaca email"],
-  [/gmail:create_draft/, "Menyiapkan draft email"],
-  [/gmail:send_message/, "Mengirim email"],
-  [/telegram:get_bot|telegram:get_chat/, "Memeriksa Telegram"],
-  [/telegram:send_message/, "Mengirim pesan Telegram"],
-  [/check_connection/i, "Memeriksa status koneksi"],
-  [/remove_vlan_interface|delete_vlan/i, "Menghapus interface VLAN"],
-  [/create_vlan_interface/i, "Membuat interface VLAN"],
-  [/list_vlan_interfaces/i, "Membaca interface VLAN"],
-  [/remove_bridge|delete_bridge/i, "Menghapus interface Bridge"],
-  [/create_bridge/i, "Membuat interface Bridge"],
-  [/list_bridges|print_bridge/i, "Membaca interface Bridge"],
-  [/add_bridge_vlan/i, "Mengonfigurasi VLAN Bridge"],
-  [/add_bridge_port/i, "Menghubungkan port ke Bridge"],
-  [/remove_ip_pool|delete_ip_pool/i, "Menghapus IP Pool"],
-  [/create_ip_pool/i, "Membuat IP Pool"],
-  [/list_ip_pools/i, "Membaca IP Pool"],
-  [/remove_ip_address|delete_ip/i, "Menghapus IP address"],
-  [/add_ip_address/i, "Menambahkan IP address"],
-  [/list_ip_addresses|print_ip_address/i, "Membaca IP address"],
-  [/list_interfaces/i, "Membaca interface"],
-  [/list_routes|print_ip_route/i, "Membaca route"],
-  [/add_dhcp_server/i, "Menambahkan DHCP Server"],
-  [/add_dhcp_network/i, "Menambahkan DHCP Network"],
-  [/dhcp_client|get_dhcp_clients/i, "Membaca DHCP client"],
-  [/dhcp_server/i, "Membaca DHCP server"],
-  [/add_nat_rule/i, "Menambahkan aturan NAT"],
-  [/firewall_nat|list_firewall_nat/i, "Membaca NAT"],
-  [/add_filter_rule|add_firewall_rule/i, "Menambahkan aturan firewall"],
-  [/firewall.*filter|list_firewall_rules/i, "Membaca firewall filter"],
-  [/design_network_segment/i, "Mendesain segmen jaringan"],
-  [/system_resource|resource/i, "Membaca resource sistem"],
-  [/identity/i, "Memeriksa koneksi & identitas"],
-  [/find_tools|routeros_search/i, "Mencari tool yang sesuai"],
-];
+/**
+ * Label manusiawi untuk nama tool, diperkaya argumen bila tersedia:
+ * "Membaca file" + path → "Membaca package.json".
+ */
+export function humanizeTool(name: string, args?: string | Record<string, unknown> | null): string {
+  const parsed = typeof args === "string" ? safeParseArgs(args) : args ?? undefined;
+  const base = labelFor(name);
+  const detail = detailFor(name, parsed);
+  return detail ? `${base} ${detail}` : base;
+}
 
-export function humanizeTool(name: string): string {
+function safeParseArgs(raw: string): Record<string, unknown> | undefined {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function labelFor(name: string): string {
   for (const [re, label] of HUMAN_TOOL_LABELS) {
     if (re.test(name)) return label;
   }
@@ -64,10 +36,53 @@ export function humanizeTool(name: string): string {
   return short.replace(/_/g, " ").slice(0, 48) || name;
 }
 
+/** Detail argumen yang membuat label lebih spesifik (path, command, query, script). */
+function detailFor(name: string, args?: Record<string, unknown>): string | null {
+  if (!args) return null;
+  const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+  if (name.startsWith("general:read_file") || name.startsWith("general:write_file") || name.startsWith("general:apply_patch") || name.startsWith("general:replace_text") || name.startsWith("archive:create")) {
+    return shortPath(str(args.path) ?? str(args.source));
+  }
+  if (name.startsWith("general:search_code") || name.startsWith("general:search_files") || name.startsWith("text:search")) {
+    return quote(str(args.query) ?? str(args.pattern), 40);
+  }
+  if (name.startsWith("data:statistics")) return quote(str(args.column), 40);
+  if (name.startsWith("data:query_csv") || name.startsWith("data:inspect_csv") || name.startsWith("data:parse_json")) {
+    return shortPath(str(args.path));
+  }
+  if (name.startsWith("project:run_script")) {
+    const script = str(args.script);
+    return script ? `(${script})` : null;
+  }
+  if (name.startsWith("general:execute_shell")) {
+    const cmd = str(args.command);
+    if (!cmd) return null;
+    return quote(cmd.split(/\s+/).slice(0, 4).join(" "), 40);
+  }
+  if (name.startsWith("general:start_process")) return quote(str(args.command)?.split(/\s+/).slice(0, 3).join(" ") ?? null, 40);
+  if (name.startsWith("web:fetch_url")) return quote(str(args.url), 40);
+  if (name.startsWith("git:")) return shortPath(str(args.path) ?? str(args.ref) ?? str(args.name) ?? null);
+  return null;
+}
+
+/** Ambil segmen terakhir path (package.json dari src/x/package.json) untuk label singkat. */
+function shortPath(path: string | null): string | null {
+  if (!path || path === ".") return null;
+  const clean = path.replaceAll("\\", "/").replace(/^\.\/+/, "");
+  const parts = clean.split("/").filter(Boolean);
+  const last = parts[parts.length - 1];
+  return last ? (parts.length > 1 ? `${parts[parts.length - 2]}/${last}` : last) : null;
+}
+
+function quote(value: string | null, max: number): string | null {
+  if (!value) return null;
+  return `(${value.length > max ? `${value.slice(0, max)}…` : value})`;
+}
+
 /** Judul fase kerja yang manusiawi: pemeriksaan baca vs penerapan perubahan. */
 export function phaseTitle(steps: PipelineStep[]): string {
   if (steps.length === 0) return "Menyiapkan pemeriksaan";
-  if (steps.some((step) => /^(general|drive|gmail|telegram):/.test(step.tool))) {
+  if (steps.some((step) => /^(general|drive|gmail|telegram|git|project|data|compute|text|archive|web|system):/.test(step.tool))) {
     return (steps.find((step) => step.status === "running") ?? steps[steps.length - 1]!).label;
   }
   const writeish = /set_|add_|remove_|delete_|update_|enable|disable|create_|apply|reboot|reset/i;

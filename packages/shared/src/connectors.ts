@@ -2,15 +2,24 @@ import { z } from "zod";
 
 export const IntegrationKindSchema = z.enum(["mikrotik", "workspace", "google", "drive", "gmail", "calendar", "telegram"]);
 export type IntegrationKind = z.infer<typeof IntegrationKindSchema>;
-export const GOOGLE_SCOPES = [
+export const GOOGLE_BASE_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
-  "https://www.googleapis.com/auth/drive",
-  "https://www.googleapis.com/auth/gmail.modify",
-  "https://www.googleapis.com/auth/calendar",
+] as const;
+export const GOOGLE_SERVICE_SCOPES: Record<"drive" | "gmail" | "calendar", readonly string[]> = {
+  drive: ["https://www.googleapis.com/auth/drive"],
+  gmail: ["https://www.googleapis.com/auth/gmail.modify"],
+  calendar: ["https://www.googleapis.com/auth/calendar"],
+};
+export const GOOGLE_SCOPES = [
+  ...GOOGLE_BASE_SCOPES,
+  ...GOOGLE_SERVICE_SCOPES.drive,
+  ...GOOGLE_SERVICE_SCOPES.gmail,
+  ...GOOGLE_SERVICE_SCOPES.calendar,
 ] as const;
 export const GOOGLE_SERVICES: IntegrationKind[] = ["drive", "gmail", "calendar"];
+
 export const IntegrationSettingsSchema = z.object({
   enabled: z.boolean(),
   allowWrite: z.boolean().default(false),
@@ -36,6 +45,7 @@ export interface IntegrationDTO {
   allowSend: boolean;
   allowShell: boolean;
   status: "disabled" | "ready" | "unverified" | "connected" | "error";
+  accountEmail?: string | null;
   lastCheckedAt: string | null;
   lastError: string | null;
 }

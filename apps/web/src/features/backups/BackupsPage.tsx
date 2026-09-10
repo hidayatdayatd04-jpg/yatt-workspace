@@ -24,33 +24,33 @@ export default function BackupsPage({ initialConnectionId }: { initialConnection
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 bg-background/80 px-6 py-3.5 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-background/80 px-4 sm:px-6 py-3 backdrop-blur-md">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
             <Archive className="size-5" />
           </div>
-          <div>
-            <h1 className="text-base font-bold leading-tight">Backup & Diff Konfigurasi</h1>
-            <p className="text-xs text-muted-foreground">Manajemen ekspor konfigurasi aman, riwayat perubahan, dan diff RouterOS</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm sm:text-base font-bold leading-tight">Backup & Diff Konfigurasi</h1>
+            <p className="truncate text-[11px] sm:text-xs text-muted-foreground">Ekspor konfigurasi dan diff RouterOS</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 pr-12 sm:pr-6 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <RouterSelector connectors={availableConnectors} selectedId={activeId} onSelect={(id) => setSelectedConnectionId(id)} />
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowSettings(!showSettings)}
-            className="gap-1.5 text-xs h-9 rounded-xl cursor-pointer"
+            className="gap-1.5 text-xs h-9 rounded-xl cursor-pointer shrink-0"
           >
             <Settings className="size-3.5" />
-            Pengaturan
+            <span>Pengaturan</span>
           </Button>
         </div>
       </header>
 
       {/* Main Body */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto w-full">
         <BackupActionsBar
           newBackupName={page.newBackupName}
           onNameChange={page.setNewBackupName}
