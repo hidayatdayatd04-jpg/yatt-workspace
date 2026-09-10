@@ -26,7 +26,7 @@ export function MobileTopBar(props: {
           </SheetTrigger>
           <SheetContent side="left" className="w-80 p-0">
             <SheetHeader className="flex flex-row items-center justify-between border-b border-border/60 px-4 py-3 text-left">
-              <SheetTitle className="text-sm font-semibold">MikroTik AI Agent</SheetTitle>
+              <SheetTitle className="text-sm font-semibold">YATT Agent</SheetTitle>
               <NotificationBell onNavigate={() => props.setMobileOpen(false)} />
             </SheetHeader>
             <div className="flex h-[calc(100svh-4rem)] flex-col overflow-hidden">
@@ -42,7 +42,7 @@ export function MobileTopBar(props: {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="truncate text-sm font-semibold">MikroTik AI Agent</span>
+        <span className="truncate text-sm font-semibold">YATT Agent</span>
       </div>
       <ThemeToggle />
     </header>

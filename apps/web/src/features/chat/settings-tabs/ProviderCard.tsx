@@ -22,7 +22,7 @@ export function ProviderCard(props: {
     <div
       className={`group relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 ${
         isEnabled
-          ? "border-indigo-500/50 bg-card shadow-sm ring-1 ring-indigo-500/20"
+          ? "border-foreground/25 bg-card shadow-xs"
           : "border-border/70 bg-card/60 hover:border-border hover:bg-card"
       }`}
     >
@@ -50,7 +50,7 @@ export function ProviderCard(props: {
                 }`}
               >
                 <Lock className="size-2.5" />
-                {p.hasKey ? "Kunci Tersimpan (AES-256)" : "Belum ada API Key"}
+                {p.hasKey ? "Kredensial tersimpan" : "Belum dikonfigurasi"}
               </span>
             </div>
           </div>

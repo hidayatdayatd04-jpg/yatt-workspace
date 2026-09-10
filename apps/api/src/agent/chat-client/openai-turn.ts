@@ -2,6 +2,7 @@ import { AppError } from "../../lib/errors";
 import { redactText } from "../../lib/redaction";
 import type { SdkChunk, TurnCtx, TurnTicket } from "./context";
 import { toProviderError } from "./errors";
+import { isMaxTokensRejection, isReasoningRejection, isTemperatureRejection } from "./openai-rejections";
 import { extractRequestId, handleProviderFailure, type FailureCtx } from "./openai-failure";
 
 /** Queue terpusat: tahan sampai kapasitas RPM/TPM tersedia (+ mapping error antrean). */
@@ -33,30 +34,6 @@ export async function acquireTurnTicket(ctx: TurnCtx): Promise<TurnTicket> {
 export type TurnRequestOutcome =
   | { stream: AsyncIterable<SdkChunk> }
   | { retryAfterMs: number };
-
-/** 400 yang menyebut temperature = model menolak parameter tersebut. */
-function isTemperatureRejection(err: unknown): boolean {
-  const e = err as { status?: number; message?: string; error?: { message?: string } } | null;
-  const status = typeof e?.status === "number" ? e.status : 0;
-  const msg = String(e?.error?.message ?? e?.message ?? (err instanceof Error ? err.message : ""));
-  return (status === 400 || /invalid[ _-]?argument/i.test(msg)) && /temperature/i.test(msg);
-}
-
-/** 400 yang menyebut reasoning_effort/reasoning = model menolak parameter reasoning. */
-function isReasoningRejection(err: unknown): boolean {
-  const e = err as { status?: number; message?: string; error?: { message?: string } } | null;
-  const status = typeof e?.status === "number" ? e.status : 0;
-  const msg = String(e?.error?.message ?? e?.message ?? (err instanceof Error ? err.message : ""));
-  return (status === 400 || /invalid[ _-]?argument/i.test(msg) || /unsupported/i.test(msg)) && /reasoning/i.test(msg);
-}
-
-/** 400 yang menyebut max_tokens = model reasoning baru minta max_completion_tokens. */
-function isMaxTokensRejection(err: unknown): boolean {
-  const e = err as { status?: number; message?: string; error?: { message?: string } } | null;
-  const status = typeof e?.status === "number" ? e.status : 0;
-  const msg = String(e?.error?.message ?? e?.message ?? (err instanceof Error ? err.message : ""));
-  return status === 400 && /max_tokens|max_completion_tokens/i.test(msg);
-}
 
 /** Satu upaya HTTP ke provider; retry/backoff terbatas untuk 429 biasa. */
 export async function requestTurnStream(ctx: TurnCtx, ticket: TurnTicket, attempt: number): Promise<TurnRequestOutcome> {

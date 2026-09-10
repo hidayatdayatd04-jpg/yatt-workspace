@@ -2,7 +2,7 @@ import type { Logger } from "../../lib/logger";
 import type { ChatMessage, ChatToolCall, ChatToolDefinition } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
 import type { TransactionCoordinator } from "../../transactions/coordinator";
-import { CONNECTION_CHECK_FQ } from "./connection";
+import { CONNECTION_CHECK_FQ } from "../../tools/mikrotik/status";
 import type { EmitFn, RunCounters, ToolMsg } from "./context";
 import { MAX_PROVIDER_TOOLS } from "./ranking";
 import { canonicalKey } from "./ranking";
@@ -58,7 +58,7 @@ export async function executeSingleTool(
     return;
   }
   let toolMsg: ToolMsg;
-  if (seen && fq !== CONNECTION_CHECK_FQ) {
+  if (seen && fq !== CONNECTION_CHECK_FQ && fq !== "mikrotik:connect_router") {
     // Pengulangan identik ke-2: pakai hasil cache, tanpa eksekusi ulang.
     seen.count += 1;
     await emitSeq({ type: "tool.started", payload: { callId: call.id, name: fq, index: toolIndex, cached: true } });
@@ -93,7 +93,7 @@ export async function executeSingleTool(
       }
     }
     // Invalidate read caches if a mutation was executed
-    if (toolMsg.ok && toolMsg.risk && toolMsg.risk !== "read") {
+    if (toolMsg.ok && (fq === "mikrotik:connect_router" || toolMsg.risk && toolMsg.risk !== "read")) {
       for (const [k, v] of identicalCalls.entries()) {
         if (v.risk === "read") identicalCalls.delete(k);
       }
@@ -102,7 +102,7 @@ export async function executeSingleTool(
   counters.toolOutcomes.push({ fq, note: toolMsg.note.slice(0, 500), ok: toolMsg.ok, errorCode: toolMsg.errorCode });
   chatHistory.push(toolMsg);
   // transaction-aware tool calls: only record SUCCESSFUL MUTATION tools
-  if (input.policy.mode === "write" && toolMsg.ok && toolMsg.risk !== "read") {
+  if (!env.agentTools?.has(fq) && input.policy.mode === "write" && toolMsg.ok && toolMsg.risk !== "read") {
     await recordTxAction(env, input, emitSeq, chatHistory);
   }
 }

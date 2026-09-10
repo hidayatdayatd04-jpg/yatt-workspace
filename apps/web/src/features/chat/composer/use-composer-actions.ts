@@ -58,5 +58,3 @@ export function useComposerActions(opts: {
 
   return { fileInputRef, setMode, readiness, writeEnabled, uploadDisabled, pickFile, toggleWrite };
 }
-
-export type ComposerActions = ReturnType<typeof useComposerActions>;

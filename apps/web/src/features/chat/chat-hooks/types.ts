@@ -86,38 +86,6 @@ export interface AiProviderDTO {
   modelLimits?: Record<string, ModelLimitStatus>;
 }
 
-export interface ProviderSettingsDTO {
-  id?: string;
-  kind: "gemini" | "openrouter" | "custom";
-  name?: string;
-  baseUrl: string;
-  model: string;
-  hasKey?: boolean;
-}
-
-export interface RateLimitStatusDTO {
-  defaults: { rpm: number; tpm: number };
-  activeModel: string | null;
-  activeProviderId: string | null;
-  globalQueue: number;
-  models: {
-    modelKey: string;
-    providerKind: string;
-    rpmUsed: number;
-    rpmLimit: number;
-    tpmUsed: number;
-    tpmLimit: number;
-    rpdStatus: { limit: number | null; remaining: number | null; resetAt: string | null } | null;
-    queueLength: number;
-    nextRetryAt: string | null;
-    blockedReason: string | null;
-    fallbackReason: string | null;
-    isDailyQuotaExhausted: boolean;
-  }[];
-  checkpoints: { id: string; primaryModelKey: string | null; reason: string; nextRetryAt: string | null; createdAt: string }[];
-  note: string;
-}
-
 export interface ActivityEventDTO {
   id: string;
   conversationId: string;

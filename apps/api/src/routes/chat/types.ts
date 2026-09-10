@@ -11,6 +11,8 @@ import type { buildSystemInstruction } from "../../agent/instructions";
 import type { conversations, agentRuns } from "../../db/schema";
 
 export interface ChatRouteDeps {
+  integrations?: import("../../services/integrations").IntegrationService;
+  agentTools?: import("../../tools/registry").AgentToolRegistry;
   db: Database;
   logger: Logger;
   loop: AgentLoop;

@@ -1,10 +1,11 @@
 import type { ChatToolDefinition } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
 import { isGreetingOnly } from "../intent";
-import { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL } from "./connection";
+import { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL } from "../../tools/mikrotik/status";
 import { toProviderTools } from "./provider-tools";
 import { selectRelevantTools } from "./ranking";
 import type { StartRunInput } from "./types";
+import { WEB_SEARCH_TOOL } from "../../tools/general/web-search-definition";
 
 export interface RunCatalog {
   greetingOnly: boolean;
@@ -23,10 +24,11 @@ export async function buildRunCatalog(
   input: StartRunInput,
 ): Promise<RunCatalog> {
   const greetingOnly = isGreetingOnly(input.userText);
-  const fullCatalog = greetingOnly ? [] : [...(await catalogSource.getCatalog(input.policy.mode)), CONNECTION_CHECK_TOOL];
-  const catalog = input.connectionId
+  const fullCatalog = greetingOnly ? [] : input.mikrotikEnabled === false ? [WEB_SEARCH_TOOL] : [...(await catalogSource.getCatalog(input.policy.mode)), CONNECTION_CHECK_TOOL];
+  const routerCatalog = input.connectionId && input.mikrotikEnabled !== false
     ? fullCatalog
     : fullCatalog.filter((t) => t.fqName.startsWith("docs:") || t.fqName.startsWith("web:") || t.fqName === CONNECTION_CHECK_FQ);
+  const catalog = [...routerCatalog, ...(greetingOnly ? [] : input.additionalTools ?? [])];
   const providerTools = toProviderTools(selectRelevantTools(catalog, input.userText), input.userText);
   return { greetingOnly, catalog, providerTools };
 }

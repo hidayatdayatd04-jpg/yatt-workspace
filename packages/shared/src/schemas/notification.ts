@@ -13,7 +13,6 @@ export const NotificationCategorySchema = z.enum([
   "config",
   "agent",
 ]);
-export type NotificationCategory = z.infer<typeof NotificationCategorySchema>;
 
 export const NotificationDTOSchema = z.object({
   id: z.string().uuid(),

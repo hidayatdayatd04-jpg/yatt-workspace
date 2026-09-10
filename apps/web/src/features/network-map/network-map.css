@@ -34,8 +34,6 @@
 .map-details dt { color: var(--muted-foreground); overflow-wrap: anywhere; }
 .map-details dd { overflow-wrap: anywhere; font-family: ui-monospace, monospace; font-size: 11px; }
 [data-network-map-active=true] { background: var(--accent); }
-@media (max-width: 767px) {
-}
 
 .map-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--card); }
 .map-toolbar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; }

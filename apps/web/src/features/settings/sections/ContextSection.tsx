@@ -1,13 +1,10 @@
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { usePreferences, useSavePreferences, useCompactionStatus } from "@/features/chat/chat-hooks";
+import { usePreferences, useSavePreferences } from "@/features/chat/chat-hooks";
 
 export function ContextSection() {
   const prefs = usePreferences();
   const save = useSavePreferences();
-  // Show last compaction status for active conversation? Use global explanation + per-chat via header.
-  const status = useCompactionStatus(null);
-  void status;
   return (
     <div className="space-y-4 rounded-2xl border border-border/70 bg-card/60 p-6">
       <h2 className="text-base font-semibold">Konteks / compact</h2>

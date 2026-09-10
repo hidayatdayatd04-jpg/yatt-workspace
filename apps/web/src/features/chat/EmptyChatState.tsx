@@ -60,7 +60,7 @@ export function EmptyChatState(props: { onSelect?: (prompt: string) => void } = 
   }
 
   const steps = [
-    { done: checklist.hasConnector === true, label: "Hubungkan router", href: "/settings/connectors" },
+    { done: checklist.hasConnector === true, label: "Hubungkan connector", href: "/connectors" },
     { done: checklist.hasProviderKey === true, label: "Isi API key AI", href: "/settings/providers" },
     { done: false, label: "Kirim diagnosis pertama", href: null as string | null },
   ];
@@ -70,7 +70,7 @@ export function EmptyChatState(props: { onSelect?: (prompt: string) => void } = 
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Apa yang ingin Anda kerjakan?</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Pilih Connector lewat menu (+) bila perlu router, atau langsung tanya jawab umum.
+        Pilih connector lewat menu (+) — hanya yang terdaftar yang tampil — atau langsung tanya jawab umum.
       </p>
       {showChecklist && (
         <div className="mt-4 w-full max-w-md rounded-2xl border border-border/70 bg-card/80 p-4 text-left shadow-xs">

@@ -32,14 +32,6 @@ export class ChildRegistry {
     return this.children.keys();
   }
 
-  count(): number {
-    return this.children.size;
-  }
-
-  getActive(userId: string): string[] {
-    return [...this.children.keys()].filter((k) => k.startsWith(`${userId}:`)).map((k) => k.split(":")[1]!);
-  }
-
   async remove(userId: string, connectionId: string): Promise<SupervisedEntry | undefined> {
     const key = `${userId}:${connectionId}`;
     const entry = this.children.get(key);
@@ -114,7 +106,7 @@ export async function spawnChildProcess(
     if (stderrLines.length > 200) stderrLines.shift();
   });
 
-  const client = new Client({ name: "agent-mikrotik-backend", version: "0.1.0" });
+  const client = new Client({ name: "yatt-agent-backend", version: "0.1.0" });
   const connect = client.connect(transport);
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {

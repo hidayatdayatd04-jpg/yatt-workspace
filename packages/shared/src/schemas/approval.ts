@@ -10,16 +10,8 @@ export const ApprovalStatusSchema = z.enum([
   "executed",
   "failed",
 ]);
-export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>;
 
 export const RiskLevelSchema = z.enum(["low", "medium", "high", "critical"]);
-export type RiskLevel = z.infer<typeof RiskLevelSchema>;
-
-export interface ApprovalOperation {
-  command: string;
-  description: string;
-  risk: "read" | "write" | "destructive";
-}
 
 export const ApprovalDTOSchema = z.object({
   id: z.string().uuid(),

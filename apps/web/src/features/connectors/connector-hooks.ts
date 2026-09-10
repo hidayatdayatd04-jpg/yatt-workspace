@@ -54,27 +54,6 @@ export function useCreateConnector() {
   });
 }
 
-export function useUpdateConnector(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { label?: string; host?: string; port?: number; username?: string; password?: string }) =>
-      apiFetch<{ connector: ConnectorDTO }>(`/api/connectors/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(input),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["connectors"] }),
-  });
-}
-
-export function useConnectConnector(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () =>
-      apiFetch<{ connector: ConnectorDTO }>(`/api/connectors/${id}/connect`, { method: "POST" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["connectors"] }),
-  });
-}
-
 export function useConnectAnyConnector() {
   const qc = useQueryClient();
   return useMutation({

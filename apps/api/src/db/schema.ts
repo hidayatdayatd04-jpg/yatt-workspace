@@ -8,3 +8,4 @@ export { terminalSessions, terminalCommands } from "./schema-terminal";
 export { monitoringSnapshots, notifications, notificationSettings, monitoringSettings } from "./schema-monitoring";
 export { configBackups, backupSettings } from "./schema-backups";
 export { approvalRequests, approvalOperationLog } from "./schema-approval";
+export { integrations, customConnectors } from "./schema-integrations";

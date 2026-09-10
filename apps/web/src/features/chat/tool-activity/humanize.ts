@@ -1,6 +1,23 @@
 import type { PipelineStep } from "./types";
 
 const HUMAN_TOOL_LABELS: [RegExp, string][] = [
+  [/general:list_files/, "Melihat file workspace"],
+  [/general:read_file/, "Membaca file"],
+  [/general:write_file/, "Menyimpan perubahan file"],
+  [/general:extract_zip/, "Mengekstrak ZIP"],
+  [/general:import_attachment/, "Menyalin lampiran ke workspace"],
+  [/general:execute_shell/, "Menjalankan command workspace"],
+  [/mikrotik:list_routers/, "Mencari router tersimpan"],
+  [/mikrotik:connect_router/, "Menghubungkan router"],
+  [/drive:search_files/, "Mencari file Google Drive"],
+  [/drive:get_file|drive:read_document/, "Membaca dokumen Drive"],
+  [/drive:create_text_file/, "Membuat file di Drive"],
+  [/gmail:search_messages/, "Mencari email"],
+  [/gmail:read_message/, "Membaca email"],
+  [/gmail:create_draft/, "Menyiapkan draft email"],
+  [/gmail:send_message/, "Mengirim email"],
+  [/telegram:get_bot|telegram:get_chat/, "Memeriksa Telegram"],
+  [/telegram:send_message/, "Mengirim pesan Telegram"],
   [/check_connection/i, "Memeriksa status koneksi"],
   [/remove_vlan_interface|delete_vlan/i, "Menghapus interface VLAN"],
   [/create_vlan_interface/i, "Membuat interface VLAN"],
@@ -50,6 +67,9 @@ export function humanizeTool(name: string): string {
 /** Judul fase kerja yang manusiawi: pemeriksaan baca vs penerapan perubahan. */
 export function phaseTitle(steps: PipelineStep[]): string {
   if (steps.length === 0) return "Menyiapkan pemeriksaan";
+  if (steps.some((step) => /^(general|drive|gmail|telegram):/.test(step.tool))) {
+    return (steps.find((step) => step.status === "running") ?? steps[steps.length - 1]!).label;
+  }
   const writeish = /set_|add_|remove_|delete_|update_|enable|disable|create_|apply|reboot|reset/i;
   const mutating = steps.some((s) => writeish.test(s.tool));
   if (mutating) return "Menerapkan perubahan";

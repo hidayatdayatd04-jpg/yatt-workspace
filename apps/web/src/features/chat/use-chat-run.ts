@@ -20,6 +20,8 @@ export function useChatRun(conversationId: string, opts: { terminalOpen: boolean
       setActiveRunId(null);
       qc.invalidateQueries({ queryKey: ["messages", conversationId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["conversation", conversationId] });
+      qc.invalidateQueries({ queryKey: ["connectors"] });
       qc.invalidateQueries({ queryKey: ["ai-providers"] });
       qc.invalidateQueries({ queryKey: ["activities", conversationId] });
     }, [qc, conversationId]),
@@ -38,11 +40,17 @@ export function useChatRun(conversationId: string, opts: { terminalOpen: boolean
     let pendingModel: string | null = null;
     let pendingProvider: string | null = null;
     let pendingReasoning: string | null = null;
+    let pendingAttachments: string[] = [];
     try {
       pending = sessionStorage.getItem(key);
       pendingModel = sessionStorage.getItem(`pending-model-${conversationId}`);
       pendingProvider = sessionStorage.getItem(`pending-provider-${conversationId}`);
       pendingReasoning = sessionStorage.getItem(`pending-reasoning-${conversationId}`);
+      const rawAttachments = sessionStorage.getItem(`pending-attachments-${conversationId}`);
+      if (rawAttachments) {
+        const parsed: unknown = JSON.parse(rawAttachments);
+        if (Array.isArray(parsed)) pendingAttachments = parsed.filter((v): v is string => typeof v === "string");
+      }
     } catch {
       pending = null;
     }
@@ -54,10 +62,11 @@ export function useChatRun(conversationId: string, opts: { terminalOpen: boolean
           sessionStorage.removeItem(`pending-model-${conversationId}`);
           sessionStorage.removeItem(`pending-provider-${conversationId}`);
           sessionStorage.removeItem(`pending-reasoning-${conversationId}`);
+          sessionStorage.removeItem(`pending-attachments-${conversationId}`);
         } catch {
           /* ignore */
         }
-        handleSend(pending!, [], pendingModel ?? undefined, pendingProvider ?? undefined, pendingReasoning ?? undefined);
+        handleSend(pending!, pendingAttachments, pendingModel ?? undefined, pendingProvider ?? undefined, pendingReasoning ?? undefined);
       });
     }
     return () => {

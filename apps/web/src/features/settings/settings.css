@@ -1,0 +1,8 @@
+.settings-content { color: var(--foreground); }
+.settings-content :where(.rounded-2xl.border) { background: var(--card); border-color: var(--border); box-shadow: 0 1px 2px #00000004; }
+.settings-content :where(input:not([type="checkbox"]), select, textarea) { border-radius: 10px; min-height: 40px; background: var(--background); font-size: 13px; }
+.settings-content :where(input, select, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.settings-content :where(h2, h3) { letter-spacing: -.015em; }
+.settings-content :where(p) { line-height: 1.7; }
+.settings-content :where(button) { transition-duration: 150ms; }
+@media (prefers-reduced-motion: reduce) { .settings-workspace *, .settings-workspace *::before, .settings-workspace *::after { animation: none !important; transition: none !important; } }

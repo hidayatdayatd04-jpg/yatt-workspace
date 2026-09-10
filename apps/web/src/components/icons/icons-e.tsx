@@ -1,8 +1,6 @@
 import { createCustomIcon } from "./base";
-import { Check, CheckCircle2 } from "./base";
+import { Check } from "./base";
 import { ChevronRight } from "./icons-a";
-import { Info, Loader2 } from "./icons-b";
-import { PanelLeftClose } from "./icons-c";
 
 /* 57. TerminalSquare / CLI Workstation Dock */
 export const TerminalSquare = createCustomIcon("TerminalSquare", (
@@ -80,8 +78,4 @@ export const TriangleAlertIcon = createCustomIcon("TriangleAlertIcon", (
 /* Convenience aliases for UI libraries & backwards compatibility */
 export const CheckIcon = Check;
 export const ChevronRightIcon = ChevronRight;
-export const CircleCheckIcon = CheckCircle2;
-export const InfoIcon = Info;
-export const Loader2Icon = Loader2;
-export const PanelLeftIcon = PanelLeftClose;
 export const XIcon = X;

@@ -1,5 +1,5 @@
 {
-  "name": "@agent-mikrotik/mikrotik-tools",
+  "name": "@yatt-agent/mikrotik-tools",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

@@ -52,8 +52,4 @@ export class RunEventHub {
   replayUpTo(runId: string): RunEvent[] {
     return this.buffers.get(runId) ?? [];
   }
-
-  subscriberCount(runId: string): number {
-    return this.subscribers.get(runId)?.size ?? 0;
-  }
 }

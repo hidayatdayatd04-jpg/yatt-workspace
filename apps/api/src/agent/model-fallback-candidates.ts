@@ -1,11 +1,4 @@
-import type { ChatClient } from "./chat-client";
-import {
-  type CentralRateLimiter,
-  classifyQuotaError,
-  globalRateLimiter,
-  modelKeyFor,
-  sharedKeyForApiKey,
-} from "./rate-limiter";
+import { classifyQuotaError, modelKeyFor, sharedKeyForApiKey } from "./rate-limiter";
 import { isDailyQuotaError } from "./provider-limits";
 
 /**
@@ -45,31 +38,6 @@ export function sharedKeyForCandidate(c: FallbackCandidate): string | null {
     }
   }
   return null;
-}
-
-/** Pilih kandidat fallback pertama yang tidak diblokir limiter. */
-export function pickFallbackCandidate(
-  primaryModelKey: string,
-  candidates: FallbackCandidate[],
-  limiter: CentralRateLimiter = globalRateLimiter,
-): FallbackCandidate | null {
-  for (const c of candidates) {
-    if (!c.enabled) continue;
-    const key = candidateKey(c);
-    if (key === primaryModelKey) continue;
-    const shared = sharedKeyForCandidate(c);
-    const blocked = limiter.isBlocked(key, shared);
-    if (blocked.blocked) continue;
-    return c;
-  }
-  return null;
-}
-
-export interface FallbackStreamResult {
-  client: ChatClient;
-  modelKey: string;
-  candidate: FallbackCandidate | null;
-  fallbackReason: string | null;
 }
 
 /** Klasifikasi error stream untuk keputusan retry vs fallback vs checkpoint. */

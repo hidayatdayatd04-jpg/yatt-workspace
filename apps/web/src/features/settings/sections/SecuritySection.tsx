@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SettingsPage } from "@/features/chat/SettingsPage";
+import { SafeModeTab } from "@/features/chat/settings-tabs/SafeModeTab";
 import { apiFetch } from "@/lib/api";
 
 export function SecuritySection() {
@@ -25,21 +25,21 @@ export function SecuritySection() {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border/70 bg-card/60 p-6">
-        <h2 className="text-base font-semibold">Keamanan & Safe Mode</h2>
+        <h2 className="text-base font-semibold">Akses agent dalam kendali Anda</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          Kredensial SSH tersimpan terenkripsi AES-256-GCM. Write hanya dalam transaksi Safe Mode backend; lifecycle tidak tersedia untuk model.
-          Recovery restart memutus connector dan mereset Write.
+          Izin membaca, mengubah file, mengirim pesan, dan menjalankan shell diatur per connector. Token aplikasi dan kredensial router disimpan terenkripsi.
+          Perubahan MikroTik menggunakan Safe Mode; izin menulis router tetap terpisah dari izin aplikasi lain.
         </p>
       </div>
       <div className="space-y-3 rounded-2xl border border-border/70 bg-card/60 p-6">
         <h3 className="text-sm font-semibold">Ubah password</h3>
-        <Input type="password" placeholder="Password lama" value={oldPw} onChange={(e) => setOldPw(e.target.value)} autoComplete="current-password" />
-        <Input type="password" placeholder="Password baru (min 8)" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" />
+        <label className="block space-y-2 text-sm"><span>Password saat ini</span><Input type="password" value={oldPw} onChange={(e) => setOldPw(e.target.value)} autoComplete="current-password" /></label>
+        <label className="block space-y-2 text-sm"><span>Password baru</span><Input type="password" placeholder="Minimal 8 karakter" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" /></label>
         <Button size="sm" disabled={busy || !oldPw || newPw.length < 8} onClick={() => void change()}>
           {busy ? "Menyimpan…" : "Ubah password"}
         </Button>
       </div>
-      <SettingsPage initialTab="safemode" hideHeader />
+      <SafeModeTab />
     </div>
   );
 }

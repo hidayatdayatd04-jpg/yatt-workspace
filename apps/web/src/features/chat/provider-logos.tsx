@@ -33,34 +33,6 @@ export function providerLogoId(provider: { kind?: string; id?: string; name?: st
   return "openrouter";
 }
 
-/**
- * Petakan nama model ke logo-id models.dev.
- * - "anthropic/claude-..." -> anthropic
- * - "openai/gpt-..." -> openai
- * - "google/gemini-..." -> google
- * - "meta-llama/llama-..." -> meta
- * - "gemini-2.0-flash" -> google, "claude-..." -> anthropic, "gpt-..." -> openai
- */
-export function modelLogoId(model: string, fallbackKind?: string): string {
-  const m = model.trim().toLowerCase();
-  if (m.includes("/")) {
-    const prefix = (m.split("/")[0] ?? "").trim();
-    if (!prefix) return fallbackKind === "gemini" ? "google" : "openrouter";
-    if (prefix === "meta-llama") return "meta";
-    return prefix;
-  }
-  if (m.startsWith("gemini")) return "google";
-  if (m.startsWith("claude")) return "anthropic";
-  if (m.startsWith("gpt") || m.startsWith("o1") || m.startsWith("o3") || m.startsWith("o4") || m.startsWith("chatgpt")) return "openai";
-  if (m.startsWith("llama") || m.startsWith("meta-")) return "meta";
-  if (m.startsWith("deepseek")) return "deepseek";
-  if (m.startsWith("qwen")) return "alibaba";
-  if (m.startsWith("mistral") || m.startsWith("mixtral")) return "mistral";
-  if (m.startsWith("grok")) return "xai";
-  if (fallbackKind === "gemini") return "google";
-  return "openrouter";
-}
-
 export function ProviderLogo({
   logoId,
   alt,

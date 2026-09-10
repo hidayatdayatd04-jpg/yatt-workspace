@@ -98,5 +98,3 @@ export function createMonitoringWatcher(deps: WatcherDeps) {
     tick,
   };
 }
-
-export type MonitoringWatcher = ReturnType<typeof createMonitoringWatcher>;

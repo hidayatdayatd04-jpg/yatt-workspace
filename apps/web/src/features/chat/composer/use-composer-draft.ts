@@ -71,5 +71,3 @@ export function useComposerDraft(opts: {
 
   return { text, setText, imeComposing, setImeComposing, textareaRef, onKeyDown, submit };
 }
-
-export type ComposerDraft = ReturnType<typeof useComposerDraft>;

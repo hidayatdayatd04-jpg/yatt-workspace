@@ -12,7 +12,7 @@ export function createDb(filename: string = ":memory:") {
   sqlite.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;");
   sqlite.transaction(() => {
     const version = (sqlite.query("PRAGMA user_version").get() as { user_version: number }).user_version;
-    if (version > migrations.length) throw new Error("Data dibuat versi aplikasi lebih baru. Perbarui mikrotik-agent.");
+    if (version > migrations.length) throw new Error("Data dibuat versi aplikasi lebih baru. Perbarui yatt-agent.");
     for (let i = version; i < migrations.length; i++) {
       sqlite.exec(migrations[i]!);
       sqlite.exec(`PRAGMA user_version = ${i + 1}`);

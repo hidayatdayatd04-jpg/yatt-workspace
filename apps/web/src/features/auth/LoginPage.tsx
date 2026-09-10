@@ -31,11 +31,11 @@ export function LoginPage() {
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-5 rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl bg-card ring-1 ring-cyan-500/40">
-            <img src="/logo.png" alt="MikroTik AI" className="size-full object-contain p-0.5" />
+            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain p-0.5" />
           </div>
           <div>
-            <h1 className="text-base font-bold">MikroTik AI Agent</h1>
-            <p className="text-xs text-muted-foreground">Masuk untuk mengelola router lokal.</p>
+            <h1 className="text-base font-bold">YATT Agent</h1>
+            <p className="text-xs text-muted-foreground">Masuk untuk mengelola workspace lokal.</p>
           </div>
         </div>
         <div className="space-y-3">
@@ -49,7 +49,7 @@ export function LoginPage() {
               autoComplete="username"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder="mikrotik-agent"
+              placeholder="yatt-agent"
               disabled={busy}
             />
           </div>

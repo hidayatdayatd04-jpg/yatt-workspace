@@ -25,6 +25,7 @@ export interface RunEvent {
 }
 
 export interface AgentRunDeps {
+  agentTools?: import("../../tools/registry").AgentToolRegistry;
   db: Database;
   logger: Logger;
   dispatcher: PolicyDispatcher;
@@ -34,6 +35,9 @@ export interface AgentRunDeps {
 }
 
 export interface StartRunInput {
+  mikrotikEnabled?: boolean;
+  canUseMikrotik?: () => Promise<boolean>;
+  additionalTools?: NormalizedTool[];
   runId: string;
   userId: string;
   conversationId: string;
@@ -50,7 +54,7 @@ export interface StartRunInput {
   /** Per-run provider client (user-configured provider or mock). */
   client: ChatClient;
   /** Executes a dispatched tool on the user's MCP child; backend-owned. */
-  executeTool: (input: { fqName: string; args: unknown; retryRead?: boolean }) => Promise<{ ok: boolean; output: string; errorCode?: string }>;
+  executeTool: (input: { fqName: string; args: unknown; retryRead?: boolean }, run?: StartRunInput) => Promise<{ ok: boolean; output: string; errorCode?: string }>;
   /** System instruction with mode/router/doc rules for this run. */
   systemInstruction: string;
   /**

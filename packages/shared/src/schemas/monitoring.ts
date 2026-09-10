@@ -29,8 +29,3 @@ export interface MonitoringLiveData {
   connectedClients: number | null;
   collectedAt: string;
 }
-
-export interface MonitoringSnapshotItem {
-  data: Record<string, unknown>;
-  collectedAt: string;
-}

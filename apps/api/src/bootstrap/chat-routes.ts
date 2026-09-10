@@ -6,6 +6,8 @@ import { config, db, logger } from "./foundation";
 import { connectors, txCoordinator } from "./policy";
 import {
   agentLoop,
+  integrationService,
+  agentTools,
   executeDocsTool,
   executeTool,
   executeWebSearchToolBound,
@@ -28,6 +30,8 @@ export function mountChatRoutes(app: Hono<HonoEnv>) {
     loop: agentLoop,
     hub,
     connectors,
+    integrations: integrationService,
+    agentTools,
     transactions: txCoordinator,
     getProvider: (userId, model, providerId) => providerSettings.resolveForRun(userId, { model, providerId }),
     getVisionProvider: (userId) => visionSettingsService.getDecrypted(userId),

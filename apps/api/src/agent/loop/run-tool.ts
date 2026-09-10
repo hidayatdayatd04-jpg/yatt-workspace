@@ -1,7 +1,7 @@
 import { toolExecutions } from "../../db/schema";
 import { redactObject, redactText } from "../../lib/redaction";
 import type { ChatToolCall } from "../chat-client";
-import { CONNECTION_CHECK_FQ } from "./connection";
+import { CONNECTION_CHECK_FQ } from "../../tools/mikrotik/status";
 import type { EmitFn, ToolMsg } from "./context";
 import { dispatchToolCall, type ToolEnv } from "./dispatch";
 import { runConnectionProbe } from "./probe";
@@ -10,6 +10,7 @@ import type { NormalizedTool } from "../../policies/normalize";
 import { extractResearchPayload } from "./research";
 import { toolFailGuidance } from "./guidance";
 import { MAX_TOOL_RESULT_CHARS, type StartRunInput } from "./types";
+import { AppError } from "../../lib/errors";
 
 /** Execute one dispatched tool with redaction + persistence. Returns SSE events. */
 export async function runTool(
@@ -75,13 +76,15 @@ export async function runTool(
     };
   }
   try {
-    result = await input.executeTool({
+    result = env.agentTools?.has(fqName)
+      ? await env.agentTools.execute(fqName, args, input, env.toolSignal)
+      : await input.executeTool({
       fqName,
       args,
       retryRead: decisionTool.risk === "read" && input.policy.transactionState !== "active",
-    });
+    }, input);
   } catch (err) {
-    result = { ok: false, output: err instanceof Error ? err.message : String(err), errorCode: "INTERNAL_ERROR" };
+    result = { ok: false, output: err instanceof Error ? err.message : String(err), errorCode: err instanceof AppError ? err.code : "TOOL_FAILED" };
   }
   const isTruncated = result.output.length > MAX_TOOL_RESULT_CHARS;
   const truncatedText = isTruncated

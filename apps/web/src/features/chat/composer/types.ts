@@ -12,6 +12,7 @@ export interface ChatComposerProps {
   onSelectConnector?: (id: string) => void;
   attachments: AttachmentDTO[];
   uploading: boolean;
+  previewUrls?: Record<string, string>;
   externalText?: string;
   onClearExternalText?: () => void;
   onPickFile: (file: File) => void;

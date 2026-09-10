@@ -34,10 +34,6 @@ export class BucketStore {
     return this.buckets.keys();
   }
 
-  reset(): void {
-    this.buckets.clear();
-  }
-
   /** Waktu tunggu (ms) sampai `estimatedTokens` muat pada satu bucket. 0 = muat. */
   waitForBucket(
     bucketKey: string,

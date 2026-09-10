@@ -1,4 +1,4 @@
-/* Handcrafted Custom Modern Icons for MikroTik AI Agent */
+/* Handcrafted Custom Modern Icons for Agent Workspace */
 import React, { forwardRef, type SVGProps } from "react";
 
 export interface IconProps extends SVGProps<SVGSVGElement> {

@@ -1,4 +1,4 @@
-import type { ModelLimitStatus } from "@agent-mikrotik/shared";
+import type { ModelLimitStatus } from "@yatt-agent/shared";
 import { classifyQuotaError } from "./rate-limiter";
 
 /** Only observations from the upstream response; never an inferred quota. */

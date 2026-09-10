@@ -6,7 +6,7 @@ import { useAuth } from "@/features/auth/auth";
 import { apiFetch } from "@/lib/api";
 
 export function ProfileSection() {
-  const { profile } = useAuth();
+  const { profile, refresh } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.displayName ?? "");
   const [busy, setBusy] = useState(false);
   async function save() {
@@ -18,6 +18,7 @@ export function ProfileSection() {
     setBusy(true);
     try {
       await apiFetch("/api/auth/profile", { method: "PATCH", body: JSON.stringify({ displayName: name }) });
+      await refresh();
       toast.success("Profil diperbarui.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan profil.");

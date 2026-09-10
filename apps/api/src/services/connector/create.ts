@@ -48,7 +48,7 @@ export async function createConnector(
       host: input.host,
       port: input.port,
       username: input.username,
-      status: "connected",
+      status: "disconnected",
       lastVerifiedAt: new Date(),
       routerIdentity: probe.routerIdentity,
       rosVersion: probe.rosVersion ?? null,

@@ -2,7 +2,7 @@ import { FileText, X } from "@/components/icons";
 import { fmtSize } from "../ChatPanel";
 import type { AttachmentDTO } from "../chat-hooks";
 
-export function ComposerAttachments(props: { attachments: AttachmentDTO[]; onRemoveAttachment: (id: string) => void }) {
+export function ComposerAttachments(props: { attachments: AttachmentDTO[]; onRemoveAttachment: (id: string) => void; previewUrls?: Record<string, string> }) {
   if (props.attachments.length === 0) return null;
   const isImage = (a: AttachmentDTO) => a.contentType.startsWith("image/") || a.contentKind === "image";
   return (
@@ -14,7 +14,7 @@ export function ComposerAttachments(props: { attachments: AttachmentDTO[]; onRem
           title={`${a.originalName} (${fmtSize(a.sizeBytes)})`}
         >
           {isImage(a) ? (
-            <img src={`/api/attachments/files/${a.id}`} alt={a.originalName} loading="lazy" className="size-8 rounded-md object-cover" />
+            <img src={props.previewUrls?.[a.id] ?? `/api/attachments/files/${a.id}`} alt={a.originalName} loading="lazy" className="size-8 rounded-md object-cover" />
           ) : (
             <FileText className="size-3.5 text-indigo-500" />
           )}

@@ -1,13 +1,14 @@
 {
-  "name": "@agent-mikrotik/api",
+  "name": "@yatt-agent/api",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "test": "bun test src/tools"
   },
   "dependencies": {
-    "@agent-mikrotik/mikrotik-tools": "workspace:*",
-    "@agent-mikrotik/shared": "workspace:*",
+    "@yatt-agent/mikrotik-tools": "workspace:*",
+    "@yatt-agent/shared": "workspace:*",
     "@hono/zod-validator": "0.7.4",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@tikoci/rosetta": "0.11.1",
@@ -18,7 +19,6 @@
     "mammoth": "^1.12.2",
     "openai": "4",
     "ssh2": "1.17.0",
-    "underscore": "^1.13.8",
     "unpdf": "^1.8.1",
     "xlsx": "^0.18.5",
     "zod": "3.25.76"

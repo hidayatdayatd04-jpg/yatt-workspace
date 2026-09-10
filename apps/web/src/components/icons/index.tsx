@@ -1,4 +1,4 @@
-/* Handcrafted Custom Modern Icons for MikroTik AI Agent — barrel re-export. */
+/* Handcrafted Custom Modern Icons for Agent Workspace — barrel re-export. */
 export type { IconProps } from "./base";
 export { createCustomIcon } from "./base";
 export {
@@ -40,59 +40,8 @@ export {
   MessageSquare,
   Moon,
 } from "./icons-b";
-export {
-  MoreHorizontal,
-  MoreVertical,
-  Palette,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Pencil,
-  Pin,
-  PinOff,
-  Plug,
-  Plus,
-  Power,
-  Radio,
-} from "./icons-c";
-export {
-  RefreshCw,
-  RotateCcw,
-  Scissors,
-  Search,
-  Send,
-  Server,
-  Settings,
-  Settings2,
-  ShieldCheck,
-  Square,
-  Sun,
-  Terminal,
-} from "./icons-d";
-export {
-  TerminalSquare,
-  Trash2,
-  User,
-  Wifi,
-  X,
-  XCircle,
-  OctagonXIcon,
-  TriangleAlertIcon,
-  CheckIcon,
-  ChevronRightIcon,
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  PanelLeftIcon,
-  XIcon,
-} from "./icons-e";
-export {
-  Network,
-  Bell,
-  BarChart3,
-  Shield,
-  FileDiff,
-  History,
-  Users,
-  HardDrive,
-  Brain,
-} from "./icons-f";
+export { MoreHorizontal, MoreVertical, Palette, PanelLeftClose, Pencil, Pin, PinOff, Plug, Plus, Power, Radio } from "./icons-c";
+export { RefreshCw, RotateCcw, Scissors, Search, Send, Server, Settings, Settings2, ShieldCheck, Square, Sun } from "./icons-d";
+export { TerminalSquare, Trash2, User, Wifi, X, XCircle, OctagonXIcon, TriangleAlertIcon, CheckIcon, ChevronRightIcon, XIcon } from "./icons-e";
+export { Network, Bell, BarChart3, Shield, FileDiff, Users, HardDrive, Brain } from "./icons-f";
+export { Folder, Mail, ArrowRight, Calendar, GoogleG } from "./integrations";

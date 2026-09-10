@@ -31,7 +31,7 @@ export async function runStepTools(
     catalog.find((t) => t.fqName.replace(/[^A-Za-z0-9_-]/g, "_") === call.name)?.fqName ?? call.name;
   const riskOf = (fq: string) => catalog.find((t) => t.fqName === fq)?.risk ?? "unknown";
   const isBatchableRead = (fq: string) =>
-    riskOf(fq) === "read" && !fq.includes("find_tools") && !fq.includes("routeros_search");
+    riskOf(fq) === "read" && fq !== "mikrotik:connect_router" && !fq.includes("find_tools") && !fq.includes("routeros_search");
 
   interface Batched {
     call: ChatToolCall;

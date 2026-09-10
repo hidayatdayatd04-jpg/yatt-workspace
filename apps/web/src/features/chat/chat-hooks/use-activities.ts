@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import type { ActivityEventDTO, TerminalCommandDTO } from "./types";
+import type { ActivityEventDTO } from "./types";
 
 export function useConversationActivities(conversationId: string | null) {
   return useQuery({
@@ -39,41 +39,5 @@ export function useStartCompaction(conversationId: string) {
         body: JSON.stringify({ reason: "manual" }),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["compaction", conversationId] }),
-  });
-}
-
-export function useTerminalSession() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { connectionId: string; conversationId?: string | null }) =>
-      apiFetch<{ session: { id: string; status: string } }>("/api/terminal/sessions", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["terminal"] }),
-  });
-}
-
-export function useTerminalCommands(sessionId: string | null) {
-  return useQuery({
-    queryKey: ["terminal", sessionId],
-    enabled: !!sessionId,
-    refetchInterval: 2000,
-    queryFn: async () => {
-      const res = await apiFetch<{ commands: TerminalCommandDTO[] }>(`/api/terminal/sessions/${sessionId}/commands`);
-      return res.commands;
-    },
-  });
-}
-
-export function useSendTerminalCommand(sessionId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { command: string; conversationId?: string | null }) =>
-      apiFetch<{ commandId: string }>(`/api/terminal/sessions/${sessionId}/commands`, {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["terminal", sessionId] }),
   });
 }

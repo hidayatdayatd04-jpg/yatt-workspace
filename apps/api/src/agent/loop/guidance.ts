@@ -38,14 +38,14 @@ export function policyDenialGuidance(code: string, toolName: string): string {
 export function toolFailGuidance(errorCode: string, toolName: string): string {
   if (errorCode === "WEB_SEARCH_NOT_CONFIGURED") {
     return (
-      `Pencarian web belum dikonfigurasi (API key Tavily belum diisi). Beritahu pengguna untuk membuka Pengaturan → Deep Research ` +
+      `Pencarian web belum dikonfigurasi (API key Tavily belum diisi). Beritahu pengguna untuk membuka Pengaturan → Riset web ` +
       `dan menambahkan API key. JANGAN mencoba tool ini lagi pada giliran yang sama.`
     );
   }
   if (errorCode === "WEB_SEARCH_UNAUTHORIZED") {
     return (
       `API key Tavily ditolak sistem. Beritahu pengguna bahwa API key kemungkinan tidak valid/kedaluwarsa ` +
-      `dan arahkan memperbaruinya di Pengaturan → Deep Research.`
+      `dan arahkan memperbaruinya di Pengaturan → Riset web.`
     );
   }
   if (errorCode === "WEB_SEARCH_RATE_LIMITED") {

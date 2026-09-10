@@ -37,15 +37,6 @@ export const PanelLeftClose = createCustomIcon("PanelLeftClose", (
   </>
 ));
 
-/* 37. PanelLeftOpen / Expand Sidebar */
-export const PanelLeftOpen = createCustomIcon("PanelLeftOpen", (
-  <>
-    <rect x="3" y="3.5" width="18" height="17" rx="3" />
-    <line x1="9.5" y1="3.5" x2="9.5" y2="20.5" />
-    <polyline points="13.5 14.5 16 12 13.5 9.5" />
-  </>
-));
-
 /* 38. Pencil / Edit & Rename */
 export const Pencil = createCustomIcon("Pencil", (
   <>

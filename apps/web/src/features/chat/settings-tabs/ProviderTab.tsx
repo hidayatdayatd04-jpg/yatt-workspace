@@ -14,7 +14,7 @@ export function ProviderTab(props: { page: ProviderList }) {
         <div>
           <h2 className="text-base font-semibold">Daftar Provider Model AI</h2>
           <p className="text-xs text-muted-foreground">
-            Setiap provider memiliki database dan API key terpisah (terisolasi). Aktifkan toggle untuk menyediakan model pada jendela chat.
+            Pilih provider yang tersedia di chat. Kredensial dan daftar model disimpan terpisah untuk setiap provider.
           </p>
         </div>
         <Button

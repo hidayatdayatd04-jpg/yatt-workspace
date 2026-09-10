@@ -1,5 +1,5 @@
 {
-  "name": "@agent-mikrotik/shared",
+  "name": "@yatt-agent/shared",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

@@ -89,13 +89,6 @@ function collectFields(text: string, row: ParsedRow): void {
   }
 }
 
-/** Parse flag letters and non-field prefix (column print), e.g. "0 X  ether1". */
-export function parseFlags(cell: string): { flags: string; rest: string } {
-  const m = /^([A-Z-]+)\s+(.*)$/.exec(cell);
-  if (!m || m[1] === undefined || m[2] === undefined) return { flags: "", rest: cell };
-  return { flags: m[1], rest: m[2] };
-}
-
 /** Detect a RouterOS failure text anywhere in the output. */
 export function detectError(output: string): string | null {
   const m = output.match(/\b(failure: [^\r\n]+|no such item[^\r\n]*|syntax error[^\r\n]*|invalid value[^\r\n]*|bad command[^\r\n]*)/i);

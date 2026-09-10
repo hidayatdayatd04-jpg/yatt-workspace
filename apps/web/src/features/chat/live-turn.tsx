@@ -25,7 +25,7 @@ export function LiveTurn(props: {
       {showTurn && (
         <div className="flex gap-3 justify-start animate-in fade-in duration-200">
           <div className="flex size-9 shrink-0 select-none items-center justify-center rounded-xl overflow-hidden ring-1 ring-cyan-500/40 bg-card shadow-xs">
-            <img src="/logo.png" alt="MikroTik AI" className="size-full object-contain p-0.5" />
+            <img src="/logo.png" alt="YATT Agent" className="size-full object-contain p-0.5" />
           </div>
           <div className="max-w-[85%] sm:max-w-[80%] rounded-2xl rounded-tl-xs border border-border/70 bg-card/80 px-4 py-3.5 shadow-xs">
             {!!reasoningText && <ReasoningBlock text={reasoningText} live={runLive} />}

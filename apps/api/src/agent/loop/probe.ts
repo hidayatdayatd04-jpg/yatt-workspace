@@ -1,7 +1,7 @@
 import type { Database } from "../../db";
 import { toolExecutions } from "../../db/schema";
 import type { ChatToolCall } from "../chat-client";
-import { readConnectionStatus } from "./connection";
+import { readConnectionStatus } from "../../tools/mikrotik/status";
 import type { EmitFn, ToolMsg } from "./context";
 import type { StartRunInput } from "./types";
 
@@ -17,7 +17,7 @@ export async function runConnectionProbe(
 ): Promise<ToolMsg> {
   const live = await readConnectionStatus(db, {
     userId: input.userId,
-    connectionId: input.connectionId,
+    connectionId: input.mikrotikEnabled === false || input.canUseMikrotik && !(await input.canUseMikrotik()) ? null : input.connectionId,
     txActive: input.policy.transactionState === "active",
   });
   const durationMs = Date.now() - started;
@@ -47,7 +47,7 @@ export async function runConnectionProbe(
       ? "Mode tulis AKTIF dan terverifikasi — langsung eksekusi tool tulis yang diminta lalu verifikasi dengan tool baca."
       : live.connected
         ? "Router terhubung tetapi mode tulis BELUM aktif — gunakan tool baca, atau arahkan pengguna mengaktifkan Izinkan perubahan di composer."
-        : "Tidak ada router terhubung — jawab umum, atau arahkan pengguna memilih Connector bila meminta data router. Jangan mengarang hasil.");
+        : "Tidak ada router terhubung. Jika MikroTik Server aktif, cari dan hubungkan router tersimpan lewat tools koneksi. Jika nonaktif, minta pengguna menyalakan toggle. Jangan mengarang hasil.");
   return {
     role: "tool",
     content: JSON.stringify({ ok: true, connection: live, guidance }),

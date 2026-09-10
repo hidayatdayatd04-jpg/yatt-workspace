@@ -91,7 +91,7 @@ export function ChatScreen(props: { conversationId: string; activeConnector: Con
             onCancel={run.handleCancel}
             onAddRouter={() => {
               const returnTo = `/chat/${props.conversationId}`;
-              window.location.href = `/settings/connectors?add=1&returnTo=${encodeURIComponent(returnTo)}`;
+              window.location.href = `/connectors?add=1&returnTo=${encodeURIComponent(returnTo)}`;
             }}
             onCompact={() => {
               startCompaction.mutate(undefined, {

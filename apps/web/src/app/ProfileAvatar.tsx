@@ -126,7 +126,7 @@ export function ProfileAvatar({
           <span>Profil</span>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => navigate({ name: "settings", section: "connectors" })}
+          onClick={() => navigate({ name: "settings", section: "providers" })}
           className="gap-2.5 px-2.5 py-2.5 text-xs font-medium rounded-xl cursor-pointer"
         >
           <Settings className="size-4 text-muted-foreground" />

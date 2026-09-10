@@ -13,7 +13,11 @@ import {
   safeModeSessions,
   txCoordinator,
 } from "./policy";
-import { executeTool, providerSettings, visionSettingsService, webSearchSettingsService } from "./ai";
+import { executeTool, providerSettings, visionSettingsService, webSearchSettingsService, integrationService } from "./ai";
+import { createIntegrationRoutes } from "../routes/integrations";
+import { createGoogleOAuthRoutes } from "../routes/google-oauth";
+import { createCustomConnectorRoutes } from "../routes/custom-connectors";
+import { createWorkspaceRoutes } from "../routes/workspace";
 import { storage } from "./storage";
 import { createConnectorRoutes } from "../routes/connectors";
 import { createTransactionRoutes } from "../routes/transactions";
@@ -36,6 +40,10 @@ import { createOpenAiCompatibleClient } from "../agent/chat-client";
 import { globalRateLimiter, globalCheckpoints } from "../agent/rate-limiter";
 
 export function mountApiRoutes(app: Hono<HonoEnv>) {
+  app.route("/api/integrations/google", createGoogleOAuthRoutes(integrationService, { clientId: config.GOOGLE_OAUTH_CLIENT_ID, clientSecret: config.GOOGLE_OAUTH_CLIENT_SECRET, redirectUri: config.GOOGLE_OAUTH_REDIRECT_URI, appUrl: config.APP_URL }));
+  app.route("/api/custom-connectors", createCustomConnectorRoutes({ db, logger }));
+  app.route("/api/integrations", createIntegrationRoutes(integrationService, config.AGENT_SHELL_ENABLED));
+  app.route("/api/workspace", createWorkspaceRoutes(integrationService, config.DATA_DIR));
   const connectorRoutes = createConnectorRoutes({ connectors, supervisor, txCoordinator, safeModeSessions, logger, invalidateCatalog: () => catalogSource.invalidate() });
   const transactionRoutes = createTransactionRoutes({ coordinator: txCoordinator, connectors, db, logger });
   const aiProviderRoutes = createAiProviderRoutes({ providers: providerSettings, logger, limiter: globalRateLimiter, checkpoints: globalCheckpoints });

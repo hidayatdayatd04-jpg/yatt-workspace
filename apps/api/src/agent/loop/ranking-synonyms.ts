@@ -38,7 +38,6 @@ const ID_TOOL_SYNONYMS: Record<string, string[]> = {
   sertifikat: ["certificate"],
   waktu: ["time", "clock", "ntp"],
   skrip: ["script"],
-  jadwal: ["scheduler"],
   paket: ["package"],
   layanan: ["service"],
   tetangga: ["neighbor"],
@@ -50,6 +49,25 @@ const ID_TOOL_SYNONYMS: Record<string, string[]> = {
   lambat: ["slow", "speed", "bandwidth", "queue"],
   putus: ["disconnect", "down", "timeout", "unreachable"],
   tersambung: ["connected", "running", "reachable"],
+  // Google Workspace: email, kalender, drive.
+  email: ["mail", "gmail", "inbox", "message"],
+  surat: ["mail", "gmail", "inbox", "message"],
+  kirim: ["send"],
+  inbox: ["inbox", "mail"],
+  draf: ["draft"],
+  draft: ["draft"],
+  kalender: ["calendar", "schedule", "event"],
+  jadwal: ["schedule", "calendar", "event", "scheduler"],
+  rapat: ["meeting", "event", "calendar"],
+  acara: ["event", "calendar"],
+  janji: ["event", "appointment", "calendar"],
+  undangan: ["invite", "attendee", "event"],
+  peserta: ["attendee"],
+  dokumen: ["document", "file", "drive", "doc"],
+  berkas: ["file", "drive"],
+  folder: ["folder", "drive"],
+  drive: ["drive", "file"],
+  lampiran: ["attachment"],
 };
 
 /** Kata kunci kueri (panjang ≥3) + ekspansi sinonim Inggris. */

@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export const API_ERROR_CODES = [
   "UNAUTHORIZED",
   "RATE_LIMITED",
@@ -32,15 +30,4 @@ export const API_ERROR_CODES = [
   "INTERNAL_ERROR",
 ] as const;
 
-export const ApiErrorCodes = API_ERROR_CODES;
-
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
-
-export const ApiErrorSchema = z.object({
-  code: z.enum(API_ERROR_CODES),
-  message: z.string(),
-  requestId: z.string(),
-  fieldErrors: z.record(z.string(), z.string()).optional(),
-});
-
-export type ApiError = z.infer<typeof ApiErrorSchema>;

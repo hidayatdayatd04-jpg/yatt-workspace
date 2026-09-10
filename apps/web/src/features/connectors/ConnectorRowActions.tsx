@@ -2,14 +2,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Power, Trash2, RefreshCw } from "@/components/icons";
+import { Power, Trash2, MessageSquare } from "@/components/icons";
 import type { ConnectorDTO } from "@shared/index";
-import { useSetConnectorMode, useDisconnectConnector, useConnectConnector, useDeleteConnector } from "./connector-hooks";
+import { useSetConnectorMode, useDisconnectConnector, useDeleteConnector } from "./connector-hooks";
+import { navigate } from "@/lib/router";
+import { useIntegrations, useSaveIntegration } from "./integration-hooks";
 
 export function ConnectorRowActions({ connector }: { connector: ConnectorDTO }) {
   const setMode = useSetConnectorMode(connector.id);
   const disconnect = useDisconnectConnector(connector.id);
-  const connect = useConnectConnector(connector.id);
+  const integrations = useIntegrations();
+  const saveIntegration = useSaveIntegration();
   const remove = useDeleteConnector(connector.id);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -57,12 +60,20 @@ export function ConnectorRowActions({ connector }: { connector: ConnectorDTO }) 
         <Button
           variant="outline"
           size="sm"
-          onClick={() => connect.mutate()}
-          disabled={connect.isPending}
+          onClick={async () => {
+            try {
+              const enabled = integrations.data?.integrations.find((item) => item.kind === "mikrotik")?.enabled;
+              if (!enabled) await saveIntegration.mutateAsync({ kind: "mikrotik", enabled: true, allowWrite: false, allowSend: false, allowShell: false });
+              sessionStorage.setItem("composer-draft-new", `Hubungkan router ${connector.label} (${connector.host}).`);
+              localStorage.setItem("composer-draft-new", `Hubungkan router ${connector.label} (${connector.host}).`);
+              navigate({ name: "chat-new" });
+            } catch (err) { toast.error(err instanceof Error ? err.message : "Gagal membuka chat."); }
+          }}
+          disabled={saveIntegration.isPending}
           className="h-8 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white border-transparent"
         >
-          {connect.isPending ? <RefreshCw className="size-3.5 animate-spin" /> : <Power className="size-3.5" />}
-          Hubungkan
+          <MessageSquare className="size-3.5" />
+          Hubungkan di chat
         </Button>
       )}
 

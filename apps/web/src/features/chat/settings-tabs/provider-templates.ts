@@ -1,5 +1,3 @@
-export type SettingsTab = "provider" | "safemode" | "monitoring" | "memory" | "about";
-
 export const DEFAULT_PROVIDER_TEMPLATES = [
   {
     id: "gemini",

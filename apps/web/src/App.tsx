@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "./features/auth/auth";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -6,8 +6,8 @@ import { useRoute, navigate } from "./lib/router";
 import { useSidebarCollapsed } from "./app/app-hooks";
 import { MobileTopBar } from "./app/MobileTopBar";
 import { DesktopSidebar } from "./app/DesktopSidebar";
-import { SettingsRoute } from "./app/SettingsRoute";
 import { MainRoutes } from "./app/MainRoutes";
+import { OverlayView, isOverlayRoute } from "./app/OverlayView";
 
 function Shell() {
   const route = useRoute();
@@ -15,6 +15,7 @@ function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { collapsed, setCollapsedPersist } = useSidebarCollapsed();
+  const lastChatId = useRef<string | null>(null);
 
   // Auth gating
   useEffect(() => {
@@ -26,6 +27,12 @@ function Shell() {
     }
   }, [loading, profile, route.name]);
 
+  // Ingat chat terakhir agar tetap tampil di belakang pop-up.
+  useEffect(() => {
+    if (route.name === "chat") lastChatId.current = route.id;
+    if (route.name === "chat-new") lastChatId.current = null;
+  }, [route]);
+
   if (route.name === "login") {
     if (loading) return <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">Memuat…</div>;
     if (profile) return null;
@@ -34,11 +41,8 @@ function Shell() {
   if (loading) return <div className="flex min-h-svh items-center justify-center text-sm text-muted-foreground">Memuat session…</div>;
   if (!profile) return null;
 
-  if (route.name === "settings") {
-    return <SettingsRoute section={route.section} />;
-  }
-
-  const conversationId = route.name === "chat" ? route.id : null;
+  const overlay = isOverlayRoute(route) ? route : null;
+  const conversationId = route.name === "chat" ? route.id : lastChatId.current;
   return (
     <div className="flex h-svh w-full flex-col overflow-hidden bg-background text-foreground md:flex-row">
       {/* Mobile top bar */}
@@ -71,6 +75,7 @@ function Shell() {
       />
 
       <MainRoutes conversationId={conversationId} onToggleSidebar={() => setCollapsedPersist(!collapsed)} />
+      {overlay && <OverlayView key={`${overlay.name}-${window.location.pathname}${window.location.search}`} route={overlay} />}
       <Toaster position="top-center" richColors />
     </div>
   );

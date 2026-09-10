@@ -11,9 +11,9 @@ export function ConnectorsHeader(props: { totalCount: number; connectedCount: nu
             <Server className="size-3.5" />
             Device Management
           </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">Connector Router</h1>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Router tersimpan</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Kelola router MikroTik target. Kredensial SSH disimpan dengan enkripsi AES-256-GCM.
+            Simpan kredensial sekali, lalu minta agent connect atau reconnect melalui chat.
           </p>
         </div>
 
@@ -22,7 +22,7 @@ export function ConnectorsHeader(props: { totalCount: number; connectedCount: nu
           className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium self-start sm:self-auto shadow-sm"
         >
           <Plus className="size-4" />
-          Tambah Router Manual
+            Tambah router
         </Button>
       </div>
 
@@ -40,7 +40,7 @@ export function ConnectorsHeader(props: { totalCount: number; connectedCount: nu
           <span className="text-xs text-muted-foreground">Proteksi Transaksi</span>
           <p className="mt-1 text-sm font-semibold flex items-center gap-1.5 text-foreground">
             <ShieldCheck className="size-4 text-emerald-500" />
-            Safe Mode Aktif
+            Safe Mode untuk perubahan
           </p>
         </div>
       </div>

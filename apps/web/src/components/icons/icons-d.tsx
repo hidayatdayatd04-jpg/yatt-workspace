@@ -106,11 +106,3 @@ export const Sun = createCustomIcon("Sun", (
     <line x1="17.2" y1="6.8" x2="19.1" y2="4.9" />
   </>
 ));
-
-/* 56. Terminal / RouterOS CLI Shell Prompt */
-export const Terminal = createCustomIcon("Terminal", (
-  <>
-    <path d="m4.5 7.5 5 4.5-5 4.5" />
-    <line x1="12" y1="17" x2="19.5" y2="17" />
-  </>
-));

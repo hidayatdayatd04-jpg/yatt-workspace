@@ -43,10 +43,6 @@ export class CheckpointStore {
   remove(id: string): boolean {
     return this.items.delete(id);
   }
-
-  clear(): void {
-    this.items.clear();
-  }
 }
 
 export const globalCheckpoints = new CheckpointStore();

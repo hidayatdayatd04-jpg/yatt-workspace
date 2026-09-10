@@ -45,8 +45,6 @@ export const StatusCodeByCode = {
   INTERNAL_ERROR: 500,
 } as const satisfies Record<ApiErrorCode, number>;
 
-export type ErrorCodeWithStatus = keyof typeof StatusCodeByCode;
-
 export function statusForCode(code: ApiErrorCode): number {
   return (StatusCodeByCode as Record<ApiErrorCode, number | undefined>)[code] ?? 500;
 }

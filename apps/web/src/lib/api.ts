@@ -1,12 +1,3 @@
-export interface ApiErrorBody {
-  error: {
-    code: string;
-    message: string;
-    requestId: string;
-    fieldErrors?: Record<string, string>;
-  };
-}
-
 export class ApiError extends Error {
   constructor(
     readonly code: string,
@@ -17,13 +8,6 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
-}
-
-export function apiErrorTitle(error: unknown): string {
-  const detail = error instanceof ApiError
-    ? (error.status > 0 ? `Status ${error.status} / ${error.code}` : error.code)
-    : null;
-  return `Gagal Mengirim Pesan${detail ? ` (${detail})` : ""}`;
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {

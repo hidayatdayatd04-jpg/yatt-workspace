@@ -2,7 +2,7 @@ import { z } from "zod";
 import { resolve } from "node:path";
 
 import { homedir } from "node:os";
-const DEFAULT_DATA_DIR = resolve(homedir(), ".mikrotik-agent");
+const DEFAULT_DATA_DIR = resolve(homedir(), ".yatt-agent");
 
 const int = (def: number, min: number, max: number) =>
   z
@@ -27,14 +27,21 @@ const num = (def: number, min: number, max: number) =>
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: int(3001, 1, 65535),
+  APP_URL: z.string().optional(),
 
   DATA_DIR: z.string().default(DEFAULT_DATA_DIR),
+  AGENT_SHELL_ENABLED: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
   // Default server-side provider (fallback when the user has not configured
   // their own provider in the DB). The user's per-user setting takes priority.
   AI_PROVIDER_KIND: z.enum(["gemini", "openrouter", "custom", ""]).default(""),
   AI_PROVIDER_BASE_URL: z.string().optional(),
   AI_PROVIDER_MODEL: z.string().optional(),
   AI_PROVIDER_API_KEY: z.string().optional(),
+  // Google OAuth satu pintu (Drive + Gmail + Calendar). Opsional: bila kosong,
+  // pengguna menempelkan Client ID/Secret miliknya lewat UI Connectors.
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().optional(),
   // Sampling temperature untuk request chat agent (tool-calling presisi butuh
   // nilai rendah agar argumen tool konsisten; kreativitas jawaban dijaga via
   // instruksi, bukan sampling). 0 = deterministik penuh (tidak disarankan:

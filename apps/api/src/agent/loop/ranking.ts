@@ -1,5 +1,5 @@
 import type { NormalizedTool } from "../../policies/normalize";
-import { CONNECTION_CHECK_FQ } from "./connection";
+import { CONNECTION_CHECK_FQ } from "../../tools/mikrotik/status";
 import { extractQueryKeywords } from "./ranking-synonyms";
 
 /**
@@ -46,6 +46,7 @@ function stemToken(w: string): string {
 /** Skor relevansi satu tool terhadap kata kunci (dipakai ranking + budget deskripsi). */
 export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): number {
   if (t.fqName === CONNECTION_CHECK_FQ) return 1_000_000;
+  if (/^(general|mikrotik|drive|gmail|calendar|telegram):/.test(t.fqName)) return 700_000;
   if (CORE_ROUTER_READ_TOOLS.has(t.rawName)) return 600_000;
   const hay = `${t.fqName} ${t.description} ${(t.capabilities ?? []).join(" ")}`.toLowerCase();
   const hayTokens = new Set(hay.split(/[^a-z0-9]+/).filter(Boolean).map(stemToken));
@@ -99,61 +100,4 @@ export function selectRelevantTools(catalog: NormalizedTool[], userText: string)
     .map((e) => e.t);
 }
 
-export function canonicalKey(fq: string, args: unknown): string {
-  if (fq.includes("find_tools") || fq.includes("routeros_search")) {
-    if (args && typeof args === "object") {
-      const rawQuery = String((args as Record<string, unknown>).query ?? (args as Record<string, unknown>).search ?? "").toLowerCase();
-      const normalizedQuery = rawQuery
-        .replace(/\b(print|detail|list|export|show|get)\b/g, "")
-        .replace(/[^a-z0-9_-]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-      return `${fq}\n${JSON.stringify({ query: normalizedQuery || rawQuery })}`;
-    }
-  }
-  try {
-    const sortObj = (val: unknown): unknown => {
-      if (val === null || typeof val !== "object") return val;
-      if (Array.isArray(val)) return val.map(sortObj);
-      const sorted: Record<string, unknown> = {};
-      for (const k of Object.keys(val as Record<string, unknown>).sort()) {
-        sorted[k] = sortObj((val as Record<string, unknown>)[k]);
-      }
-      return sorted;
-    };
-    return `${fq}\n${JSON.stringify(sortObj(args))}`;
-  } catch {
-    return `${fq}\n${JSON.stringify(args)}`;
-  }
-}
-
-/**
- * Alihkan discovery yang tidak perlu ke tool langsung: bila kueri find_tools
- * jelas cocok dengan tool non-discovery yang SUDAH ada di katalog run ini,
- * kembalikan daftar tool langsung tanpa eksekusi pencarian — menghemat
- * round-trip AI dan menuntun model memakai pembacaan langsung.
- */
-export function findDirectToolsForQuery(query: unknown, catalog: NormalizedTool[]): NormalizedTool[] {
-  const raw = String(query ?? "").toLowerCase();
-  const normalized = raw
-    .replace(/\b(print|detail|list|export|show|get)\b/g, "")
-    .replace(/[^a-z0-9_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!normalized) return [];
-  const tokens = normalized.split(" ").filter((w) => w.length >= 4);
-  const out: NormalizedTool[] = [];
-  for (const t of catalog) {
-    if (t.fqName.includes("find_tools") || t.fqName.includes("routeros_search")) continue;
-    const nameSpaced = t.rawName.toLowerCase().replace(/_/g, " ");
-    const nameFlat = t.rawName.toLowerCase().replace(/_/g, "");
-    const queryFlat = normalized.replace(/ /g, "");
-    if (nameSpaced.includes(normalized) || normalized.includes(nameSpaced) || nameFlat.includes(queryFlat) || queryFlat.includes(nameFlat)) {
-      out.push(t);
-      continue;
-    }
-    const hayTokens = new Set(`${t.rawName} ${(t.capabilities ?? []).join(" ")}`.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
-    if (tokens.some((tok) => hayTokens.has(tok))) out.push(t);
-  }
-  return out.slice(0, 5);
-}
+export { canonicalKey, findDirectToolsForQuery } from "./ranking-query";

@@ -2,7 +2,7 @@ import { queueTerminalCommand } from "./terminal/submit";
 import { executeTerminalCommand } from "./terminal/execute";
 import type { TerminalDeps } from "./terminal/types";
 
-export { routerKeyFor, tryAcquireRouter, releaseRouter, routerLockOwner } from "./terminal/locks";
+export { routerKeyFor, tryAcquireRouter, releaseRouter } from "./terminal/locks";
 export { openTerminalSession } from "./terminal/session";
 export type { TerminalDeps } from "./terminal/types";
 

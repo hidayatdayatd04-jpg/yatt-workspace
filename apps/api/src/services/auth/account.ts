@@ -6,19 +6,37 @@ import { AppError } from "../../lib/errors";
 import type { Logger } from "../../lib/logger";
 import { hashPassword, verifyPassword } from "./password";
 
-export const SEED_USERNAME = "mikrotik-agent";
-export const SEED_ALIAS = "mikrotikagent";
-export const SEED_PASSWORD = "mikrotik123";
-export const SEED_DISPLAY = "mikrotik-agent";
+export const SEED_USERNAME = "yatt-agent";
+export const SEED_ALIAS = "yattagent";
+export const SEED_PASSWORD = "yatt123";
+export const SEED_DISPLAY = "yatt-agent";
+
+// Username lama tetap bisa login pada instalasi yang sudah ada.
+const LEGACY_USERNAMES = ["mikrotik-agent", "mikrotikagent"];
 
 /** Idempotent seed: creates the requested local account once, never resets password. */
 export async function ensureSeedAccount(db: Database, logger?: Pick<Logger, "info" | "warn">): Promise<void> {
-  const existing = await db
+  const seeded = await db
     .select({ id: accounts.id })
     .from(accounts)
     .where(or(eq(accounts.username, SEED_USERNAME), eq(accounts.loginAlias, SEED_ALIAS)))
     .limit(1);
-  if (existing.length > 0) return;
+  if (seeded.length > 0) return;
+  // Migrasi sekali jalan dari brand lama: rename akun legacy ke identitas baru.
+  // Password tidak diubah, jadi user lama login dengan username baru + password lama.
+  const legacy = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(or(eq(accounts.username, LEGACY_USERNAMES[0]!), eq(accounts.loginAlias, LEGACY_USERNAMES[1]!)))
+    .limit(1);
+  if (legacy.length > 0) {
+    await db
+      .update(accounts)
+      .set({ username: SEED_USERNAME, loginAlias: SEED_ALIAS, displayName: SEED_DISPLAY, updatedAt: new Date() })
+      .where(eq(accounts.id, legacy[0]!.id));
+    logger?.info("seed account migrated", { from: LEGACY_USERNAMES[0], to: SEED_USERNAME });
+    return;
+  }
   // Ensure the legacy local workspace exists (migrations already insert it, but be defensive).
   try {
     await db.run(`INSERT OR IGNORE INTO workspaces (id, name) VALUES ('${LOCAL_WORKSPACE_ID}', 'Lokal')`);

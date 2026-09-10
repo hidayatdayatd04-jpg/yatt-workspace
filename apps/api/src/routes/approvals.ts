@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env as HonoEnv } from "../types";
 import { AppError } from "../lib/errors";
 import type { ApprovalService } from "../services/approval";
-import type { ToolExecutor } from "../agent/tool-executor";
+import type { ToolExecutor } from "../tools/mikrotik/executor";
 
 export function createApprovalRoutes(deps: { approvals: ApprovalService; executeTool: ToolExecutor }) {
   const app = new Hono<HonoEnv>();

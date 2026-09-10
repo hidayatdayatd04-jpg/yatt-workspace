@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useConnectors } from "../features/connectors/connector-hooks";
-import { useCreateConversation } from "../features/chat/chat-hooks";
+import { useCreateConversation, type AttachmentDTO } from "../features/chat/chat-hooks";
 import { ChatComposer } from "../features/chat/ChatComposer";
+import { apiForm } from "@/lib/api";
+import { usePendingFiles } from "./use-pending-files";
 
 export function NewChatView({
   draftKey,
@@ -27,6 +29,9 @@ export function NewChatView({
       return null;
     }
   });
+  const files = usePendingFiles();
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     try {
       sessionStorage.removeItem("pending-connector");
@@ -38,7 +43,7 @@ export function NewChatView({
   const selected =
     (pendingConnector !== null
       ? (connectors.data ?? []).find((c) => c.id === pendingConnector)
-      : ((connectors.data ?? []).find((c) => c.status === "connected") ?? connectors.data?.[0])) ??
+      : null) ??
     null;
 
   useEffect(() => {
@@ -50,57 +55,79 @@ export function NewChatView({
     }
   }, [text, draftKey]);
 
-  async function handleSend(message: string, attachmentIds: string[], model?: string, providerId?: string, reasoningEffort?: string) {
+  async function handleSend(message: string, model?: string, providerId?: string, reasoningEffort?: string) {
     const trimmed = message.trim();
-    if (!trimmed) return;
-    // Persist draft for returnTo flow before navigation.
+    if (!trimmed || createConversation.isPending || uploading) return;
     try {
       sessionStorage.setItem("composer-draft", "");
     } catch {
       /* ignore */
     }
-    const res = await createConversation.mutateAsync({ title: trimmed.slice(0, 40), connectionId: selected?.id ?? null });
-    // Uploads for new chat are handled inside ChatScreen after navigation; here we have no files yet.
-    void attachmentIds;
     try {
-      localStorage.removeItem(draftKey);
-    } catch {
-      /* ignore */
+      const res = await createConversation.mutateAsync({ title: trimmed.slice(0, 40), connectionId: selected?.id ?? null });
+      const uploadedIds: string[] = [];
+      if (files.pendingFiles.length > 0) {
+        setUploading(true);
+        try {
+          for (const file of files.pendingFiles) {
+            const form = new FormData();
+            form.append("file", file);
+            const uploaded = await apiForm<{ attachment: AttachmentDTO }>(`/api/attachments/${res.conversation.id}/files`, form);
+            uploadedIds.push(uploaded.attachment.id);
+          }
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Gagal mengunggah lampiran.");
+          setUploading(false);
+          onCreated(res.conversation.id);
+          return;
+        }
+        setUploading(false);
+        files.clear();
+      }
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        /* ignore */
+      }
+      try {
+        sessionStorage.setItem(`pending-prompt-${res.conversation.id}`, trimmed);
+        if (uploadedIds.length > 0) sessionStorage.setItem(`pending-attachments-${res.conversation.id}`, JSON.stringify(uploadedIds));
+        if (selected) sessionStorage.setItem("pending-connector", selected.id);
+        if (model) sessionStorage.setItem(`pending-model-${res.conversation.id}`, model);
+        if (providerId) sessionStorage.setItem(`pending-provider-${res.conversation.id}`, providerId);
+        if (reasoningEffort) sessionStorage.setItem(`pending-reasoning-${res.conversation.id}`, reasoningEffort);
+      } catch {
+        /* ignore */
+      }
+      onCreated(res.conversation.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal membuat chat.");
     }
-    // Store pending prompt to auto-send after navigation.
-    try {
-      sessionStorage.setItem(`pending-prompt-${res.conversation.id}`, trimmed);
-      if (selected) sessionStorage.setItem("pending-connector", selected.id);
-      if (model) sessionStorage.setItem(`pending-model-${res.conversation.id}`, model);
-      if (providerId) sessionStorage.setItem(`pending-provider-${res.conversation.id}`, providerId);
-      if (reasoningEffort) sessionStorage.setItem(`pending-reasoning-${res.conversation.id}`, reasoningEffort);
-    } catch {
-      /* ignore */
-    }
-    onCreated(res.conversation.id);
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-card p-2 shadow-sm ring-1 ring-border/80">
-          <img src="/logo.png" alt="MikroTik AI" className="size-full object-contain" />
+          <img src="/logo.png" alt="YATT Agent" className="size-full object-contain" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Apa yang ingin Anda kerjakan?</h1>
-        <div className="mt-8 w-full max-w-2xl">
+        <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">Tulis kode, olah file, cari informasi, atau bekerja dengan aplikasi yang Anda hubungkan.</p>
+        <div className="mt-8 w-full max-w-2xl text-left">
           <ChatComposer
-            running={createConversation.isPending}
+            running={createConversation.isPending || uploading}
             connector={selected}
             connectors={connectors.data ?? []}
             selectedConnectorId={selected?.id ?? null}
             onSelectConnector={setPendingConnector}
-            attachments={[]}
-            uploading={false}
+            attachments={files.attachments}
+            previewUrls={files.previewUrls}
+            uploading={uploading}
             externalText={text}
             onClearExternalText={() => setText("")}
-            onPickFile={() => toast.info("Lampirkan file setelah chat dibuat, atau via chat tersimpan.")}
-            onRemoveAttachment={() => {}}
-            onSend={(t, ids, m, p, r) => void handleSend(t, ids, m, p, r)}
+            onPickFile={files.pickFile}
+            onRemoveAttachment={files.removeAttachment}
+            onSend={(t, _ids, m, p, r) => void handleSend(t, m, p, r)}
             onCancel={() => {}}
             onAddRouter={() => {
               try {
@@ -110,7 +137,7 @@ export function NewChatView({
                 /* ignore */
               }
               const returnTo = window.location.pathname;
-              window.location.href = `/settings/connectors?add=1&returnTo=${encodeURIComponent(returnTo)}`;
+              window.location.href = `/connectors?add=1&returnTo=${encodeURIComponent(returnTo)}`;
             }}
             onCompact={() => toast.info("Buat chat dulu sebelum compact.")}
             draftKey={draftKey}

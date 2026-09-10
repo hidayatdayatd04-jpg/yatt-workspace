@@ -16,25 +16,6 @@ export interface StatsEnv {
   effectiveLimits: (input: { providerKind: string; modelKey: string; sharedKey?: string | null }) => EffectiveLimits;
 }
 
-export function usageOf(
-  env: StatsEnv,
-  modelKey: string,
-  sharedKey?: string | null,
-): { rpmUsed: number; rpmLimit: number; tpmUsed: number; tpmLimit: number; nextRetryAt: string | null } {
-  const now = env.now();
-  const limits = env.effectiveLimits({ providerKind: providerKindOf(modelKey), modelKey, sharedKey });
-  const bucket = env.buckets.bucketFor(`model:${modelKey}`);
-  env.buckets.prune(bucket, now);
-  const blocked = env.blocks.blockState(modelKey, sharedKey);
-  return {
-    rpmUsed: bucket.requests.length,
-    rpmLimit: limits.rpm,
-    tpmUsed: sumTokens(bucket),
-    tpmLimit: limits.tpm,
-    nextRetryAt: blocked.retryAt,
-  };
-}
-
 export function snapshotModels(env: StatsEnv, modelKeys?: string[]): ModelRateSnapshot[] {
   const now = env.now();
   const keys = modelKeys ?? [

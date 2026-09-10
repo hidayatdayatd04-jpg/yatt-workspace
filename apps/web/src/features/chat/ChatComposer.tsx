@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Send, Square } from "@/components/icons";
-import { toast } from "sonner";
+import { Send, Square, ShieldCheck } from "@/components/icons";
 import { useConnectors } from "@/features/connectors/connector-hooks";
 import { ContextMeter } from "./ContextMeter";
 import { useComposerModel } from "./composer/use-composer-model";
@@ -10,6 +9,7 @@ import { useComposerActions } from "./composer/use-composer-actions";
 import { useComposerReasoning } from "./composer/use-composer-reasoning";
 import { ReasoningPicker } from "./composer/ReasoningPicker";
 import { ComposerMenu } from "./composer/ComposerMenu";
+import { ComposerInput } from "./composer/ComposerInput";
 import { VoiceButton } from "./composer/VoiceButton";
 import { saveRecentPrompt } from "./composer/prompt-library";
 import { ModelPicker } from "./composer/ModelPicker";
@@ -59,73 +59,9 @@ export function ChatComposer(props: ChatComposerProps) {
   return (
     <div className={isDocked ? "border-t border-border/40 bg-background/80 backdrop-blur-md px-3 py-3 sm:px-6 sm:py-4" : "w-full"}>
       <div className={isDocked ? "mx-auto max-w-3xl" : "w-full"}>
-        <ComposerAttachments attachments={props.attachments} onRemoveAttachment={props.onRemoveAttachment} />
-
-        <div
-          className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border"
-          onDragOver={(e) => {
-            if (props.uploading || uploadDisabled) return;
-            e.preventDefault();
-          }}
-          onDrop={(e) => {
-            if (props.uploading || uploadDisabled) return;
-            const files = Array.from(e.dataTransfer.files ?? []);
-            if (files.length === 0) return;
-            e.preventDefault();
-            const room = Math.max(0, 4 - props.attachments.length);
-            files.slice(0, room).forEach((f) => props.onPickFile(f));
-            if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
-          }}
-        >
-          <input
-            ref={actions.fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            accept=".png,.jpg,.jpeg,.webp,.pdf,.txt,.csv,.log,.rsc"
-            onChange={(e) => {
-              const files = Array.from(e.target.files ?? []);
-              const room = Math.max(0, 4 - props.attachments.length);
-              files.slice(0, room).forEach((f) => props.onPickFile(f));
-              if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
-              e.target.value = "";
-            }}
-          />
-
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                e.preventDefault();
-                draft.submit();
-                return;
-              }
-              if (e.key === "Escape" && props.running) {
-                e.preventDefault();
-                props.onCancel();
-                return;
-              }
-              draft.onKeyDown(e);
-            }}
-            onPaste={(e) => {
-              const files = Array.from(e.clipboardData?.files ?? []);
-              if (files.length === 0 || props.uploading || uploadDisabled) return;
-              e.preventDefault();
-              const room = Math.max(0, 4 - props.attachments.length);
-              files.slice(0, room).forEach((f) => props.onPickFile(f));
-              if (files.length > room) toast.error("Maksimal 4 lampiran per pesan.");
-            }}
-            onCompositionStart={() => draft.setImeComposing(true)}
-            onCompositionEnd={() => draft.setImeComposing(false)}
-            placeholder="Tulis pesan…"
-            aria-label="Pesan untuk AI"
-            rows={1}
-            disabled={props.disabled}
-            className="max-h-44 min-h-[38px] w-full resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground/70 disabled:opacity-50"
-          />
-
+        <ComposerAttachments attachments={props.attachments} onRemoveAttachment={props.onRemoveAttachment} previewUrls={props.previewUrls} />
+        <div className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border">
+          <ComposerInput composer={props} draft={draft} actions={actions} uploadDisabled={uploadDisabled} text={text} setText={setText} textareaRef={textareaRef} />
           <div className="mt-1 flex items-center justify-between pt-1">
             <div className="flex items-center gap-1.5 flex-wrap">
               <ComposerMenu
@@ -135,16 +71,23 @@ export function ChatComposer(props: ChatComposerProps) {
                 selectedId={selectedId}
                 onSelectConnector={props.onSelectConnector}
                 onAddRouter={props.onAddRouter}
-                uploadDisabled={uploadDisabled}
-                onPickFile={actions.pickFile}
-                writeEnabled={writeEnabled}
-                onToggleWrite={actions.toggleWrite}
-                writeDisabled={!props.connector || props.connector.status !== "connected" || setMode.isPending || props.running}
-                onCompact={props.onCompact}
-                connector={props.connector}
+                onPickFile={(images) => { if (!uploadDisabled) actions.pickFile(images); }}
+                onAttachFile={props.onPickFile}
               />
+              {props.connector?.status === "connected" && (
+                <button
+                  type="button"
+                  onClick={() => actions.toggleWrite(!writeEnabled)}
+                  disabled={!props.connector || props.connector.status !== "connected" || setMode.isPending || props.running}
+                  className={`flex h-9 items-center gap-2 rounded-xl px-2.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${writeEnabled ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
+                  aria-label="Izinkan perubahan MikroTik"
+                  title={writeEnabled ? "Perubahan via Safe Mode aktif" : "Read-only — klik untuk izinkan perubahan"}
+                >
+                  <ShieldCheck className="size-4" />
+                  <span className="hidden sm:inline">{writeEnabled ? "Write" : "Read-only"}</span>
+                </button>
+              )}
             </div>
-
             <div className="flex items-center gap-1.5 sm:gap-2">
               <VoiceButton
                 onTranscript={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
@@ -176,8 +119,4 @@ export function ChatComposer(props: ChatComposerProps) {
       </div>
     </div>
   );
-}
-
-export function toastAttachmentError(msg: string) {
-  toast.error(msg);
 }

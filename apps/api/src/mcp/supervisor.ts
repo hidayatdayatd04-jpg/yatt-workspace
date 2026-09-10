@@ -93,23 +93,10 @@ export class McpSupervisor {
     this.logger.info(`mcp child stopped for ${key}`);
   }
 
-  getActive(userId: string): string[] {
-    return this.registry.getActive(userId);
-  }
-
-  async stopAllForUser(userId: string): Promise<void> {
-    const ids = this.getActive(userId);
-    for (const id of ids) await this.stop(userId, id);
-  }
-
   async shutdownAll(): Promise<void> {
     for (const key of [...this.registry.keys()]) {
       const [userId, connId] = key.split(":");
       if (userId && connId) await this.stop(userId, connId);
     }
-  }
-
-  count(): number {
-    return this.registry.count();
   }
 }

@@ -19,18 +19,6 @@ export function useApprovals(opts: { connectionId?: string; conversationId?: str
   });
 }
 
-export function useApproval(id: string | null) {
-  return useQuery({
-    queryKey: ["approvals", "detail", id],
-    enabled: Boolean(id),
-    queryFn: async () => {
-      if (!id) throw new Error("ID approval diperlukan");
-      const res = await apiFetch<{ approval: ApprovalDTO }>(`/api/approvals/${id}`);
-      return res.approval;
-    },
-  });
-}
-
 export function useCreateApproval() {
   const qc = useQueryClient();
   return useMutation({
@@ -58,20 +46,6 @@ export function useApproveRequest() {
   return useMutation({
     mutationFn: (id: string) =>
       apiFetch<{ approval: ApprovalDTO }>(`/api/approvals/${id}/approve`, { method: "POST" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["approvals"] });
-    },
-  });
-}
-
-export function useRejectRequest() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { id: string; reason?: string }) =>
-      apiFetch<{ approval: ApprovalDTO }>(`/api/approvals/${input.id}/reject`, {
-        method: "POST",
-        body: JSON.stringify({ reason: input.reason }),
-      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["approvals"] });
     },

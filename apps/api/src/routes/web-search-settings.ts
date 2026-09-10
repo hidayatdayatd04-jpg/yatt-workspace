@@ -5,7 +5,7 @@ import type { Env } from "../types";
 import { AppError } from "../lib/errors";
 import { requireWorkspace } from "../middleware/session";
 import type { WebSearchSettingsService } from "../agent/web-search-settings";
-import { verifyTavilyApiKey } from "../agent/web-search-tool";
+import { verifyTavilyApiKey } from "../tools/general/web-search";
 
 /**
  * Web Search (Tavily) settings: GET status / POST simpan (test-before-save) /

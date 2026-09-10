@@ -5,13 +5,19 @@ import type { ProviderConfigWithKey } from "../agent/provider-settings";
 import { createOpenAiCompatibleClient } from "../agent/chat-client";
 import { createAgentLoop } from "../agent/loop";
 import { RunEventHub } from "../agent/hub";
-import { createToolExecutor } from "../agent/tool-executor";
-import { executeWebSearchTool } from "../agent/web-search-tool";
+import { createToolExecutor } from "../tools/mikrotik/executor";
+import { executeWebSearchTool } from "../tools/general/web-search";
 import { createWebSearchSettingsService } from "../agent/web-search-settings";
 import { createVisionSettingsService } from "../agent/vision-settings";
 import { globalCheckpoints, globalRateLimiter } from "../agent/rate-limiter";
 import { parseRateLimitOverrides } from "../lib/config";
 import { createFallbackChatClient, type FallbackCandidate } from "../agent/model-fallback";
+import { createIntegrationService } from "../services/integrations";
+import { createAgentToolRegistry } from "../tools/registry";
+import { storage } from "./storage";
+
+export const integrationService = createIntegrationService({ db, keyRing });
+export const agentTools = createAgentToolRegistry({ db, integrations: integrationService, connectors, supervisor, transactions: txCoordinator, dataDir: config.DATA_DIR, shellAvailable: config.AGENT_SHELL_ENABLED, readObject: async (key) => (await storage.get(key)).body });
 
 // M7: AI provider (multi-provider OpenAI-compatible; Gemini/OpenRouter/custom
 // per user; mock deterministik bila belum dikonfigurasi).
@@ -83,6 +89,7 @@ export const executeWebSearchToolBound = (input: { userId: string; args: unknown
 export const hub = new RunEventHub();
 
 export const agentLoop = createAgentLoop({
+  agentTools,
   db,
   logger,
   dispatcher,

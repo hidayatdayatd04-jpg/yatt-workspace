@@ -41,7 +41,6 @@ export function useProviderList() {
   const customProviders = aiProviders.data?.filter((p) => !DEFAULT_PROVIDER_TEMPLATES.some((tmpl) => tmpl.id === p.id)) ?? [];
 
   const allDisplayProviders = [...standardProviders, ...customProviders];
-  const anyHasKey = allDisplayProviders.some((p) => p.hasKey);
 
   function handleOpenEdit(provider: EditingProvider, isNew = false) {
     setEditingProvider(provider);
@@ -74,7 +73,6 @@ export function useProviderList() {
     editingProvider,
     isNewCustom,
     allDisplayProviders,
-    anyHasKey,
     handleOpenEdit,
     handleToggle,
   };

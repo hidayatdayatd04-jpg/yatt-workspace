@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/lib/api";
-import type { MessageDTO, RunEventDTO, AttachmentDTO, StartRunResult, StartRunInput } from "./types";
+import type { MessageDTO, AttachmentDTO, StartRunResult, StartRunInput } from "./types";
 
 export function useMessages(conversationId: string | null, pollInterval?: number | false) {
   return useQuery({
@@ -32,17 +32,6 @@ export function useStartRun(conversationId: string) {
 export function useCancelRun() {
   return useMutation({
     mutationFn: (runId: string) => apiFetch<{ ok: boolean }>(`/api/runs/${runId}/cancel`, { method: "POST" }),
-  });
-}
-
-export function useRunSnapshot(runId: string | null) {
-  return useQuery({
-    queryKey: ["run", runId],
-    enabled: !!runId,
-    queryFn: async () => {
-      const res = await apiFetch<{ run: { id: string; status: string; usage: unknown }; events: RunEventDTO[] }>(`/api/runs/${runId}`);
-      return res;
-    },
   });
 }
 

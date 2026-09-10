@@ -67,7 +67,7 @@ export function handleStepFinish(
         role: "user",
         content:
           "[Sistem: Anda baru menulis rencana TANPA memanggil tool. Panggil SEKARANG tool yang relevan — " +
-          "tool router bila soal router pengguna, atau tool pencarian web bila ini riset internet. Jangan hanya berbicara.]",
+          "pilih tools coding/file, connector aplikasi, router, atau pencarian web sesuai tugas dan izin yang tersedia. Jangan hanya berbicara.]",
       });
       return { action: "next" };
     }

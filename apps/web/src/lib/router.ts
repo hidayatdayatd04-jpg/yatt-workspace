@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export type Route =
   | { name: "login" }
   | { name: "chat-new" }
+  | { name: "connectors" }
   | { name: "chat"; id: string }
   | { name: "network-map"; id?: string }
   | { name: "monitoring"; id?: string }
@@ -12,6 +13,8 @@ export type Route =
 
 const SETTINGS_SECTIONS = new Set([
   "connectors",
+  "memory",
+  "monitoring",
   "providers",
   "web-search",
   "profile",
@@ -26,6 +29,7 @@ const SETTINGS_SECTIONS = new Set([
 export function parsePath(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/login") return { name: "login" };
+  if (path === "/connectors" || path === "/settings/connectors") return { name: "connectors" };
   if (path === "/network-map") return { name: "network-map" };
   const mapMatch = path.match(/^\/network-map\/([^/]+)$/);
   if (mapMatch) return { name: "network-map", id: decodeURIComponent(mapMatch[1]!) };
@@ -43,7 +47,7 @@ export function parsePath(pathname: string): Route {
   if (path === "/chat" || path === "/") return { name: "chat-new" };
   const chatMatch = path.match(/^\/chat\/([^/]+)$/);
   if (chatMatch) return { name: "chat", id: decodeURIComponent(chatMatch[1]!) };
-  if (path === "/settings") return { name: "settings", section: "connectors" };
+  if (path === "/settings") return { name: "settings", section: "providers" };
   const setMatch = path.match(/^\/settings\/([^/]+)$/);
   if (setMatch) {
     const section = setMatch[1]!;
@@ -56,6 +60,8 @@ export function routePath(route: Route): string {
   switch (route.name) {
     case "login":
       return "/login";
+    case "connectors":
+      return "/connectors";
     case "chat-new":
       return "/chat";
     case "chat":
@@ -89,8 +95,4 @@ export function useRoute(): Route {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   return route;
-}
-
-export function useNavigate() {
-  return useCallback((route: Route, opts?: { replace?: boolean }) => navigate(route, opts), []);
 }

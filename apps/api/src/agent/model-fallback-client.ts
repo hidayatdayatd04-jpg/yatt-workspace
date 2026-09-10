@@ -95,10 +95,7 @@ export function createFallbackChatClient(
           continue;
         }
         try {
-          let sawUsage = false;
           for await (const ev of client.stream(input)) {
-            if (ev.type === "usage") sawUsage = true;
-            void sawUsage;
             yield ev;
           }
           // Sukses: catat model aktif + alasan fallback (bila pindah model).
@@ -106,8 +103,6 @@ export function createFallbackChatClient(
           if (key !== primaryKey) {
             lastFallbackReason = `Fallback ${primaryKey} → ${key}: primer tidak tersedia saat request.`;
             limiter.setFallbackReason(primaryKey, lastFallbackReason);
-          } else if (lastFallbackReason === null) {
-            // tetap primer, tidak ada fallback
           }
           (this as { modelLabel?: string }).modelLabel = `${cand.providerKind}:${cand.model}`;
           return;

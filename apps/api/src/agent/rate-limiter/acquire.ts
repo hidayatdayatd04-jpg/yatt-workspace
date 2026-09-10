@@ -35,11 +35,6 @@ export class QueueTracker {
       else this.queueByModel.set(modelKey, q);
     };
   }
-
-  reset(): void {
-    this.queueByModel.clear();
-    this.globalQueue = 0;
-  }
 }
 
 export interface AcquireEnv {

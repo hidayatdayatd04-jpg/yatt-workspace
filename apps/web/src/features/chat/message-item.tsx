@@ -35,7 +35,7 @@ export function MessageItem(props: {
     <div key={m.id} className={`group flex gap-3 animate-in fade-in duration-200 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
         <div className="flex size-9 shrink-0 select-none items-center justify-center rounded-xl overflow-hidden ring-1 ring-cyan-500/30 bg-card shadow-xs">
-          <img src="/logo.png" alt="MikroTik AI" className="size-full object-contain p-0.5" />
+          <img src="/logo.png" alt="YATT Agent" className="size-full object-contain p-0.5" />
         </div>
       )}
 

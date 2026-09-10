@@ -15,10 +15,6 @@
 export const REASONING_EFFORTS = ["low", "medium", "high"] as const;
 export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
-/** Nilai yang boleh dikirim dari UI/API (termasuk "off" = tanpa reasoning). */
-export const RUN_REASONING_VALUES = ["off", ...REASONING_EFFORTS] as const;
-export type RunReasoningValue = (typeof RUN_REASONING_VALUES)[number];
-
 /**
  * Pola nama model yang mendukung reasoning / thinking.
  * Dicocokkan case-insensitive terhadap model id.

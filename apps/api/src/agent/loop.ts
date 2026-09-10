@@ -10,8 +10,8 @@ import type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
 
 export type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
 export { MAX_TOOL_RESULT_CHARS } from "./loop/types";
-export { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL, readConnectionStatus } from "./loop/connection";
-export type { ConnectionLiveStatus } from "./loop/connection";
+export { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL, readConnectionStatus } from "../tools/mikrotik/status";
+export type { ConnectionLiveStatus } from "../tools/mikrotik/status";
 export {
   MAX_PROVIDER_TOOLS,
   MAX_PROVIDER_SCHEMA_CHARS,
@@ -69,6 +69,7 @@ export function createAgentLoop(deps: AgentRunDeps) {
 
       const { chatHistory } = await assembleHistory(deps.db, input);
       const { greetingOnly, catalog, providerTools } = await buildRunCatalog(deps.catalog, input);
+      let catalogTarget = `${input.connectionId}:${input.policy.mode}`;
       const toolCallCount = new Map<string, number>(); // dedup tool call ids
       // Guard anti-loop: tool sama + argumen identik yang diulang tanpa
       // kemajuan → pakai cache / hentikan run (hemat kuota + eksekusi).
@@ -78,6 +79,8 @@ export function createAgentLoop(deps: AgentRunDeps) {
       const toolDeadlineBufferMs = deps.limits.runTimeoutMs >= 10_000 ? 2_000 : 0;
 
       const stepEnv = {
+        agentTools: deps.agentTools,
+        toolSignal: AbortSignal.any([entry.controller.signal, AbortSignal.timeout(Math.max(1, deadline - Date.now()))]),
         db: deps.db,
         client: input.client,
         maxTokens: deps.limits.maxTokens,
@@ -92,6 +95,12 @@ export function createAgentLoop(deps: AgentRunDeps) {
         runTimeoutMs: deps.limits.runTimeoutMs,
       };
       for (let step = 0; step < deps.limits.maxSteps; step++) {
+        if (catalogTarget !== `${input.connectionId}:${input.policy.mode}`) {
+          const refreshed = await buildRunCatalog(deps.catalog, input);
+          catalog.splice(0, catalog.length, ...refreshed.catalog);
+          providerTools.splice(0, providerTools.length, ...refreshed.providerTools);
+          catalogTarget = `${input.connectionId}:${input.policy.mode}`;
+        }
         if (cancelledNow()) {
           counters.finalStatus = "cancelled";
           break;

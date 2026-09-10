@@ -25,7 +25,7 @@ export function makeSpawnPlan(bunExecutable: string): (spec: ConnectionSpec) => 
     };
     if (spec.password) env.MIKROTIK_PASSWORD = spec.password;
     if (spec.readOnly) env.MIKROTIK_READ_ONLY = "1";
-    const cwd = resolve(tmpdir(), "agent-mikrotik-mcp", spec.userId, spec.connectionId);
+    const cwd = resolve(tmpdir(), "yatt-agent-mcp", spec.userId, spec.connectionId);
     mkdirSync(cwd, { recursive: true });
     return { command: bunExecutable, args, env, cwd };
   };

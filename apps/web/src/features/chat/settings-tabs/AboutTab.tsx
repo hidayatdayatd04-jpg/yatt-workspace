@@ -9,8 +9,8 @@ export function AboutTab() {
             <Cpu className="size-5" />
           </div>
           <div>
-            <h2 className="text-base font-semibold">MikroTik AI Agent</h2>
-            <p className="text-xs text-muted-foreground">Autonomous Network Operations Copilot untuk RouterOS v6 & v7.</p>
+            <h2 className="text-base font-semibold">YATT Agent</h2>
+            <p className="text-xs text-muted-foreground">AI agent lokal serba bisa: coding, file, riset, aplikasi, dan RouterOS v6 & v7.</p>
           </div>
         </div>
 

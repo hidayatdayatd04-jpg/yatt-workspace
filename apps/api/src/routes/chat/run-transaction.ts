@@ -1,5 +1,5 @@
 import { redactText } from "../../lib/redaction";
-import type { OwnedConnection } from "../../agent/tool-executor";
+import type { OwnedConnection } from "../../tools/mikrotik/executor";
 import type { ChatRouteDeps } from "./types";
 
 /** State transaksi lazy + koneksi yang dibagi executor, ensureTransaction, dan settle. */

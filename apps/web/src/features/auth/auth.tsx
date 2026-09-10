@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { apiFetch, ApiError } from "@/lib/api";
 import { navigate } from "@/lib/router";
 
@@ -128,13 +128,4 @@ export function useAuth(): AuthState {
   const ctx = useContext(AuthCtx);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
-
-export function useProfile() {
-  return useQuery({
-    queryKey: ["auth-me"],
-    queryFn: fetchMe,
-    retry: false,
-    staleTime: 60_000,
-  });
 }

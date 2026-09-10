@@ -32,8 +32,6 @@ export function registerRateLimitRoutes(routes: Hono<Env>, ctx: AiProviderRouteC
     for (const p of list) {
       for (const [model, st] of Object.entries(p.modelLimits ?? {})) {
         const key = `${p.kind}:${model}`;
-        const s = st as { requestsLimit?: number | null };
-        void s;
         const typed = st as unknown as Record<string, unknown>;
         const dailyLimit = typeof typed.dailyLimit === "number" ? (typed.dailyLimit as number) : null;
         const dailyRemaining = typeof typed.dailyRemaining === "number" ? (typed.dailyRemaining as number) : null;

@@ -14,7 +14,3 @@ export function tryAcquireRouter(key: string, owner: string): boolean {
 export function releaseRouter(key: string, owner: string): void {
   if (routerLocks.get(key) === owner) routerLocks.delete(key);
 }
-
-export function routerLockOwner(key: string): string | null {
-  return routerLocks.get(key) ?? null;
-}

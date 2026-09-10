@@ -46,7 +46,7 @@ export class RosettaProcess {
         stderr.push(chunk.toString().slice(-2000));
         if (stderr.length > 10) stderr.shift();
       });
-      const client = new Client({ name: "agent-mikrotik-backend", version: "0.1.0" });
+      const client = new Client({ name: "yatt-agent-backend", version: "0.1.0" });
       client.onclose = () => {
         if (this.client === client) this.client = null;
       };

@@ -62,18 +62,6 @@ export class BlockRegistry {
     this.fallbackReasons.set(input.modelKey, `Kuota harian habis: ${input.reason}`);
   }
 
-  unblockModel(modelKey: string): void {
-    this.blocked.delete(`model:${modelKey}`);
-    this.fallbackReasons.delete(modelKey);
-  }
-
-  clearExpiredBlocks(): void {
-    const now = this.now();
-    for (const [k, info] of this.blocked.entries()) {
-      if (info.until <= now) this.blocked.delete(k);
-    }
-  }
-
   notifySuccess(modelKey: string): void {
     // Sukses menghapus penanda fallback sementara (bukan RPD/history).
     if (this.fallbackReasons.get(modelKey)?.startsWith("Rate limit sementara")) {
@@ -83,10 +71,6 @@ export class BlockRegistry {
 
   setFallbackReason(modelKey: string, reason: string): void {
     this.fallbackReasons.set(modelKey, reason);
-  }
-
-  getFallbackReason(modelKey: string): string | null {
-    return this.fallbackReasons.get(modelKey) ?? null;
   }
 
   setRpdStatus(modelKey: string, rpd: RpdStatus): void {
@@ -116,11 +100,5 @@ export class BlockRegistry {
 
   fallbackReasonOf(modelKey: string): string | null {
     return this.fallbackReasons.get(modelKey) ?? null;
-  }
-
-  reset(): void {
-    this.blocked.clear();
-    this.fallbackReasons.clear();
-    this.rpdByModel.clear();
   }
 }

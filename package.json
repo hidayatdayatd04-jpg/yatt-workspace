@@ -1,5 +1,5 @@
 {
-  "name": "mikrotik-agent",
+  "name": "yatt-agent",
   "type": "module",
   "workspaces": [
     "apps/*",
@@ -10,7 +10,8 @@
     "build": "bun run --cwd apps/web build && bun tooling/build.ts",
     "typecheck": "tsc -b tsconfig.json",
     "lint": "eslint .",
-    "start": "bun bin/mikrotik-agent.js run",
+    "test": "bun run --cwd apps/api test",
+    "start": "bun bin/yatt-agent.js run",
     "prepack": "bun run build"
   },
   "devDependencies": {
@@ -21,9 +22,10 @@
     "typescript-eslint": "8"
   },
   "version": "0.1.0",
-  "description": "Local MikroTik AI agent with a web UI and API powered by Bun",
+  "description": "YATT Agent — local AI agent for coding, files, research, app integrations and MikroTik management, powered by Bun",
   "bin": {
-    "mikrotik-agent": "bin/mikrotik-agent.js"
+    "yatt-agent": "bin/yatt-agent.js",
+    "mikrotik-agent": "bin/yatt-agent.js"
   },
   "files": [
     "bin/",

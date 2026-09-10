@@ -52,21 +52,6 @@ export function useToggleAiProvider() {
   });
 }
 
-export function useSetActiveModel() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, model }: { id: string; model: string }) =>
-      apiFetch<{ provider: AiProviderDTO }>(`/api/ai-provider/${id}/active-model`, {
-        method: "PATCH",
-        body: JSON.stringify({ model }),
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ai-providers"] });
-      qc.invalidateQueries({ queryKey: ["ai-provider"] });
-    },
-  });
-}
-
 export function useDeleteAiProvider() {
   const qc = useQueryClient();
   return useMutation({

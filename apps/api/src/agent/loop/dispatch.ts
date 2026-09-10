@@ -10,6 +10,8 @@ import { policyDenialGuidance } from "./guidance";
 import type { StartRunInput } from "./types";
 
 export interface ToolEnv {
+  agentTools?: import("../../tools/registry").AgentToolRegistry;
+  toolSignal?: AbortSignal;
   db: Database;
   dispatcher: PolicyDispatcher;
 }
@@ -34,7 +36,12 @@ export async function dispatchToolCall(
 ): Promise<DispatchOutcome> {
   // Deferred transaction opening: only open Safe Mode when a mutation tool is dispatched
   const toolInCatalog = catalog.find((t) => t.fqName === fqName);
-  if (input.policy.mode === "write" && input.policy.transactionState !== "active" && toolInCatalog && toolInCatalog.risk !== "read" && input.ensureTransaction) {
+  // General/integration tools use their own live permission checks in the registry.
+  // They never enter the MikroTik transaction dispatcher.
+  if (toolInCatalog && env.agentTools?.has(fqName)) return { allowed: true, tool: toolInCatalog };
+  const isRouterTool = !fqName.startsWith("docs:") && !fqName.startsWith("web:");
+  const routerDisabled = isRouterTool && (input.mikrotikEnabled === false || input.canUseMikrotik && !(await input.canUseMikrotik()));
+  if (!routerDisabled && input.policy.mode === "write" && input.policy.transactionState !== "active" && toolInCatalog && toolInCatalog.risk !== "read" && input.ensureTransaction) {
     const txRes = await input.ensureTransaction();
     if (txRes.ok && txRes.transactionId) {
       input.policy.transactionState = "active";
@@ -47,6 +54,7 @@ export async function dispatchToolCall(
 
   let decision: Awaited<ReturnType<PolicyDispatcher["check"]>>;
   try {
+    if (routerDisabled) throw new AppError("FORBIDDEN", "MikroTik Server nonaktif. Aktifkan melalui menu chat atau Connectors.", 403);
     decision = await env.dispatcher.check({
       workspace: { userId: input.userId },
       snapshot: { ...input.policy },

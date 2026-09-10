@@ -1,6 +1,7 @@
-import { SettingsPage } from "@/features/chat/SettingsPage";
+import { ProviderTab } from "@/features/chat/settings-tabs/ProviderTab";
+import { useProviderList } from "@/features/chat/settings-tabs/use-provider-list";
 
 export function ProvidersSection() {
-  // Reuse existing provider settings UI (business component) inside settings shell.
-  return <SettingsPage initialTab="provider" />;
+  const page = useProviderList();
+  return <ProviderTab page={page} />;
 }

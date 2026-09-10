@@ -31,18 +31,3 @@ export function redactObject<T>(value: T): T {
   };
   return visit(value, 0) as T;
 }
-
-export function redactUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.password) u.password = REDACTED;
-    if (u.searchParams.has("signature") || u.searchParams.has("X-Amz-Signature")) {
-      for (const p of ["signature", "X-Amz-Signature", "X-Amz-Credential", "X-Amz-Security-Token"]) {
-        if (u.searchParams.has(p)) u.searchParams.set(p, REDACTED);
-      }
-    }
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
