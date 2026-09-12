@@ -46,14 +46,6 @@ export function useGoogleAuthUrl() {
   });
 }
 
-export function useDisconnectGoogle() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => apiFetch<{ ok: boolean }>("/api/integrations/google", { method: "DELETE" }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["integrations"] }); qc.invalidateQueries({ queryKey: ["google-account"] }); },
-  });
-}
-
 export function useDisconnectService() {
   const qc = useQueryClient();
   return useMutation({

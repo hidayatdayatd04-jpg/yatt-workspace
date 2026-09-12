@@ -30,35 +30,7 @@
  *   - Read-only guarantee (#8): modul ini tidak menyentuh policy mode/tools.
  */
 
-export {
-  DEFAULT_GLOBAL_RPM,
-  DEFAULT_GLOBAL_TPM,
-  RATE_WINDOW_MS,
-  MAX_QUEUE_DEFAULT,
-  MAX_WAIT_MS_DEFAULT,
-  MAX_429_RETRIES_DEFAULT,
-} from "./rate-limiter/types";
-export type {
-  ProviderKindLabel,
-  RateLimitOverride,
-  EffectiveLimits,
-  LimiterOptions,
-  AcquireInput,
-  AcquireTicket,
-  BlockInfo,
-  ModelRateSnapshot,
-} from "./rate-limiter/types";
-export {
-  sharedKeyForApiKey,
-  modelKeyFor,
-  estimateTokensFromChars,
-  estimateRequestTokens,
-  computeBackoffWithJitter,
-  parseRetryAfterMs,
-  classifyQuotaError,
-  nextMidnightUtcMs,
-} from "./rate-limiter/estimate";
-export type { QuotaKind } from "./rate-limiter/estimate";
+export { sharedKeyForApiKey, modelKeyFor, estimateRequestTokens, computeBackoffWithJitter, parseRetryAfterMs, classifyQuotaError, nextMidnightUtcMs } from "./rate-limiter/estimate";
+
 export { CentralRateLimiter, globalRateLimiter } from "./rate-limiter/core";
 export { CheckpointStore, globalCheckpoints } from "./rate-limiter/checkpoints";
-export type { TaskCheckpoint } from "./rate-limiter/checkpoints";

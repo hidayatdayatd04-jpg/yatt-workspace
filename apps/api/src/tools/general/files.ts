@@ -1,32 +1,14 @@
 import type { StartRunInput } from "../../agent/loop/types";
 import { readFileContent, type DescribeImage } from "../../services/file-extract/read";
 import { createHash } from "node:crypto";
-import { mkdir, lstat, readdir, readFile, realpath, writeFile } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep } from "node:path";
-import { unzipSync } from "fflate";
+import { mkdir, lstat, readdir, readFile, writeFile } from "node:fs/promises";
+import { createZipExtractionTool } from "./zip-extract";
+import { workspacePath, workspaceRoot } from "./file-paths";
+export { workspacePath, workspaceRoot } from "./file-paths";
 import { z } from "zod";
 import { defineTool, objectSchema, stringField } from "../types";
 
 const pathSchema = z.string().min(1).max(1000);
-export async function workspaceRoot(baseDir: string, userId: string) {
-  const root = resolve(baseDir, "workspaces", createHash("sha256").update(userId).digest("hex"));
-  await mkdir(root, { recursive: true });
-  return realpath(root);
-}
-/** Reject traversal and links (including Windows junctions) for every existing path component. */
-export async function workspacePath(root: string, path: string) {
-  if (isAbsolute(path) || /[:\x00]/.test(path)) throw new Error("Gunakan path relatif di workspace.");
-  const destination = resolve(root, path);
-  const rel = relative(root, destination);
-  if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error("Path di luar workspace ditolak.");
-  let part = root;
-  for (const segment of rel.split(sep).filter(Boolean)) {
-    part = resolve(part, segment);
-    const stat = await lstat(part).catch((err: NodeJS.ErrnoException) => { if (err.code === "ENOENT") return null; throw err; });
-    if (stat?.isSymbolicLink()) throw new Error("Symlink dan junction tidak boleh diakses oleh tools file.");
-  }
-  return destination;
-}
 export function createFileTools(baseDir: string, describeImage?: (image: Parameters<DescribeImage>[0], run: StartRunInput) => Promise<string>) {
   const target = async (userId: string, path: string) => workspacePath(await workspaceRoot(baseDir, userId), path);
   return [
@@ -38,7 +20,7 @@ export function createFileTools(baseDir: string, describeImage?: (image: Paramet
         if ((await lstat(file)).size > 25_000_000) throw new Error("File terlalu besar untuk dibaca (maksimal 25 MB).");
         return { path: args.path, ...await readFileContent({ name: args.path, bytes: await readFile(file), offset: args.offset, entryPath: args.entryPath, page: args.page, describeImage: describeImage ? (image) => describeImage(image, run) : undefined }) };
       } }),
-    defineTool({ name: "general:write_file", connector: "workspace", permission: "write", description: "Buat atau edit file kode/teks. Untuk menimpa file wajib expectedHash dari read_file agar perubahan lain tidak hilang.", schema: z.object({ path: pathSchema, content: z.string().max(200_000), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict(), parameters: objectSchema({ path: stringField, content: stringField, expectedHash: stringField }, ["path", "content"]),
+    defineTool({ name: "general:write_file", connector: "workspace", permission: "write", description: "Buat atau timpa file kode/teks. Baca dulu via general:read_file bila butuh konteks; expectedHash (sha256 dari read_file) opsional untuk mencegah menimpa perubahan terbaru.", schema: z.object({ path: pathSchema, content: z.string().max(200_000), expectedHash: z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict(), parameters: objectSchema({ path: stringField, content: stringField, expectedHash: stringField }, ["path", "content"]),
       execute: async (args, run) => {
         const file = await target(run.userId, args.path);
         if (args.expectedHash) {
@@ -47,29 +29,9 @@ export function createFileTools(baseDir: string, describeImage?: (image: Paramet
         }
         const { dirname } = await import("node:path");
         await mkdir(dirname(file), { recursive: true });
-        await writeFile(file, args.content, { flag: args.expectedHash ? "w" : "wx" });
+        await writeFile(file, args.content, { flag: "w" });
         return { path: args.path, bytes: Buffer.byteLength(args.content), sha256: createHash("sha256").update(args.content).digest("hex"), downloadUrl: `/api/workspace/download?path=${encodeURIComponent(args.path)}` };
       } }),
-    defineTool({ name: "general:extract_zip", connector: "workspace", permission: "write", description: "Ekstrak arsip ZIP di workspace ke folder baru. Menolak path traversal, symlink, overwrite, dan arsip terlalu besar.", schema: z.object({ path: pathSchema, destination: pathSchema }).strict(), parameters: objectSchema({ path: stringField, destination: stringField }, ["path", "destination"]),
-      execute: async (args, run) => {
-        const file = await target(run.userId, args.path);
-        if ((await lstat(file)).size > 25_000_000) throw new Error("ZIP maksimal 25 MB.");
-        let count = 0, total = 0;
-        const entries = unzipSync(await readFile(file), { filter: (entry) => {
-          count++; total += entry.originalSize;
-          if (count > 500 || total > 25_000_000 || entry.originalSize > 5_000_000) throw new Error("Batas ekstraksi ZIP terlampaui.");
-          return true;
-        } });
-        const destination = await target(run.userId, args.destination);
-        // Validate the entire archive before writing any entry. ZIP entries are always materialized as regular files.
-        const paths = await Promise.all(Object.entries(entries).map(async ([name, bytes]) => ({ name, bytes, file: await workspacePath(destination, name.replaceAll("\\", "/")) })));
-        await mkdir(destination, { recursive: false });
-        const { dirname } = await import("node:path");
-        for (const item of paths) {
-          if (item.name.endsWith("/")) await mkdir(item.file, { recursive: true });
-          else { await mkdir(dirname(item.file), { recursive: true }); await writeFile(item.file, item.bytes, { flag: "wx" }); }
-        }
-        return { destination: args.destination, files: paths.length, bytes: total };
-      } }),
+    createZipExtractionTool(baseDir),
   ];
 }

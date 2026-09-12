@@ -68,12 +68,3 @@ export function fetchVisionModels(input: { providerId?: string; kind: string; ba
     method: "POST", body: JSON.stringify(input),
   });
 }
-export function useActiveVisionModel() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, model }: { id: string; model: string }) => apiFetch(`/api/vision-settings/${encodeURIComponent(id)}/active-model`, {
-      method: "PATCH", body: JSON.stringify({ model }),
-    }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["vision-providers"] }); },
-  });
-}

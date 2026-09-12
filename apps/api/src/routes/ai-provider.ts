@@ -4,8 +4,6 @@ import { registerProviderRoutes } from "./ai-provider/providers";
 import { registerRateLimitRoutes } from "./ai-provider/rate-limits";
 import type { AiProviderRouteCtx, AiProviderRouteDeps } from "./ai-provider/ctx";
 
-export type { AiProviderRouteDeps };
-
 /**
  * AI provider settings + model auto-fetch (Multi-Provider with isolation).
  * The API key is submitted to save or transiently to fetch models — it is never

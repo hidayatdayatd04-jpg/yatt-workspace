@@ -25,6 +25,9 @@ export function createIntegrationRoutes(service: IntegrationService, shellAvaila
       if (selected === "telegram") await telegramRequest(service, userId, "getMe");
       else if (selected === "google") await googleRequest(service, userId, "google", "/oauth2/v2/userinfo?fields=email");
       else if (selected === "calendar") await googleRequest(service, userId, "calendar", "/calendar/v3/users/me/calendarList?maxResults=1&fields=items(id)");
+      else if (selected === "docs") await googleRequest(service, userId, "docs", "/v1/documents?fields=documents(documentId)&pageSize=1");
+      else if (selected === "sheets") await googleRequest(service, userId, "sheets", "/v4/spreadsheets?fields=spreadsheetId&pageSize=1");
+      else if (selected === "slides") await googleRequest(service, userId, "slides", "/v1/presentations?fields=presentationId&pageSize=1");
       else await googleRequest(service, userId, selected, selected === "drive" ? "/drive/v3/about?fields=user(displayName)" : "/gmail/v1/users/me/profile");
       await service.markChecked(userId, selected, null);
     } catch {

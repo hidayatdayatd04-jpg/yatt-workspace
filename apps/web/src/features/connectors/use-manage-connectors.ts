@@ -23,7 +23,8 @@ export function useManageConnectors(props: { initialSelected?: VisibleKind | nul
     if (flag === "connected") {
       const email = params.get("email");
       const service = params.get("service");
-      const sName = service === "drive" ? "Google Drive" : service === "gmail" ? "Gmail" : service === "calendar" ? "Google Calendar" : "Akun Google";
+      const sName = service === "drive" ? "Google Drive" : service === "gmail" ? "Gmail" : service === "calendar" ? "Google Calendar"
+        : service === "docs" ? "Google Docs" : service === "sheets" ? "Google Sheets" : service === "slides" ? "Google Slides" : "Akun Google";
       toast.success(email ? `${sName} (${email}) berhasil terhubung.` : `${sName} berhasil terhubung.`);
       void data.refetch();
       void googleAccount.refetch();

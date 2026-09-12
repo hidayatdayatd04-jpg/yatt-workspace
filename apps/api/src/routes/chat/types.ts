@@ -82,10 +82,12 @@ export const RunSchema = z.object({
   model: z.string().max(255).optional(),
   providerId: z.string().max(128).optional(),
   /**
-   * Upaya penalaran pilihan pengguna (hanya dikirim bila model mendukung;
-   * backend mengabaikan nilai untuk model tanpa dukungan reasoning).
+   * Upaya penalaran pilihan pengguna. "off" = pengguna sengaja mematikan
+   * penalaran (beda dari tidak dikirim = default server "medium" untuk model
+   * yang mendukung). Backend mengabaikan nilai untuk model tanpa dukungan
+   * reasoning.
    */
-  reasoningEffort: z.enum(["low", "medium", "high"]).optional(),
+  reasoningEffort: z.enum(["low", "medium", "high", "off"]).optional(),
   /**
    * Retry in-place: id pesan user yang teksnya diperbarui lalu dipakai ulang
    * sebagai pemicu run (tanpa menambah pesan user baru). Pesan-pesan di

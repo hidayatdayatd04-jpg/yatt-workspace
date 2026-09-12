@@ -4,17 +4,8 @@ import { getSavedKey, getWithKey, resolveForRun } from "./provider-settings-keys
 import { saveProvider } from "./provider-settings-save";
 import type { ProviderSettingsCtx, ProviderSettingsDeps, SaveProviderInput } from "./provider-settings-types";
 
-export { PROVIDER_KINDS } from "./provider-settings-types";
-export type {
-  AiProviderPublicDTO,
-  ProviderConfig,
-  ProviderConfigWithKey,
-  ProviderFallbackCandidate,
-  ProviderKind,
-  ProviderSettingsDeps,
-  SaveProviderInput,
-} from "./provider-settings-types";
-export { defaultBaseUrl, defaultProviderName } from "./provider-settings-helpers";
+export type { ProviderConfigWithKey, ProviderKind } from "./provider-settings-types";
+export { defaultBaseUrl } from "./provider-settings-helpers";
 
 /**
  * Per-user AI provider settings (multi-provider with isolated databases & keys):

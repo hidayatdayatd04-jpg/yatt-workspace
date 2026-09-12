@@ -6,12 +6,7 @@ import { reconcileOrphans, reconcileTransaction } from "./coordinator/reconcile"
 import { assertActive, execInSession, getActionCount, getSession, recordAction } from "./coordinator/sessions";
 import { createCoordinatorState, type CoordinatorState, type SafeModeSession, type TransactionCoordinatorDeps, type TxState } from "./coordinator/types";
 
-export type {
-  SafeModeSession,
-  TransactionContext,
-  TransactionCoordinatorDeps,
-  TxState,
-} from "./coordinator/types";
+export type { SafeModeSession, TransactionContext } from "./coordinator/types";
 
 /**
  * Backend transaction coordinator for RouterOS Safe Mode.

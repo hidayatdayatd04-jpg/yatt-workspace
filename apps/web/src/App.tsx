@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "./features/auth/auth";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -15,7 +15,9 @@ function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { collapsed, setCollapsedPersist } = useSidebarCollapsed();
-  const lastChatId = useRef<string | null>(null);
+  // Chat terakhir dipakai sebagai latar saat overlay (settings/connectors/dll)
+  // dibuka — bukan untuk chat-new. Pakai state agar perubahan me-render ulang.
+  const [lastChatId, setLastChatId] = useState<string | null>(null);
 
   // Auth gating
   useEffect(() => {
@@ -28,9 +30,10 @@ function Shell() {
   }, [loading, profile, route.name]);
 
   // Ingat chat terakhir agar tetap tampil di belakang pop-up.
+  // chat-new sengaja di-nol-kan agar tombol Chat baru langsung kosong.
   useEffect(() => {
-    if (route.name === "chat") lastChatId.current = route.id;
-    if (route.name === "chat-new") lastChatId.current = null;
+    if (route.name === "chat") setLastChatId(route.id);
+    else if (route.name === "chat-new") setLastChatId(null);
   }, [route]);
 
   if (route.name === "login") {
@@ -42,7 +45,9 @@ function Shell() {
   if (!profile) return null;
 
   const overlay = isOverlayRoute(route) ? route : null;
-  const conversationId = route.name === "chat" ? route.id : lastChatId.current;
+  // chat-new harus selalu null pada render yang sama — jangan tunggu efek ref
+  // yang tidak memicu render ulang (itu yang bikin URL /chat tapi isi chat lama).
+  const conversationId = route.name === "chat" ? route.id : overlay ? lastChatId : null;
   return (
     <div className="flex h-svh w-full flex-col overflow-hidden bg-background text-foreground md:flex-row">
       {/* Mobile top bar */}

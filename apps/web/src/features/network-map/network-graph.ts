@@ -5,7 +5,7 @@ import { matchesNetworkNode, type NetworkMapSnapshot, type NetworkNode, type Net
 export type MapFlowNode = Node<{ device: NetworkNode }, "device">;
 export const NODE_WIDTH = 220;
 export const NODE_HEIGHT = 88;
-export const PAGE_SIZE = 160;
+const PAGE_SIZE = 160;
 
 export function selectMapNodes(snapshot: NetworkMapSnapshot, query: string, kinds: NetworkNodeKind[], page: number) {
   const matching = snapshot.nodes.filter(n => kinds.includes(n.kind) && matchesNetworkNode(n, query));

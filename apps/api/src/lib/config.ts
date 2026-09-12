@@ -24,7 +24,7 @@ const num = (def: number, min: number, max: number) =>
     })
     .transform((v) => v as number);
 
-export const EnvSchema = z.object({
+const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: int(3001, 1, 65535),
   APP_URL: z.string().optional(),

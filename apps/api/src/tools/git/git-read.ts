@@ -12,7 +12,7 @@ export async function runGit(cwd: string, args: string[], timeoutMs = GIT_TIMEOU
   return { exitCode: result.exitCode, stdout: result.stdout, stderr: result.stderr, timedOut: result.timedOut };
 }
 
-export function gitNotRepoError(): ToolResultError {
+function gitNotRepoError(): ToolResultError {
   return new ToolResultError("DEPENDENCY_MISSING", "Folder kerja bukan repositori git (git tidak menemukan .git).", { guidance: "Informasikan pengguna bahwa folder ini belum di-init sebagai repositori git." });
 }
 

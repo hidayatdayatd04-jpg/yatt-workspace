@@ -1,5 +1,5 @@
 import { readdir, readFile, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { zipSync, type Zippable } from "fflate";
 import { z } from "zod";
 import { ToolResultError } from "../errors";
@@ -52,10 +52,23 @@ export function createArchiveTools(baseDir: string) {
           };
           await walk(source, "");
         }
-        if (count === 0) throw new ToolResultError("VALIDATION_FAILED", "Tidak ada file untuk diarsipkan.");
+        if (count === 0) throw new ToolResultError("VALIDATION_FAILED", "Tidak ada file untuk diarsipkan.", {
+          guidance: "Pastikan sumber ada dan berisi file (folder kosong, node_modules/.git/dist dilewati). Periksa isi via general:list_files.",
+        });
         const zipped = zipSync(payload, { level: 6 });
-        await writeFile(dest, zipped, { flag: "wx" });
-        return { destination: dest.slice(root.length + 1).replaceAll("\\", "/"), files: count, bytes: zipped.byteLength };
+        // Tujuan sudah ada → auto-rename bertingkat (laporan.zip → laporan-2.zip)
+        // supaya percobaan ulang tidak pernah gagal permanen.
+        const destDir = dirname(dest);
+        const destName = basename(dest, ".zip");
+        let finalDest = dest;
+        for (let attempt = 2; ; attempt++) {
+          if (attempt > 20) throw new ToolResultError("VALIDATION_FAILED", "Nama tujuan ZIP selalu terpakai; hapus file lama terlebih dahulu.");
+          const exists = await stat(finalDest).then((s) => s.isFile()).catch(() => false);
+          if (!exists) break;
+          finalDest = join(destDir, `${destName}-${attempt}.zip`);
+        }
+        await writeFile(finalDest, zipped);
+        return { destination: finalDest.slice(root.length + 1).replaceAll("\\", "/"), files: count, bytes: zipped.byteLength };
       } }),
   ];
 }

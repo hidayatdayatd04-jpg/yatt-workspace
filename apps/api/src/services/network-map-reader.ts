@@ -2,7 +2,7 @@ import { parseValueList } from "@mikrotik-tools/index";
 import type { NetworkDataset } from "@shared/network-map";
 
 // Fixed, reviewed read commands. No model/user values are interpolated into CLI.
-export const NETWORK_READS = {
+const NETWORK_READS = {
   identity: "/system identity print",
   resource: "/system resource print",
   interfaces: "/interface print terse without-paging",
@@ -36,7 +36,7 @@ const FIELDS = new Set(("name version uptime cpu-load free-memory total-memory b
   "server active-server active-address active-mac-address host-name status last-seen expires-after dynamic complete " +
   "identity platform interface-name address4 address6 vlan-encap relay").split(" "));
 
-export function parseNetworkRows(output: string, singleton = false): NetworkRow[] {
+function parseNetworkRows(output: string, singleton = false): NetworkRow[] {
   if (singleton) {
     const row: NetworkRow = {};
     for (const line of output.split(/\r?\n/)) {

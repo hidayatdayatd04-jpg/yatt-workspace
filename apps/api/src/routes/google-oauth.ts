@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
-import { GOOGLE_SCOPES, GOOGLE_BASE_SCOPES, GOOGLE_SERVICE_SCOPES } from "@shared/index";
+import { GOOGLE_SCOPES, GOOGLE_BASE_SCOPES, GOOGLE_SERVICE_SCOPES, type IntegrationKind } from "@shared/index";
 import type { Env } from "../types";
 import type { IntegrationService } from "../services/integrations";
 import { requireWorkspace } from "../middleware/session";
@@ -13,7 +13,7 @@ const AuthUrlSchema = z.object({
   clientId: z.string().trim().max(512).optional(),
   clientSecret: z.string().trim().max(512).optional(),
   redirectUri: z.string().trim().url().max(1024).optional(),
-  service: z.enum(["drive", "gmail", "calendar", "google"]).optional(),
+  service: z.enum(["drive", "gmail", "calendar", "docs", "sheets", "slides", "google"]).optional(),
 }).strict();
 
 export function createGoogleOAuthRoutes(service: IntegrationService, opts: { clientId?: string; clientSecret?: string; redirectUri?: string; appUrl?: string }) {
@@ -29,13 +29,16 @@ export function createGoogleOAuthRoutes(service: IntegrationService, opts: { cli
   routes.get("/status", async (c) => {
     const { userId } = requireWorkspace(c);
     const account = await service.googleAccount(userId);
-    const [drive, gmail, calendar, google] = await Promise.all([
+    const [drive, gmail, calendar, docs, sheets, slides, google] = await Promise.all([
       service.status(userId, "drive"),
       service.status(userId, "gmail"),
       service.status(userId, "calendar"),
+      service.status(userId, "docs"),
+      service.status(userId, "sheets"),
+      service.status(userId, "slides"),
       service.status(userId, "google"),
     ]);
-    return c.json({ account, services: { drive, gmail, calendar, google } });
+    return c.json({ account, services: { drive, gmail, calendar, docs, sheets, slides, google } });
   });
 
   routes.post("/auth-url", zValidator("json", AuthUrlSchema), async (c) => {
@@ -102,7 +105,7 @@ export function createGoogleOAuthRoutes(service: IntegrationService, opts: { cli
       await service.saveGoogleTokens(auth.userId, { accessToken, expiryMs: typeof expiresIn === "number" ? Date.now() + expiresIn * 1000 : undefined, accountEmail, scopes: grantedScopes, clientId: auth.clientId, clientSecret: auth.clientSecret, refreshToken, targetService: auth.targetService });
       if (!refreshToken && auth.targetService) {
         try {
-          const targetKind = auth.targetService as "drive" | "gmail" | "calendar" | "google";
+          const targetKind = auth.targetService as IntegrationKind;
           const existing = await service.credentials(auth.userId, targetKind);
           if (existing.refreshToken && !existing.accessToken) {
             await service.updateGoogleAccessToken(auth.userId, accessToken, expiresIn, targetKind);

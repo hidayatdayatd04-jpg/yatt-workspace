@@ -9,7 +9,7 @@
  * datang dinamis dari provider (Gemini / OpenRouter / custom) tanpa
  * metadata kapabilitas yang seragam. Heuristik ini sengaja konservatif:
  * hanya model yang namanya jelas-jelas keluarga reasoning yang lolos,
- * sehingga picker reasoning di composer tidak muncul untuk model biasa.
+ * sehingga model biasa memakai thinking custom tanpa parameter provider.
  */
 
 export const REASONING_EFFORTS = ["low", "medium", "high"] as const;
@@ -56,7 +56,8 @@ const REASONING_PATTERNS: RegExp[] = [
 
 /** True bila model id kemungkinan mendukung parameter reasoning. */
 export function supportsReasoning(modelId: string | null | undefined): boolean {
-  const id = (modelId ?? "").trim().toLowerCase();
+  // Namespace penyedia (mis. thinkingmachines/) bukan kapabilitas model.
+  const id = (modelId ?? "").trim().toLowerCase().split("/").at(-1) ?? "";
   if (!id) return false;
   return REASONING_PATTERNS.some((re) => re.test(id));
 }

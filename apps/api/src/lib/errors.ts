@@ -13,7 +13,7 @@ export class AppError extends Error {
   }
 }
 
-export const StatusCodeByCode = {
+const StatusCodeByCode = {
   UNAUTHORIZED: 401,
   RATE_LIMITED: 429,
   VALIDATION_FAILED: 422,

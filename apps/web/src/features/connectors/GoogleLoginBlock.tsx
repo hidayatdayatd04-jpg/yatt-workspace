@@ -2,21 +2,27 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GoogleG, GoogleDriveIcon, GmailIcon, GoogleCalendarIcon } from "@/components/icons";
+import { GoogleG, GoogleDriveIcon, GmailIcon, GoogleCalendarIcon, GoogleDocsIcon, GoogleSheetsIcon, GoogleSlidesIcon } from "@/components/icons";
 import { useGoogleConfig, useGoogleAuthUrl } from "./integration-hooks";
 
-export type GoogleServiceKind = "drive" | "gmail" | "calendar";
+export type GoogleServiceKind = "drive" | "gmail" | "calendar" | "docs" | "sheets" | "slides";
 
 const SERVICE_NAMES: Record<GoogleServiceKind, string> = {
   drive: "Google Drive",
   gmail: "Gmail",
   calendar: "Google Calendar",
+  docs: "Google Docs",
+  sheets: "Google Sheets",
+  slides: "Google Slides",
 };
 
 const SERVICE_ICONS: Record<GoogleServiceKind, React.ComponentType<{ className?: string }>> = {
   drive: GoogleDriveIcon,
   gmail: GmailIcon,
   calendar: GoogleCalendarIcon,
+  docs: GoogleDocsIcon,
+  sheets: GoogleSheetsIcon,
+  slides: GoogleSlidesIcon,
 };
 
 /** Blok login Google per-layanan (Drive, Gmail, atau Kalender). */

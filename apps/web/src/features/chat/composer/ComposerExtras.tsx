@@ -1,4 +1,5 @@
-import { FileText, X } from "@/components/icons";
+import { X } from "@/components/icons";
+import { FileIcon } from "@/components/file-icons";
 import { fmtSize } from "../ChatPanel";
 import type { AttachmentDTO } from "../chat-hooks";
 
@@ -16,7 +17,7 @@ export function ComposerAttachments(props: { attachments: AttachmentDTO[]; onRem
           {isImage(a) ? (
             <img src={props.previewUrls?.[a.id] ?? `/api/attachments/files/${a.id}`} alt={a.originalName} loading="lazy" className="size-8 rounded-md object-cover" />
           ) : (
-            <FileText className="size-3.5 text-indigo-500" />
+            <FileIcon fileName={a.originalName} size={16} />
           )}
           <span className="max-w-[160px] truncate font-medium">{a.originalName}</span>
           <span className="text-[11px] text-muted-foreground">{fmtSize(a.sizeBytes)}</span>

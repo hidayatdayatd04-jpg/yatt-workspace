@@ -41,6 +41,11 @@ export function handleStepFinish(
   }
   if (stepToolCalls.length === 0) {
     if (!stepText.trim()) {
+      if (counters.toolCallsTotal > 0 && (counters.emptyResponseRetries ?? 0) < 1) {
+        counters.emptyResponseRetries = (counters.emptyResponseRetries ?? 0) + 1;
+        args.chatHistory.push({ role: "user", content: "[Sistem: respons akhir Anda kosong. Hasil tool sebelumnya sudah tersedia. Sampaikan hasil yang terverifikasi sekarang. Jangan mengulang tool, penulisan file, atau mutasi. Jika ada kegagalan, jelaskan dengan jujur.]" });
+        return { action: "next" };
+      }
       counters.finalStatus = "failed";
       counters.failCode = "EMPTY_RESPONSE";
       counters.failMessage =
@@ -51,23 +56,26 @@ export function handleStepFinish(
     }
 
     // Guard anti-berhenti prematur: bila model hanya mengeluarkan kalimat rencana/pengantar
-    // tindakan di step awal tanpa memanggil tool pada giliran ini dan belum ada
-    // tool/kartu yang dijalankan, jangan matikan loop!
-    const isPreambleWithoutTool =
-      counters.toolCallsTotal === 0 &&
-      args.step < 2 &&
+    // tindakan tanpa memanggil tool pada giliran ini, jangan matikan loop!
+    //  - step awal tanpa tool sama sekali → nudge memaksa tool SEKARANG.
+    //  - setelah tool berjalan → penalaran tanpa tindakan di-nudge SEKALI agar
+    //    model berhenti mengulang berpikir (loop thinking tanpa kemajuan).
+    const isPlanText =
       !args.greetingOnly &&
-      args.providerToolsLength > 0 &&
-      /(?:saya akan|akan saya|mari kita|sebentar saya|izinkan saya|saya periksa|saya cek|akan kami|saya bantu|saya carikan|saya buatkan|saya tulis|saya baca|saya jalankan|saya coba|coba saya|biar saya|akan segera|saya telusuri|let me|i will)\b/i.test(stepText) &&
-      !/```(?:approval|ask)\b/.test(stepText);
+      !/```/.test(stepText) && stepText.length < 700 &&
+      /(?:saya akan|akan saya|mari kita|sebentar saya|izinkan saya|saya periksa|saya cek|akan kami|saya bant(?:u|uin)\s+(?:periksa|cek|lihat|analisa|analisis|buat|buatkan|tulis|baca|jalankan|cari|carikan|telusuri|susun|kerjakan|selesaikan|perbaiki)|saya carikan|saya buatkan|saya tulis|saya baca|saya jalankan|saya coba|coba saya|biar saya|akan segera|saya telusuri|let me|i will)\b/i.test(stepText);
+    const isPreambleWithoutTool = isPlanText && args.providerToolsLength > 0 &&
+      (counters.toolCallsTotal === 0
+        ? args.step < 2
+        : (counters.thinkNudges ?? 0) < 1 && args.step < 8);
 
     if (isPreambleWithoutTool) {
+      counters.thinkNudges = (counters.thinkNudges ?? 0) + 1;
       args.chatHistory.push({ role: "assistant", content: stepText });
       args.chatHistory.push({
         role: "user",
         content:
-          "[Sistem: Anda baru menulis rencana TANPA memanggil tool. Panggil SEKARANG tool yang relevan — " +
-          "pilih tools coding/file, connector aplikasi, router, atau pencarian web sesuai tugas dan izin yang tersedia. Jangan hanya berbicara.]",
+          "[Sistem: Anda baru menulis rencana/penalaran TANPA tindakan pada giliran ini. JANGAN mengulang penalaran atau rencana yang sama. Langsung panggil SEKARANG tool yang relevan; bila pekerjaan sudah selesai atau gagal permanen, sampaikan jawaban akhir yang jujur sekarang.]",
       });
       return { action: "next" };
     }

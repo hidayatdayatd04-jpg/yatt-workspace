@@ -20,7 +20,7 @@ export interface PatchBlock {
  * wajib cocok unik (atau replaceAll eksplisit); kegagalan menunjuk blok ke-n
  * tanpa mengubah file.
  */
-export function applyBlocks(text: string, blocks: PatchBlock[]): { text: string; applied: number[] } {
+function applyBlocks(text: string, blocks: PatchBlock[]): { text: string; applied: number[] } {
   let out = text;
   const applied: number[] = [];
   blocks.forEach((block, idx) => {

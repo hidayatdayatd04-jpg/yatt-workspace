@@ -4,7 +4,8 @@ import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { FileText, Download } from "@/components/icons";
+import { Download } from "@/components/icons";
+import { FileIcon } from "@/components/file-icons";
 import type { AttachmentDTO } from "./chat-hooks/types";
 import { ChatFilePreview } from "./ChatFilePreview";
 
@@ -31,7 +32,7 @@ export function ChatFilesPanel(props: { conversationId: string; open: boolean; o
               <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelected(selected === file.id ? null : file.id)} aria-expanded={selected === file.id}>
                 {/^(image\/(png|jpeg|webp|gif))$/.test(file.contentType)
                   ? <img src={`/api/attachments/files/${file.id}`} alt="" loading="lazy" className="size-10 shrink-0 rounded-lg object-cover" />
-                  : <FileText className="size-8 shrink-0 text-muted-foreground" />}
+                  : <FileIcon fileName={file.originalName} size={32} />}
                 <span className="min-w-0"><span className="block break-all text-sm font-medium">{file.originalName}</span>
                   <span className="text-xs text-muted-foreground">{(file.sizeBytes / 1024).toFixed(1)} KB{file.messageId === null ? " - Belum dikirim" : ""}</span></span>
               </button>

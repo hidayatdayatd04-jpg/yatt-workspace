@@ -50,9 +50,10 @@ export async function runAgentStep(env: StepEnv, args: StepArgs): Promise<"end" 
     return "end";
   }
   const streamed = await streamStepTurn(env, {
+    catalog: args.catalog,
     chatHistory: args.chatHistory,
-    providerTools: args.providerTools,
-    greetingOnly: args.greetingOnly,
+    providerTools: c.emptyResponseRetries ? [] : args.providerTools,
+    greetingOnly: args.greetingOnly || !!c.emptyResponseRetries,
     deadline: args.deadline,
     finalizationBufferMs: args.finalizationBufferMs,
     emitSeq: args.emitSeq,
@@ -75,7 +76,15 @@ export async function runAgentStep(env: StepEnv, args: StepArgs): Promise<"end" 
     providerToolsLength: args.providerTools.length,
     chatHistory: args.chatHistory,
   });
-  if (finished.action === "next") return "continue";
+  if (finished.action === "next") {
+    if (args.step === env.maxSteps - 1) {
+      c.finalStatus = "failed";
+      c.failCode = "EMPTY_RESPONSE";
+      c.failMessage = "Batas langkah tercapai sebelum provider menyampaikan hasil akhir.";
+      return "end";
+    }
+    return "continue";
+  }
   if (finished.action !== "tools") return "end";
   if (args.step === env.maxSteps - 1 && streamed.stepToolCalls.length > 0) {
     c.finalStatus = "failed";

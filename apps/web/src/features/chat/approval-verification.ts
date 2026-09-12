@@ -12,9 +12,7 @@ import {
   buildFallbackNarrative,
 } from "./verification-narratives";
 
-export { extractRouterOsNames, formatItemNames } from "./verification-names";
-
-export function getVerificationToolLabel(pathOrCmd: string): string {
+function getVerificationToolLabel(pathOrCmd: string): string {
   const lower = pathOrCmd.toLowerCase();
   if (lower.includes("vlan")) return "Membaca interface";
   if (lower.includes("bridge")) return "Membaca interface";

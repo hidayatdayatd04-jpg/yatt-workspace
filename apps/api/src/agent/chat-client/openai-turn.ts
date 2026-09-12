@@ -39,6 +39,7 @@ export type TurnRequestOutcome =
 export async function requestTurnStream(ctx: TurnCtx, ticket: TurnTicket, attempt: number): Promise<TurnRequestOutcome> {
   const { cfg, logger, limiter, modelKey, client, input, diag, endpointHost, wireMessages, wireTools, maxRetries } = ctx;
   const failureCtx: FailureCtx = { cfg, logger, limiter, modelKey, sharedKey: ctx.sharedKey };
+  logger.info("thinking request diagnostic", { kind: cfg.kind, effort: ctx.reasoningEffort });
   input.onRequestAttempt?.();
   try { input.onQueueWait?.(ticket.waitedMs); } catch { /* telemetry non-fatal */ }
   logger.debug("provider request attempt", {
@@ -68,6 +69,8 @@ export async function requestTurnStream(ctx: TurnCtx, ticket: TurnTicket, attemp
       // DeepSeek/Qwen via OpenRouter. SDK versi lama belum mengetiknya —
       // cast aman karena provider yang tak kenal akan 400 lalu di-fallback.
       ...(reasoningEffort !== null ? { reasoning_effort: reasoningEffort } : {}),
+      ...(cfg.kind === "gemini" && reasoningEffort !== null
+        ? { extra_body: { google: { thinking_config: { include_thoughts: true } } } } : {}),
       stream: true,
       stream_options: { include_usage: true },
     } as never, { signal: input.signal });

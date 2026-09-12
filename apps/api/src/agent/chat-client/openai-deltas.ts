@@ -1,11 +1,10 @@
+import { createToolProgressReader } from "./tool-progress";
 import { AppError } from "../../lib/errors";
 import { classifyQuotaError, computeBackoffWithJitter } from "../rate-limiter";
 import type { ChatToolCall, StreamEvent } from "./types";
 import type { SdkChunk, TurnCtx, TurnTicket } from "./context";
 import { toProviderError } from "./errors";
 import { extractRetryMs } from "./openai-failure";
-
-export type { SdkChunk, TurnTicket };
 
 export interface DrainResult {
   finishReason: string;
@@ -28,6 +27,7 @@ export async function* drainTurnStream(
 ): AsyncGenerator<StreamEvent, DrainResult | DrainRetry> {
   const { cfg, logger, limiter, modelKey, sharedKey, maxRetries, input } = ctx;
   const toolAcc = new Map<number, { id: string; name: string; args: string; extraContent?: unknown }>();
+  const progressOf = createToolProgressReader();
   let nextToolIdx = 0;
   const idToIdx = new Map<string, number>();
   let lastActiveIdx = 0;
@@ -60,6 +60,8 @@ export async function* drainTurnStream(
     for await (const chunk of chunks) {
       const choice = chunk.choices?.[0];
       const delta = choice?.delta;
+      if (cfg.kind === "gemini" && delta) logger.info("thinking diagnostic", { keys: Object.keys(delta),
+        extra: JSON.stringify((delta as Record<string, unknown>).extra_content, (_key, value) => typeof value === "string" ? `string(${value.length})` : value) });
       const reasoning = delta?.reasoning_content ?? delta?.reasoning;
       if (typeof reasoning === "string" && reasoning) {
         yield { type: "reasoning", text: reasoning };
@@ -75,6 +77,8 @@ export async function* drainTurnStream(
         if (tc.function?.arguments) acc.args += tc.function.arguments;
         if (tc.extra_content) acc.extraContent = tc.extra_content;
         toolAcc.set(idx, acc);
+        const progress = progressOf(acc);
+        if (progress) yield progress;
       }
       if (chunk.usage && Number.isSafeInteger(chunk.usage.prompt_tokens) && Number.isSafeInteger(chunk.usage.completion_tokens)) {
         actualTokens = (chunk.usage.prompt_tokens ?? 0) + (chunk.usage.completion_tokens ?? 0);

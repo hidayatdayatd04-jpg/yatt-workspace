@@ -5,11 +5,6 @@ import { compareBackups, compareWithLive, getBackup, listBackups, removeBackup }
 import { createSnapshot } from "./backup/snapshot";
 import type { BackupCtx } from "./backup/types";
 
-export { redactExport } from "./backup/redact";
-export { computeDiff } from "./backup/diff";
-export type { DiffLine, DiffResult } from "./backup/diff";
-export type { ConfigBackupDTO } from "./backup/types";
-
 export function createBackupService(deps: {
   db: Database;
   connectors: Pick<ConnectorService, "requireOwned" | "decryptCredential">;

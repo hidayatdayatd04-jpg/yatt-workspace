@@ -7,7 +7,7 @@ import { workspacePath, workspaceRoot } from "./files";
 const pathSchema = z.string().min(1).max(1000);
 
 /** Parse CSV (RFC4180 longgar: quote, koma, newline dalam sel). */
-export function parseCsv(text: string, delimiter = ","): string[][] {
+function parseCsv(text: string, delimiter = ","): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = "";

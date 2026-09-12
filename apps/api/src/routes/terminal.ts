@@ -4,8 +4,6 @@ import { buildTerminalDeps, type TerminalRouteDeps } from "./terminal/deps";
 import { registerCommandRoutes } from "./terminal/commands";
 import { registerSessionRoutes } from "./terminal/sessions";
 
-export type { TerminalRouteDeps };
-
 export function createTerminalRoutes(deps: TerminalRouteDeps) {
   const routes = new Hono<Env>();
   const tdeps = buildTerminalDeps(deps);

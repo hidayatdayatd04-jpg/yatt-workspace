@@ -17,9 +17,12 @@ const SERVICE_TEXT: Record<GoogleServiceKind, { name: string; desc: string }> = 
   drive: { name: "Google Drive", desc: "Cari file, baca dokumen, dan buat file teks. Agent membaca sesuai izin akun Google Anda." },
   gmail: { name: "Gmail", desc: "Cari dan baca email, buat draft, dan kirim pesan saat Anda memintanya." },
   calendar: { name: "Google Calendar", desc: "Lihat jadwal, buat dan hapus event kalender." },
+  docs: { name: "Google Docs", desc: "Buat, baca, dan edit dokumen Google Docs. Login memakai akun Google Docs tersendiri, terpisah dari layanan Google lain." },
+  sheets: { name: "Google Sheets", desc: "Baca dan kelola spreadsheet Google Sheets. Login memakai akun Google Sheets tersendiri, terpisah dari layanan Google lain." },
+  slides: { name: "Google Slides", desc: "Baca dan kelola presentasi Google Slides. Login memakai akun Google Slides tersendiri, terpisah dari layanan Google lain." },
 };
 
-/** Konfigurasi Drive/Gmail/Kalender: login Google + izin (tanpa form token manual). */
+/** Konfigurasi layanan Google (Drive/Gmail/Kalender/Docs/Sheets/Slides): login + izin. */
 export function GoogleServiceConfig({ integration: item }: { integration: IntegrationDTO }) {
   const kind = item.kind as GoogleServiceKind;
   const text = SERVICE_TEXT[kind];

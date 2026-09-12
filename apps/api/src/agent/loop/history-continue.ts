@@ -8,7 +8,7 @@ export async function buildContinueNote(
   db: Database,
   input: StartRunInput,
 ): Promise<ChatMessage | null> {
-  if (!/lanjutkan|teruskan|continue/i.test(input.userText)) return null;
+  if (!/lanjut(?:kan)?|teruskan|continue|mana (?:kode|code|file)|tampilkan (?:kode|code|file)/i.test(input.userText)) return null;
   try {
     const { toolExecutions: toolTable, agentRuns: runsTable } = await import("../../db/schema");
     const lastRuns = await db
@@ -23,9 +23,9 @@ export async function buildContinueNote(
       if (r.id === input.runId) continue;
       const rows = await db.select().from(toolTable).where(eq(toolTable.runId, r.id)).limit(30);
       for (const row of rows) {
-        if (row.status === "completed" && row.risk === "read" && row.resultSummary) {
+        if (row.status === "completed" && row.resultSummary) {
           if (priorNotes.length < 8) {
-            priorNotes.push(`- ${row.toolName}: ${String(row.resultSummary).slice(0, 400)}`);
+            priorNotes.push(`- ${row.toolName}${row.risk !== "read" ? " (mutasi sudah berhasil; jangan ulangi)" : ""}: ${String(row.resultSummary).slice(0, 400)}`);
           }
         } else if (row.status !== "completed" && failedNotes.length < 4) {
           failedNotes.push(
@@ -63,7 +63,7 @@ export async function buildContinueNote(
     const parts: string[] = [];
     if (priorNotes.length > 0) {
       parts.push(
-        "[Hasil pembacaan sebelumnya yang masih tersimpan — pakai langsung bila masih valid, jangan diulang. Hanya baca ulang yang kedaluwarsa/diragukan:] \n" +
+        "[Hasil tool sebelumnya yang masih tersimpan — pakai langsung bila masih valid, jangan diulang. Mutasi berhasil tidak boleh diulang; baca file hasil bila perlu menampilkan kode lengkap:] \n" +
           priorNotes.join("\n"),
       );
     }

@@ -1,125 +1,96 @@
 import { useEffect } from "react";
-import { STREAM_EVENT_TYPES, type RunEventsSink } from "./run-event-types";
-import { attachTerminalListeners, createPayloadHandler } from "./run-events-reducer";
+import { STREAM_EVENT_TYPES } from "./run-event-types";
+import { TERMINAL } from "./run-event-types";
+import type { RunEventDTO } from "./chat-hooks";
 
+/** Listener status terminal transport (tanpa nama event) + sinyal done server. */
+function attachTerminalListeners(
+  es: EventSource,
+  runId: string,
+  notifyTerminal: (cancelled: boolean, runId: string) => void,
+  isDone: () => boolean,
+  onDoneEvent: () => void,
+) {
+  es.onmessage = (e) => {
+    if (!e.data || isDone()) return;
+    try {
+      const parsed = JSON.parse(e.data) as { status?: string };
+      if (parsed.status && (TERMINAL as readonly string[]).includes(parsed.status)) {
+        notifyTerminal(parsed.status === "cancelled", runId);
+      }
+    } catch {
+      /* abaikan keepalive non-JSON */
+    }
+  };
+
+  // Server hanya mengirim `done` untuk run terminal.
+  es.addEventListener("done", () => {
+    if (isDone()) return;
+    notifyTerminal(false, runId);
+    onDoneEvent();
+  });
+}
+
+/** Pipa SSE murni: sambung, teruskan event ke handler, reconnect saat putus. */
 export function useRunEventStream(
   runId: string | null,
-  sink: RunEventsSink,
-  doneRef: { current: (() => void) | undefined },
-  finishRef: { current: (immediate?: boolean) => void },
+  handlePayload: (type: RunEventDTO["type"], data: string) => void,
+  notifyTerminal: (cancelled: boolean, runId: string) => void,
   lastSeqRef: { current: number },
 ) {
-  const { setEvents, setStreamText, setReasoningText, setToolActivity, setTxStatus, setQueueStatus, setLive } = sink;
-  const { setRunError } = sink;
-
   useEffect(() => {
-    lastSeqRef.current = 0;
-    if (!runId) {
-      setEvents([]);
-      setStreamText("");
-      setReasoningText("");
-      setToolActivity([]);
-      setTxStatus(null);
-      setQueueStatus(null);
-      setRunError(null);
-      setLive(false);
-      finishRef.current = () => {};
-      return;
-    }
-    setEvents([]);
-    setStreamText("");
-    setReasoningText("");
-    setToolActivity([]);
-    setTxStatus(null);
-    setQueueStatus(null);
-    setRunError(null);
-    setLive(true);
-
+    if (!runId) return;
+    const id = runId;
     let cancelled = false;
-    let confirmed = false;
     let es: EventSource | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    let completeTimer: ReturnType<typeof setTimeout> | null = null;
-    let streamTextLength = 0;
+    let done = false;
 
     const teardown = () => {
       if (retryTimer) clearTimeout(retryTimer);
-      if (completeTimer) clearTimeout(completeTimer);
       retryTimer = null;
-      completeTimer = null;
       try {
         es?.close();
       } catch {
-        /* ignore */
+        /* abaikan */
       }
       es = null;
     };
 
-    const confirmDone = (immediate = false) => {
-      if (cancelled || confirmed) return;
-      try {
-        es?.close();
-      } catch {}
-      es = null;
-
-      if (immediate || streamTextLength === 0) {
-        if (completeTimer) clearTimeout(completeTimer);
-        confirmed = true;
-        teardown();
-        setLive(false);
-        doneRef.current?.();
-        return;
-      }
-
-      // Allow smooth typewriter to complete its visual typing cadence (~22ms per char)
-      const typingWaitMs = Math.min(2200, Math.max(350, streamTextLength * 22));
-      if (completeTimer) clearTimeout(completeTimer);
-      completeTimer = setTimeout(() => {
-        if (cancelled || confirmed) return;
-        confirmed = true;
-        teardown();
-        setLive(false);
-        doneRef.current?.();
-      }, typingWaitMs);
+    const markDone = () => {
+      done = true;
+      teardown();
     };
-    finishRef.current = (immediate?: boolean) => confirmDone(immediate);
-
-    const handlePayload = createPayloadHandler({
-      runId,
-      lastSeqRef,
-      sink,
-      confirmDone,
-      isConfirmed: () => confirmed,
-      addStreamLength: (n: number) => {
-        streamTextLength += n;
-      },
-    });
 
     const connect = () => {
-      if (cancelled || confirmed) return;
+      if (cancelled || done) return;
       try {
         es?.close();
       } catch {
-        /* ignore */
+        /* abaikan */
       }
       const from = lastSeqRef.current;
-      es = new EventSource(`/api/runs/${runId}/events${from > 0 ? `?from=${from}` : ""}`);
-      attachTerminalListeners(es, confirmDone, () => confirmed);
+      es = new EventSource(`/api/runs/${id}/events${from > 0 ? `?from=${from}` : ""}`);
+      attachTerminalListeners(es, id, notifyTerminal, () => done || cancelled, markDone);
 
       for (const type of STREAM_EVENT_TYPES) {
-        es.addEventListener(type, (e: MessageEvent) => handlePayload(type, (e as MessageEvent).data));
+        es.addEventListener(type, (e: MessageEvent) => {
+          if (!done) handlePayload(type, (e as MessageEvent).data);
+        });
       }
+      // Terminal via antrean juga menutup stream lokal.
+      es.addEventListener("run.completed", markDone);
+      es.addEventListener("run.cancelled", markDone);
+      es.addEventListener("run.failed", markDone);
 
       es.onerror = () => {
-        if (cancelled || confirmed || !es) return;
-        // Transport failure is NOT a terminal signal: EventSource may retry
-        // on its own; when it gives up (CLOSED) we reconnect explicitly so a
-        // live run keeps streaming instead of stranding the UI.
+        if (cancelled || done || !es) return;
+        // Gagal transport BUKAN sinyal terminal: reconnect eksplisit.
         if (es.readyState === 2) {
           try {
             es.close();
           } catch {
-            /* ignore */
+            /* abaikan */
           }
           es = null;
           if (retryTimer) clearTimeout(retryTimer);
@@ -133,7 +104,6 @@ export function useRunEventStream(
     return () => {
       cancelled = true;
       teardown();
-      finishRef.current = () => {};
     };
-  }, [runId]);
+  }, [runId, handlePayload, notifyTerminal, lastSeqRef]);
 }

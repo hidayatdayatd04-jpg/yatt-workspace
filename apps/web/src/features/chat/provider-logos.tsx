@@ -3,7 +3,7 @@ import { Cpu } from "@/components/icons";
 
 const LOGO_BASE = "https://models.dev/logos";
 
-export function providerLogoUrl(logoId: string): string {
+function providerLogoUrl(logoId: string): string {
   return `${LOGO_BASE}/${logoId}.svg`;
 }
 

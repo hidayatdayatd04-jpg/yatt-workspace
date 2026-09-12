@@ -65,7 +65,7 @@ export async function fetchLive(deps: MonitoringDeps, userId: string, connection
   return data;
 }
 
-export async function storeSnapshot(deps: MonitoringDeps, userId: string, connectionId: string, data: MonitoringLiveData) {
+async function storeSnapshot(deps: MonitoringDeps, userId: string, connectionId: string, data: MonitoringLiveData) {
   const now = new Date();
   await deps.db.insert(monitoringSnapshots).values({
     connectionId,

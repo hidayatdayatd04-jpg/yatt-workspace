@@ -31,7 +31,7 @@ function ipToLong(ip: string): number | null {
   return n;
 }
 
-export function ipInCidr(ip: string, cidr: string): boolean {
+function ipInCidr(ip: string, cidr: string): boolean {
   const [base, bitsRaw] = cidr.split("/");
   const bits = Number(bitsRaw);
   if (!base || !Number.isInteger(bits) || bits < 0 || bits > 32) return false;

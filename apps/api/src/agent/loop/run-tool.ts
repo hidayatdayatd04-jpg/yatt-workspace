@@ -1,3 +1,4 @@
+import { splitToolPresentation, withToolPresentation, writtenCodeArtifact } from "./tool-presentation";
 import { toolExecutions } from "../../db/schema";
 import { redactObject, redactText } from "../../lib/redaction";
 import type { ChatToolCall } from "../chat-client";
@@ -8,6 +9,7 @@ import { runConnectionProbe } from "./probe";
 import { findDirectToolsForQuery } from "./ranking";
 import type { NormalizedTool } from "../../policies/normalize";
 import { extractResearchPayload } from "./research";
+import { producedFilePath } from "./produced-file";
 import { toolFailGuidance } from "./guidance";
 import { MAX_TOOL_RESULT_CHARS, type StartRunInput } from "./types";
 import { AppError } from "../../lib/errors";
@@ -20,10 +22,16 @@ export async function runTool(
   fqName: string,
   args: unknown,
   catalog: NormalizedTool[],
-  emit: EmitFn,
+  emitEvent: EmitFn,
   toolIndex: number,
 ): Promise<ToolMsg> {
+  const presentation = splitToolPresentation(args);
+  args = presentation.args;
+  emitEvent = withToolPresentation(emitEvent, presentation.activityLabel);
   const started = Date.now();
+  const metadata = await env.agentTools?.activityMetadata(fqName, args, input).catch(() => ({})) ?? {};
+  const emit: EmitFn = (event) => emitEvent(event.type.startsWith("tool.")
+    ? { ...event, payload: { ...event.payload, ...metadata, preparationMs: call.preparationMs } } : event);
   const startedArgsPreview = JSON.stringify(redactObject(args ?? {})).slice(0, 500);
   await emit({ type: "tool.started", payload: { callId: call.id, name: fqName, index: toolIndex, args: startedArgsPreview } });
   // Backend-owned probe: answered from live server rows, no dispatcher needed
@@ -37,8 +45,7 @@ export async function runTool(
   const decisionTool = dispatched.tool;
 
   let result: { ok: boolean; output: string; errorCode?: string };
-  // Discovery yang tidak perlu dialihkan ke tool langsung yang sudah tersedia
-  // (tanpa eksekusi pencarian): hemat round-trip, tuntun model ke pembacaan langsung.
+  // Discovery dialihkan ke tool langsung (tanpa eksekusi pencarian): hemat round-trip.
   const isDiscovery = fqName.includes("find_tools") || fqName.includes("routeros_search");
   const directRedirect = isDiscovery
     ? findDirectToolsForQuery(
@@ -87,8 +94,7 @@ export async function runTool(
   } catch (err) {
     result = { ok: false, output: err instanceof Error ? err.message : String(err), errorCode: err instanceof AppError ? err.code : "TOOL_FAILED" };
   }
-  const isTruncated = result.output.length > MAX_TOOL_RESULT_CHARS;
-  const truncatedText = isTruncated
+  const truncatedText = result.output.length > MAX_TOOL_RESULT_CHARS
     ? result.output.slice(0, MAX_TOOL_RESULT_CHARS) + `\n\n[Output terpotong: menampilkan ${MAX_TOOL_RESULT_CHARS} karakter pertama]`
     : result.output;
   let redacted = redactText(truncatedText);
@@ -103,7 +109,8 @@ export async function runTool(
       toolName: fqName,
       risk: decisionTool.risk,
       sanitizedInput: redactObject(args ?? {}),
-      resultSummary: redacted.slice(0, 500),
+      // Detail Tool Card (web) membaca kolom ini; event SSE tetap 1500 kar.
+      resultSummary: redacted.slice(0, 8000),
       status: result.ok ? "completed" : "failed",
       errorCode: result.errorCode ?? null,
       durationMs: Date.now() - started,
@@ -112,8 +119,10 @@ export async function runTool(
   const durationMs = Date.now() - started;
   const argsPreview = JSON.stringify(redactObject(args ?? {})).slice(0, 500);
   const research = extractResearchPayload(fqName, result);
+  const artifact = env.agentTools?.has(fqName) ? writtenCodeArtifact(fqName, args, result) : undefined;
+  const fileDownload = env.agentTools?.has(fqName) ? producedFilePath(fqName, result) : null;
   if (result.ok) {
-    await emit({ type: "tool.completed", payload: { callId: call.id, name: fqName, summary: redacted.slice(0, 1500), args: argsPreview, durationMs, index: toolIndex, ...(research ? { research } : {}) } });
+    await emit({ type: "tool.completed", payload: { callId: call.id, name: fqName, summary: redacted.slice(0, 1500), args: argsPreview, durationMs, index: toolIndex, ...(research ? { research } : {}), ...(artifact ? { artifact } : {}), ...(fileDownload ? { fileDownload } : {}) } });
   } else {
     await emit({ type: "tool.failed", payload: { callId: call.id, name: fqName, code: result.errorCode ?? "TOOL_FAILED", summary: redacted.slice(0, 1500), args: argsPreview, durationMs } });
   }
@@ -132,7 +141,7 @@ export async function runTool(
   }
   return {
     role: "tool",
-    content: JSON.stringify({ ok: true, output: redacted }),
+    content: JSON.stringify({ ok: true, output: redacted, ...(artifact ? { artifactPresented: true, guidance: "Kode lengkap sudah ditampilkan di canvas. Sampaikan hasil secara informatif dan lengkap: file yang dibuat, struktur/isi utamanya, cara memakainya, dan hasil verifikasi — tanpa menulis ulang file atau mengulang kode yang sama." } : {}) }),
     toolCallId: call.id,
     note: `Tool ${fqName} berhasil: ${redacted.slice(0, 400)}`,
     ok: true,

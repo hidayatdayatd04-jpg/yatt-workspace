@@ -3,25 +3,24 @@
  * menerjemahkan jadi {ok:false, error:{code,message,retryable,guidance}}.
  * Pesan guidance mengarahkan model ke tindakan korektif, bukan retry buta.
  */
-export const TOOL_ERROR_CODES = [
-  "FILE_NOT_FOUND",
-  "PATH_OUTSIDE_WORKSPACE",
-  "FILE_CHANGED",
-  "COMMAND_NOT_FOUND",
-  "COMMAND_FAILED",
-  "COMMAND_TIMEOUT",
-  "PROCESS_NOT_FOUND",
-  "NETWORK_ERROR",
-  "HTTP_ERROR",
-  "DEPENDENCY_MISSING",
-  "USER_APPROVAL_REQUIRED",
-  "TOOL_NOT_ALLOWED",
-  "TOOL_TIMEOUT",
-  "CANCELLED",
-] as const;
-export type ToolErrorCode = (typeof TOOL_ERROR_CODES)[number];
+export type ToolErrorCode =
+  | "ARCHIVE_LIMIT_EXCEEDED"
+  | "FILE_NOT_FOUND"
+  | "PATH_OUTSIDE_WORKSPACE"
+  | "FILE_CHANGED"
+  | "COMMAND_NOT_FOUND"
+  | "COMMAND_FAILED"
+  | "COMMAND_TIMEOUT"
+  | "PROCESS_NOT_FOUND"
+  | "NETWORK_ERROR"
+  | "HTTP_ERROR"
+  | "DEPENDENCY_MISSING"
+  | "USER_APPROVAL_REQUIRED"
+  | "TOOL_NOT_ALLOWED"
+  | "TOOL_TIMEOUT"
+  | "CANCELLED";
 
-export const RETRYABLE_TOOL_ERRORS: ReadonlySet<string> = new Set(["NETWORK_ERROR", "HTTP_ERROR", "TOOL_TIMEOUT"]);
+const RETRYABLE_TOOL_ERRORS: ReadonlySet<string> = new Set(["NETWORK_ERROR", "HTTP_ERROR", "TOOL_TIMEOUT"]);
 
 export class ToolResultError extends Error {
   readonly code: ToolErrorCode | "TOOL_FAILED" | "VALIDATION_FAILED";

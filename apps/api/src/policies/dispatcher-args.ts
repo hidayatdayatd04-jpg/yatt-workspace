@@ -7,7 +7,7 @@
  * per-connection MCP child is already bound to one router, so rule data args
  * cannot redirect execution elsewhere.
  */
-export const FORBIDDEN_ARG_NAMES = new Set([
+const FORBIDDEN_ARG_NAMES = new Set([
   "host", "hostname",
   "username", "user", "password", "credential", "credentials",
 ]);

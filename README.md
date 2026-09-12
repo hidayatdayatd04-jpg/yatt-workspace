@@ -82,6 +82,10 @@ bun run build      # build web lalu bundle API ke dist/
 bun run start      # jalankan CLI produksi dari source build
 ```
 
+Suite pengujian dan konfigurasi E2E telah dihapus. `bun run test` tetap tersedia
+untuk kompatibilitas pemeriksaan repo dan melaporkan tidak ada tes;
+validasi source menggunakan typecheck, lint, dan build di atas.
+
 Konfigurasi opsional via `.env` (lihat `.env.example`). CLI produksi tidak membutuhkan `.env` — semua kredensial diatur melalui UI dan disimpan terenkripsi di folder data (`~/.yatt-agent` secara default, atau `--data-dir`).
 
 Opsi CLI:

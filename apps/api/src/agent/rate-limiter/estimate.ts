@@ -25,7 +25,7 @@ export function modelKeyFor(providerKind: string, model: string): string {
 }
 
 /** Estimasi token konservatif: ~3.5 char per token (ID/EN + output RouterOS). */
-export function estimateTokensFromChars(chars: number): number {
+function estimateTokensFromChars(chars: number): number {
   return Math.max(1, Math.ceil(chars / 3.5));
 }
 

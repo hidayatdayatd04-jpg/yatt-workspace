@@ -1,7 +1,7 @@
 import React, { forwardRef } from "react";
 import { createCustomIcon, type IconProps } from "./base";
 
-export function createBrandIcon(name: string, src: string, alt: string) {
+function createBrandIcon(name: string, src: string, alt: string) {
   const Component = forwardRef<HTMLImageElement, IconProps & { alt?: string }>(
     ({ size, className, style, alt: customAlt, ...props }, ref) => (
       <img
@@ -26,6 +26,9 @@ export function createBrandIcon(name: string, src: string, alt: string) {
 export const GmailIcon = createBrandIcon("GmailIcon", "/icons/gmail.svg", "Gmail");
 export const GoogleDriveIcon = createBrandIcon("GoogleDriveIcon", "/icons/google-drive.svg", "Google Drive");
 export const GoogleCalendarIcon = createBrandIcon("GoogleCalendarIcon", "/icons/google-calendar.svg", "Google Calendar");
+export const GoogleDocsIcon = createBrandIcon("GoogleDocsIcon", "/icons/google-docs.svg", "Google Docs");
+export const GoogleSheetsIcon = createBrandIcon("GoogleSheetsIcon", "/icons/google-sheets.svg", "Google Sheets");
+export const GoogleSlidesIcon = createBrandIcon("GoogleSlidesIcon", "/icons/google-slides.svg", "Google Slides");
 export const MikrotikIcon = createBrandIcon("MikrotikIcon", "/icons/mikrotik.svg", "MikroTik Server");
 
 export const Folder = createCustomIcon("Folder", <path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />);

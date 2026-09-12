@@ -1,23 +1,16 @@
 import { unzipSync } from "fflate";
+import { inspectZip, MAX_EXPANDED_BYTES, zipLimit } from "./zip-limits";
 
-export const MAX_EXPANDED_BYTES = 25_000_000;
-export function safeArchiveName(name: string): boolean {
-  return !/^[\\/]|[:\x00]/.test(name) && !name.replaceAll("\\", "/").split("/").includes("..");
-}
-/** Validate declared sizes before inflation, then verify actual output sizes. */
+/** Batasi hanya isi yang benar-benar dibaca, bukan entri lain di arsip. */
 export function readZipEntries(bytes: Buffer, selected?: string) {
-  const entries: { name: string; sizeBytes: number; directory: boolean }[] = [];
-  let total = 0;
-  const files = unzipSync(bytes, { filter: (entry) => {
-    if (!safeArchiveName(entry.name)) throw new Error("Path tidak aman di dalam ZIP.");
-    total += entry.originalSize;
-    if (entries.length >= 1000 || entry.originalSize > MAX_EXPANDED_BYTES || total > MAX_EXPANDED_BYTES) {
-      throw new Error("Batas ekstraksi ZIP terlampaui (1000 entri / 25 MB).");
-    }
-    entries.push({ name: entry.name, sizeBytes: entry.originalSize, directory: entry.name.endsWith("/") });
-    return selected === undefined || entry.name === selected;
-  } });
-  if (Object.values(files).reduce((sum, data) => sum + data.length, 0) > MAX_EXPANDED_BYTES) throw new Error("Isi ZIP terlalu besar.");
-  if (selected !== undefined && selected !== "" && !Object.hasOwn(files, selected)) throw new Error("Entri tidak ditemukan di ZIP. Gunakan nama persis dari daftar entri.");
+  const entries = inspectZip(bytes);
+  if (selected === "") return { entries, files: {} as Record<string, Uint8Array> };
+  const chosen = selected === undefined ? entries : entries.filter((entry) => entry.name === selected);
+  if (selected !== undefined && chosen.length === 0) throw new Error("Entri tidak ditemukan di ZIP. Gunakan nama persis dari daftar entri.");
+  const total = chosen.reduce((sum, entry) => sum + entry.sizeBytes, 0);
+  if (total > MAX_EXPANDED_BYTES) zipLimit("isi yang dibaca (byte)", total, MAX_EXPANDED_BYTES);
+  const files = unzipSync(bytes, { filter: (entry) => selected === undefined || entry.name === selected });
+  const actual = Object.values(files).reduce((sum, data) => sum + data.length, 0);
+  if (actual > MAX_EXPANDED_BYTES) zipLimit("isi yang dibaca (byte)", actual, MAX_EXPANDED_BYTES);
   return { entries, files };
 }

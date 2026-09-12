@@ -17,7 +17,7 @@ export const TEXT_EXTENSIONS = new Set([
 ]);
 
 /** Nama file tanpa ekstensi yang selalu dianggap teks (mis. .gitignore, Dockerfile). */
-export const TEXT_FILENAMES = new Set([
+const TEXT_FILENAMES = new Set([
   "dockerfile", "makefile", ".gitignore", ".gitattributes", ".env", ".editorconfig",
   ".npmrc", ".babelrc", ".eslintrc", ".prettierrc", ".htaccess", "license", "changelog", "readme",
 ]);

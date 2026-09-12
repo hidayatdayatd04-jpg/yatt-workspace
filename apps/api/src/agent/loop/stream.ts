@@ -1,3 +1,5 @@
+import { createToolProgressPublisher } from "./stream-tool-progress";
+import { createStreamText } from "./stream-text";
 import { eq } from "drizzle-orm";
 import type { Database } from "../../db";
 import { agentRuns } from "../../db/schema";
@@ -13,6 +15,7 @@ export interface StreamStepEnv {
   entryController: AbortController;
   /** Diteruskan ke provider sebagai reasoning_effort (undefined = default). */
   reasoningEffort?: import("@shared/index").ReasoningEffort;
+  customThinking?: boolean;
 }
 
 export type StreamStepOutcome =
@@ -23,6 +26,7 @@ export type StreamStepOutcome =
 export async function streamStepTurn(
   env: StreamStepEnv,
   args: {
+    catalog?: import("../../policies/normalize").NormalizedTool[];
     chatHistory: ChatMessage[];
     providerTools: ChatToolDefinition[];
     greetingOnly: boolean;
@@ -48,7 +52,8 @@ export async function streamStepTurn(
     return { status: "timeout" };
   }
 
-  let stepText = "";
+  const progress = createToolProgressPublisher(args.catalog ?? [], emitSeq);
+  const textStream = createStreamText(!!env.customThinking, c, emitSeq);
   let stepToolCalls: ChatToolCall[] = [];
   let stepFinishReason: string | undefined;
   let stepPromptTokens = 0;
@@ -80,19 +85,20 @@ export async function streamStepTurn(
       },
     })) {
       combinedController.signal.throwIfAborted();
-      if (ev.type === "reasoning" && ev.text) {
-        c.reasoningText += ev.text;
-        await emitSeq({ type: "reasoning.delta", payload: { text: ev.text } });
+      if (ev.type === "tool_progress" && ev.toolProgress && !args.greetingOnly) {
+        await textStream.finish();
+        await progress.update(ev.toolProgress);
+      } else if (ev.type === "reasoning" && ev.text) {
+        // Mode custom: penalaran native (reasoning_content) tidak dibuat blok
+        // live agar tidak ada dua blok penalaran. Ia dibuffer dan hanya
+        // menjadi SATU blok fallback bila model tidak memakai [[PIKIR]].
+        if (env.customThinking) await textStream.nativeReasoning(ev.text);
+        else await textStream.reasoning(ev.text);
       } else if (ev.type === "text" && ev.text) {
-        if (!stepText && c.assistantText) {
-          c.assistantText += "\n\n";
-          await emitSeq({ type: "message.delta", payload: { text: "\n\n" } });
-        }
-        stepText += ev.text;
-        c.assistantText += ev.text;
-        await emitSeq({ type: "message.delta", payload: { text: ev.text } });
+        await textStream.text(ev.text);
       } else if (ev.type === "tool_calls" && ev.toolCalls) {
-        stepToolCalls = args.greetingOnly ? [] : ev.toolCalls;
+        await textStream.finish();
+        stepToolCalls = args.greetingOnly ? [] : ev.toolCalls.map(progress.complete);
       } else if (ev.type === "usage" && ev.usage) {
         stepPromptTokens = Math.max(0, ev.usage.promptTokens || 0);
         stepCompletionTokens = Math.max(0, ev.usage.completionTokens || 0);
@@ -102,6 +108,7 @@ export async function streamStepTurn(
         break;
       }
     }
+    await textStream.finish();
     if (stepSawUsage) {
       c.lastRequestPromptTokens = stepPromptTokens;
       c.lastRequestCompletionTokens = stepCompletionTokens;
@@ -116,7 +123,7 @@ export async function streamStepTurn(
       }
       await env.db.update(agentRuns).set({ usage: usageRecordOf(c, env.client.modelLabel) }).where(eq(agentRuns.id, env.runId));
     }
-    return { status: "ok", stepText, stepToolCalls, stepFinishReason };
+    return { status: "ok", stepText: textStream.stepText, stepToolCalls, stepFinishReason };
   } catch (err) {
     // Deadline abort mid-stream → timeout, not crash
     if (deadlineSignal.aborted && !env.entryController.signal.aborted) {
@@ -128,5 +135,7 @@ export async function streamStepTurn(
     throw err;
   } finally {
     env.entryController.signal.removeEventListener("abort", onAbort);
+    deadlineSignal.removeEventListener("abort", onAbort);
+    await textStream.finish();
   }
 }

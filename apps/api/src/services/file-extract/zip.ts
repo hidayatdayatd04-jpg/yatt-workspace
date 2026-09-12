@@ -26,26 +26,57 @@ function isBinaryEntry(name: string): boolean {
  * Ekstrak folder/arsip ZIP: daftar entri + isi semua file teks/kode/PDF/
  * dokumen di dalamnya. ZIP bersarang diikuti hingga kedalaman MAX_ZIP_DEPTH.
  * Aman terhadap zip-bomb lewat batas entri, byte per entri, dan total karakter.
+ * Daftar entri selalu dikembalikan walau total isi melebihi batas baca —
+ * cuplikan dibaca selektif per file agar arsip besar tetap bisa dianalisis.
  */
 export async function extractArchiveText(name: string, bytes: Buffer, depth: number): Promise<string | null> {
-  let files: Record<string, Uint8Array>;
+  let meta: { name: string; sizeBytes: number }[];
   try {
-    files = readZipEntries(bytes).files;
+    meta = readZipEntries(bytes, "").entries;
   } catch (error) {
     return `[ZIP gagal dibaca: ${error instanceof Error ? error.message : "arsip rusak atau terenkripsi"}]`;
   }
-  const entries = Object.entries(files).filter(
-    ([n, data]) => !n.endsWith("/") && data.length > 0 && !n.startsWith("__MACOSX/") && !n.split("/").pop()?.startsWith("._"),
-  );
-  const readable = entries.filter(([n]) => !isBinaryEntry(n)).slice(0, MAX_ZIP_ENTRIES);
-  const lines: string[] = [`Arsip "${name}": ${entries.length} entri. Daftar file:\n${entries.map(([n]) => n).join("\n")}\nCuplikan isi berikut dibatasi. Gunakan general:read_attachment dengan entryPath untuk membaca file tertentu.`];
+  const names = meta
+    .map((e) => e.name)
+    .filter((n) => !n.endsWith("/") && !n.startsWith("__MACOSX/") && !n.split("/").pop()?.startsWith("._"));
+  const sizeByName = new Map(meta.map((e) => [e.name, e.sizeBytes]));
+  const readableNames = names.filter((n) => !isBinaryEntry(n)).slice(0, MAX_ZIP_ENTRIES);
+  const shown = names.slice(0, 500);
+  const lines: string[] = [
+    `Arsip "${name}": ${names.length} entri. Daftar file:\n${shown.join("\n")}${names.length > shown.length ? `\n[... ${names.length - shown.length} entri lain disembunyikan]` : ""}\nCuplikan isi berikut dibatasi. Gunakan general:read_attachment dengan entryPath untuk membaca file tertentu.`,
+  ];
   let total = 0;
   let written = 0;
-  for (const [entryName, data] of readable) {
+  // Coba baca massal dulu (cepat untuk arsip kecil); bila melebihi batas,
+  // jatuh ke pembacaan selektif per file agar daftar + cuplikan tetap ada.
+  let bulk: Record<string, Uint8Array> | null = null;
+  try {
+    bulk = readZipEntries(bytes).files;
+  } catch {
+    bulk = null;
+  }
+  for (const entryName of readableNames) {
     if (total >= MAX_ZIP_TOTAL_CHARS) {
       lines.push("[... sisa entri dilewati: batas konteks tercapai]");
       break;
     }
+    const declared = sizeByName.get(entryName) ?? 0;
+    if (declared > MAX_ZIP_ENTRY_BYTES) {
+      lines.push(`--- ${entryName}: dilewati (${declared} byte > batas per file) ---`);
+      continue;
+    }
+    let data: Uint8Array | null = bulk?.[entryName] ?? null;
+    if (!data) {
+      try {
+        const single = readZipEntries(bytes, entryName).files[entryName];
+        if (!single || single.length === 0) continue;
+        data = single;
+      } catch {
+        lines.push(`--- ${entryName}: dilewati (melebihi batas baca 25 MB atau gagal didekompresi) ---`);
+        continue;
+      }
+    }
+    if (!data || data.length === 0) continue;
     if (data.length > MAX_ZIP_ENTRY_BYTES) {
       lines.push(`--- ${entryName}: dilewati (${data.length} byte > batas per file) ---`);
       continue;

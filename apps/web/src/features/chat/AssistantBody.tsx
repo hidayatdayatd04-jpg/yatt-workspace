@@ -42,7 +42,6 @@ function ConfidenceBadge(props: { level: "Tinggi" | "Sedang" | "Rendah"; reason:
 export function AssistantBody({
   text,
   onAnswerAsk,
-  onSendToTerminal,
   activeConnectionId,
   conversationId,
   onSelectPrompt,
@@ -50,7 +49,6 @@ export function AssistantBody({
 }: {
   text: string;
   onAnswerAsk?: (label: string) => void;
-  onSendToTerminal?: (code: string) => void;
   activeConnectionId?: string | null;
   conversationId?: string | null;
   onSelectPrompt?: (prompt: string) => void;
@@ -68,7 +66,7 @@ export function AssistantBody({
   return (
     <>
       {confidence && <ConfidenceBadge level={confidence.level} reason={confidence.reason} />}
-      {body && <Markdown text={body} onSendToTerminal={onSendToTerminal} />}
+      {body && <Markdown text={body} />}
       {approvalSpecs &&
         approvalSpecs.map((spec, i) => (
           <ApprovalCard key={i} spec={spec} activeConnectionId={activeConnectionId} conversationId={conversationId} />

@@ -1,12 +1,20 @@
-import type { PipelineStep } from "./types";
+import type { PipelineStep, ToolActivityMetadata } from "./types";
 import { HUMAN_TOOL_LABELS } from "./humanize-labels";
 
 /**
  * Label manusiawi untuk nama tool, diperkaya argumen bila tersedia:
  * "Membaca file" + path → "Membaca package.json".
  */
-export function humanizeTool(name: string, args?: string | Record<string, unknown> | null): string {
+export function humanizeTool(name: string, args?: string | Record<string, unknown> | null, metadata: ToolActivityMetadata = {}): string {
+  if (metadata.activityLabel?.trim()) return metadata.activityLabel.trim().slice(0, 120);
   const parsed = typeof args === "string" ? safeParseArgs(args) : args ?? undefined;
+  if (name === "general:read_attachment") {
+    const labels: Record<string, string> = { image: "Menganalisis gambar", pdf: "Membaca PDF", doc: "Membaca dokumen Office",
+      archive: "Membaca isi arsip", text: "Membaca lampiran", unsupported: "Memeriksa lampiran" };
+    const base = labels[metadata.attachmentKind ?? ""] ?? labelFor(name);
+    const file = shortPath(metadata.attachmentName ?? null);
+    return file ? `${base} (${file})` : base;
+  }
   const base = labelFor(name);
   const detail = detailFor(name, parsed);
   return detail ? `${base} ${detail}` : base;
@@ -26,20 +34,20 @@ function labelFor(name: string): string {
     if (re.test(name)) return label;
   }
   const n = name.toLowerCase();
-  if (n.startsWith("web:")) return "Deep Research";
+  if (n.startsWith("web:")) return "Menelusuri web";
   if (n.includes("terminal") || n.includes("exec") || n.includes("run_routeros") || n.includes("command")) {
     return "Menjalankan perintah RouterOS";
   }
   if (n.includes("verify") || n.includes("safe_mode_status")) return "Verifikasi Safe Mode";
   if (n.startsWith("docs:")) return "Mencari dokumentasi";
-  const short = name.includes(":") ? name.split(":").slice(1).join(":") : name;
-  return short.replace(/_/g, " ").slice(0, 48) || name;
+  return "Menjalankan alat bantu";
 }
 
 /** Detail argumen yang membuat label lebih spesifik (path, command, query, script). */
 function detailFor(name: string, args?: Record<string, unknown>): string | null {
   if (!args) return null;
   const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
+  if (name === "web:search") return quote(str(args.query), 60);
   if (name.startsWith("general:read_file") || name.startsWith("general:write_file") || name.startsWith("general:apply_patch") || name.startsWith("general:replace_text") || name.startsWith("archive:create")) {
     return shortPath(str(args.path) ?? str(args.source));
   }

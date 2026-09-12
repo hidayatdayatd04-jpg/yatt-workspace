@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import type { Env } from "../../types";
 import { RouterModeSchema } from "@shared/index";
 
-export const HostSchema = z
+const HostSchema = z
   .string({ required_error: "Host / IP address wajib diisi" })
   .min(1, "Host / IP address tidak boleh kosong")
   .max(255, "Host maksimal 255 karakter")

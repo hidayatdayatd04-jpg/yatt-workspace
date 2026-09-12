@@ -1,6 +1,8 @@
 /** Tabel label manusiawi: nama tool → teks yang ditampilkan pengguna. */
 export const HUMAN_TOOL_LABELS: [RegExp, string][] = [
   // Workspace & files
+  [/general:list_attachments/, "Melihat daftar lampiran"],
+  [/general:read_attachment/, "Membaca lampiran"],
   [/general:list_files/, "Melihat file workspace"],
   [/general:read_file/, "Membaca file"],
   [/general:write_file/, "Menyimpan perubahan file"],
@@ -34,6 +36,7 @@ export const HUMAN_TOOL_LABELS: [RegExp, string][] = [
   [/git:checkout/, "Berpindah branch/versi"],
   [/git:restore/, "Membatalkan perubahan lokal"],
   // Web, data, compute, sistem
+  [/web:search/, "Mencari informasi di web"],
   [/web:fetch_url/, "Membuka halaman web"],
   [/data:parse_json|data:validate_json/, "Memeriksa data JSON"],
   [/data:format_json/, "Merapikan JSON"],
@@ -50,6 +53,9 @@ export const HUMAN_TOOL_LABELS: [RegExp, string][] = [
   [/system:network_interfaces/, "Membaca interface jaringan host"],
   [/system:environment_capabilities/, "Memeriksa kapabilitas environment"],
   // Integrasi
+  [/calendar:list_events/, "Melihat jadwal kalender"],
+  [/calendar:create_event/, "Membuat acara kalender"],
+  [/calendar:delete_event/, "Menghapus acara kalender"],
   [/mikrotik:list_routers/, "Mencari router tersimpan"],
   [/mikrotik:connect_router/, "Menghubungkan router"],
   [/drive:search_files/, "Mencari file Google Drive"],

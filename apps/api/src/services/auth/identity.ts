@@ -3,7 +3,7 @@ import type { Database } from "../../db";
 import { accounts } from "../../db/schema";
 import { AppError } from "../../lib/errors";
 
-export const USERNAME_RE = /^[a-zA-Z0-9._-]{3,32}$/;
+const USERNAME_RE = /^[a-zA-Z0-9._-]{3,32}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface IdentityPatch {

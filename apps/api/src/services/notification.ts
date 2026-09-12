@@ -4,8 +4,6 @@ import { cleanupNotifications, listNotifications, markAllNotificationsRead, mark
 import { sendNotification, type NotifyCtx } from "./notification/sender";
 import { getNotificationSettings, updateNotificationSettings } from "./notification/settings";
 
-export type { CreateNotificationInput, NotificationCategory, NotificationDTO, NotificationType } from "./notification/types";
-
 export function createNotificationService(deps: { db: Database }) {
   const ctx: NotifyCtx = { db: deps.db, lastNotified: new Map<string, number>() };
 

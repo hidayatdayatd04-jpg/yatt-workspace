@@ -27,8 +27,17 @@ export async function runStepTools(
   state: SingleToolState,
 ): Promise<void> {
   const { stepToolCalls, catalog, chatHistory, toolCallCount } = args;
-  const providerNameOf = (call: ChatToolCall) =>
-    catalog.find((t) => t.fqName.replace(/[^A-Za-z0-9_-]/g, "_") === call.name)?.fqName ?? call.name;
+  // Map nama provider (kolon dinormalisasi jadi underscore) balik ke fqName
+  // katalog. Tool yang tidak ada di katalog tetap dipetakan ke bentuk kolon
+  // kanoniknya agar guard TOOL_NOT_OFFERED di dispatch terpicu (bukan jatuh
+  // ke gerbang MikroTik yang menyesatkan). Namespace registry tidak pernah
+  // mengandung underscore, jadi underscore pertama selalu pemisah namespace.
+  const providerNameOf = (call: ChatToolCall) => {
+    const mapped = catalog.find((t) => t.fqName.replace(/[^A-Za-z0-9_-]/g, "_") === call.name)?.fqName;
+    if (mapped) return mapped;
+    const canonical = call.name.replace("_", ":");
+    return env.agentTools?.has(canonical) ? canonical : call.name;
+  };
   const riskOf = (fq: string) => catalog.find((t) => t.fqName === fq)?.risk ?? "unknown";
   const isBatchableRead = (fq: string) =>
     riskOf(fq) === "read" && fq !== "mikrotik:connect_router" && !fq.includes("find_tools") && !fq.includes("routeros_search");
@@ -95,7 +104,13 @@ export async function runStepTools(
     toolCallCount.set(call.id, 1);
     // WAIT for complete arguments: parse JSON; incomplete → typed error result, never executed
     const parsed = await parseToolArgs(env.db, input, call, chatHistory);
-    if (!parsed.ok) continue;
+    if (!parsed.ok) {
+      // Emit penyelesaian agar kartu aktivitas tool.preparing tidak menggantung
+      // dalam status "running" (VALIDATION_FAILED tidak pernah dieksekusi).
+      await emitSeq({ type: "tool.failed", payload: { callId: call.id, name: call.name,
+        code: "VALIDATION_FAILED", summary: "Argumen tool bukan JSON lengkap — tidak dieksekusi.", durationMs: 0 } });
+      continue;
+    }
     // map provider tool name back to fqName (dots replaced by _ in provider space)
     const fq = providerNameOf(call);
     if (isBatchableRead(fq)) {

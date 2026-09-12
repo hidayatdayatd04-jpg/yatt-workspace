@@ -1,3 +1,4 @@
+import { extractPageImages } from "./web-page-assets";
 import { z } from "zod";
 import { ToolResultError } from "../errors";
 import { defineTool, objectSchema, stringField } from "../types";
@@ -15,7 +16,7 @@ const TEXTUAL = /^(text\/|application\/(json|xml|javascript|x-yaml|xml|ld\+json)
  */
 export function createWebFetchTool() {
   return defineTool({ name: "web:fetch_url", connector: "workspace", tags: ["web", "fetch", "read", "http"],
-    description: "Baca isi satu URL (dokumen, halaman, API publik) menjadi teks. Untuk MENCARI sumber gunakan web:search dulu. Response dibatasi ukuran dan durasi; IP internal diblokir.",
+    description: "Baca isi satu URL (dokumen, halaman, API publik) menjadi teks. Untuk MENCARI sumber gunakan web:search dulu. HTML menyertakan daftar images berisi URL gambar yang benar-benar ditemukan. Gunakan HEAD untuk memverifikasi aset. Response dibatasi ukuran dan durasi; IP internal diblokir.",
     schema: z.object({
       url: z.string().min(4).max(2000),
       method: z.enum(["GET", "HEAD"]).default("GET"),
@@ -55,7 +56,7 @@ export function createWebFetchTool() {
         const contentType = response.headers.get("content-type") ?? "";
         const sizeLimit = Math.min(args.maxBytes, MAX_BYTES);
         const text = await readBounded(response, contentType, sizeLimit);
-        return { url: args.url, finalUrl, status: response.status, contentType: contentType || "unknown", bytes: text.length, truncated: text.length >= sizeLimit, content: text };
+        return { url: args.url, finalUrl, status: response.status, contentType: contentType || "unknown", bytes: text.length, truncated: text.length >= sizeLimit, ...(contentType.includes("text/html") ? { images: extractPageImages(text, finalUrl) } : {}), content: text };
       }
       throw new ToolResultError("HTTP_ERROR", "Redirect chain terlalu panjang.");
     },

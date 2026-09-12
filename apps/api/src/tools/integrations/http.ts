@@ -1,6 +1,6 @@
 import type { IntegrationService } from "../../services/integrations";
 
-export type GoogleKind = "drive" | "gmail" | "calendar" | "google";
+export type GoogleKind = "drive" | "gmail" | "calendar" | "google" | "sheets" | "slides" | "docs";
 
 export async function boundedJson(url: string, init: RequestInit = {}) {
   const response = await fetch(url, { ...init, redirect: "error", signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) });
@@ -39,6 +39,8 @@ async function refreshAccessToken(clientId: string, clientSecret: string, refres
 }
 
 export async function googleToken(service: IntegrationService, userId: string, kind: GoogleKind, signal?: AbortSignal, opts: { forceRefresh?: boolean } = {}) {
+  // Tiap layanan Google memakai token/login akunnya sendiri (drive, gmail, calendar,
+  // docs, sheets, slides). Tidak ada fallback antar layanan.
   const targetKind = kind === "google" ? "google" : kind;
   const c = await service.credentials(userId, targetKind);
   if (!opts.forceRefresh && c.accessToken && c.expiryMs && isFresh(c.expiryMs)) return c.accessToken;
@@ -52,7 +54,11 @@ export async function googleToken(service: IntegrationService, userId: string, k
 }
 
 function googleOrigin(kind: GoogleKind) {
-  return kind === "gmail" ? "https://gmail.googleapis.com" : "https://www.googleapis.com";
+  if (kind === "gmail") return "https://gmail.googleapis.com";
+  if (kind === "sheets") return "https://sheets.googleapis.com";
+  if (kind === "slides") return "https://slides.googleapis.com";
+  if (kind === "docs") return "https://docs.googleapis.com";
+  return "https://www.googleapis.com";
 }
 
 export async function googleRequest(service: IntegrationService, userId: string, kind: GoogleKind, path: string, body?: unknown, signal?: AbortSignal, init?: { method?: string }) {

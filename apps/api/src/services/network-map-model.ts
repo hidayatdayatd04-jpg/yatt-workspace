@@ -5,8 +5,6 @@ import { buildInterfaceSection } from "./network-map-model/interfaces";
 import { buildClientSection } from "./network-map-model/clients";
 import { buildRouteSection } from "./network-map-model/routes";
 
-export { ipv4Subnet } from "./network-map-model/helpers";
-
 export function buildNetworkMap(tables: NetworkTables, meta: Pick<NetworkMapSnapshot, "connectionId" | "collectedAt" | "datasets"> & { host: string }): NetworkMapSnapshot {
   const ctx = createModelCtx(tables, meta);
   const routerData = tables.identity?.[0];

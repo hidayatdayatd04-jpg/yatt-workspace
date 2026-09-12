@@ -7,6 +7,7 @@ import type { PolicyDispatcher } from "../../policies/dispatcher";
 import type { NormalizedTool } from "../../policies/normalize";
 import type { EmitFn, ToolMsg } from "./context";
 import { policyDenialGuidance } from "./guidance";
+import { rejectUnreferencedPath, type DispatchOutcomeDenied } from "./dispatch-peek";
 import type { StartRunInput } from "./types";
 
 export interface ToolEnv {
@@ -19,6 +20,27 @@ export interface ToolEnv {
 export type DispatchOutcome =
   | { allowed: true; tool: NormalizedTool }
   | { allowed: false; toolMsg: ToolMsg };
+
+/** Penolakan typed + catat DB + emit tool.failed. */
+async function deny(
+  env: ToolEnv,
+  input: StartRunInput,
+  call: ChatToolCall,
+  fqName: string,
+  args: unknown,
+  emit: EmitFn,
+  started: number,
+  code: string,
+  message: string,
+  guidance?: string,
+): Promise<DispatchOutcomeDenied> {
+  await env.db.insert(toolExecutions).values({ runId: input.runId, toolCallId: call.id, toolName: fqName, risk: "unknown", sanitizedInput: redactObject(args ?? {}), resultSummary: null, status: "denied", errorCode: code, durationMs: Date.now() - started }).onConflictDoNothing();
+  await emit({ type: "tool.failed", payload: { callId: call.id, name: fqName, code, message, durationMs: Date.now() - started } });
+  return {
+    allowed: false,
+    toolMsg: { role: "tool", content: JSON.stringify({ ok: false, error: code, message, ...(guidance ? { guidance } : {}) }), toolCallId: call.id, note: `Tool ${fqName} ditolak (${code}): ${message}`.slice(0, 500), ok: false, errorCode: code, risk: "unknown" },
+  };
+}
 
 /**
  * Deferred transaction opening + policy dispatch + pencatatan denial.
@@ -34,11 +56,21 @@ export async function dispatchToolCall(
   emit: EmitFn,
   started: number,
 ): Promise<DispatchOutcome> {
-  // Deferred transaction opening: only open Safe Mode when a mutation tool is dispatched
+  const peek = await rejectUnreferencedPath(env.db, input, call, fqName, args, emit, started);
+  if (peek) return peek;
   const toolInCatalog = catalog.find((t) => t.fqName === fqName);
+  const isRegistryTool = !!env.agentTools?.has(fqName);
   // General/integration tools use their own live permission checks in the registry.
   // They never enter the MikroTik transaction dispatcher.
-  if (toolInCatalog && env.agentTools?.has(fqName)) return { allowed: true, tool: toolInCatalog };
+  if (toolInCatalog && isRegistryTool) return { allowed: true, tool: toolInCatalog };
+  // Registry tool sengaja tidak ditawarkan run ini (filter anti-intip/sapaan):
+  // tolak typed — JANGAN jatuh ke gerbang MikroTik yang menyesatkan.
+  if (isRegistryTool && !toolInCatalog) {
+    return deny(env, input, call, fqName, args, emit, started, "TOOL_NOT_OFFERED",
+      `Tool ${fqName} tidak ditawarkan untuk percakapan ini.`,
+      "Jangan menebak isi workspace. Tanyakan kepada pengguna file/kebutuhan mana yang dimaksud, atau minta file dilampirkan.");
+  }
+  // Router tools (mikrotik/custom) fall through to the transaction dispatcher.
   const isRouterTool = !fqName.startsWith("docs:") && !fqName.startsWith("web:");
   const routerDisabled = isRouterTool && (input.mikrotikEnabled === false || input.canUseMikrotik && !(await input.canUseMikrotik()));
   if (!routerDisabled && input.policy.mode === "write" && input.policy.transactionState !== "active" && toolInCatalog && toolInCatalog.risk !== "read" && input.ensureTransaction) {
@@ -66,62 +98,11 @@ export async function dispatchToolCall(
     // never crash the run (e.g. no router bound to the conversation)
     const code = err instanceof AppError ? err.code : "INTERNAL_ERROR";
     const message = err instanceof AppError ? err.message : "Pemeriksaan policy gagal.";
-    await env.db
-      .insert(toolExecutions)
-      .values({
-        runId: input.runId,
-        toolCallId: call.id,
-        toolName: fqName,
-        risk: "unknown",
-        sanitizedInput: redactObject(args ?? {}),
-        resultSummary: null,
-        status: "denied",
-        errorCode: code,
-        durationMs: Date.now() - started,
-      })
-      .onConflictDoNothing();
-    await emit({ type: "tool.failed", payload: { callId: call.id, name: fqName, code, message, durationMs: Date.now() - started } });
-    return {
-      allowed: false,
-      toolMsg: {
-        role: "tool",
-        content: JSON.stringify({ error: code, message }),
-        toolCallId: call.id,
-        note: `Tool ${fqName} ditolak (${code}): ${message}`.slice(0, 500),
-        ok: false,
-        errorCode: code,
-        risk: "unknown",
-      },
-    };
+    return deny(env, input, call, fqName, args, emit, started, code, message);
   }
   if (!decision.allowed) {
-    const record = {
-      runId: input.runId,
-      toolCallId: call.id,
-      toolName: fqName,
-      risk: "unknown",
-      sanitizedInput: redactObject(args ?? {}),
-      resultSummary: null,
-      status: "denied",
-      errorCode: decision.code,
-      durationMs: Date.now() - started,
-    };
-    await env.db.insert(toolExecutions).values(record).onConflictDoNothing();
-    await emit({ type: "tool.failed", payload: { callId: call.id, name: fqName, code: decision.code, message: decision.message, durationMs: Date.now() - started } });
-    // Build actionable guidance so the AI model clearly reports the denial.
     const guidance = policyDenialGuidance(decision.code, fqName);
-    return {
-      allowed: false,
-      toolMsg: {
-        role: "tool",
-        content: JSON.stringify({ ok: false, error: decision.code, message: decision.message, guidance }),
-        toolCallId: call.id,
-        note: `Tool ${fqName} ditolak (${decision.code}): ${decision.message}`.slice(0, 500),
-        ok: false,
-        errorCode: decision.code,
-        risk: "unknown",
-      },
-    };
+    return deny(env, input, call, fqName, args, emit, started, decision.code, decision.message, guidance);
   }
   return { allowed: true, tool: decision.tool };
 }

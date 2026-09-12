@@ -1,7 +1,7 @@
 import type { ModelLimitStatus } from "@shared/index";
 import { TriangleAlertIcon } from "@/components/icons";
 
-export function modelLimitLabel(data?: ModelLimitStatus, now = Date.now()): string {
+function modelLimitLabel(data?: ModelLimitStatus, now = Date.now()): string {
   if (!data) return "Belum diketahui";
   if (data.retryAt && Date.parse(data.retryAt) <= now) return "Waktu tunggu lewat · coba ulang";
   if (now - Date.parse(data.observedAt) > 15 * 60_000) return "Data lama · coba ulang";

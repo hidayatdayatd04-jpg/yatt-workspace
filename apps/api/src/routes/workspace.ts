@@ -19,7 +19,7 @@ export function createWorkspaceRoutes(service: IntegrationService, dataDir: stri
     catch { throw new AppError("FORBIDDEN", "Path di luar workspace ditolak.", 403); }
     const stat = await lstat(file).catch(() => null);
     if (!stat?.isFile()) throw new AppError("NOT_FOUND", "File tidak ditemukan.", 404);
-    if (stat.size > 10_000_000) throw new AppError("FILE_TOO_LARGE", "File terlalu besar untuk diunduh.", 413);
+    if (stat.size > 25_000_000) throw new AppError("FILE_TOO_LARGE", "File terlalu besar untuk diunduh (maks 25 MB).", 413);
     return new Response(await readFile(file), { headers: { "Content-Type": "application/octet-stream", "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(basename(file))}`, "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" } });
   });
   return routes;

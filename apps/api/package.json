@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "test": "bun test src/tools src/agent/loop/agent-intelligence.test.ts src/agent/vision-settings.test.ts src/routes/chat/image-reader.test.ts src/services/file-extract/read.test.ts src/routes/attachments.test.ts src/middleware/local-only.test.ts"
+    "test": "bun test --pass-with-no-tests"
   },
   "dependencies": {
     "@hono/zod-validator": "0.7.4",
@@ -14,11 +14,14 @@
     "@usex/mikrotik-mcp": "5.6.0",
     "@yatt-agent/mikrotik-tools": "workspace:*",
     "@yatt-agent/shared": "workspace:*",
+    "docx": "^9.7.1",
     "drizzle-orm": "0.44.7",
     "fflate": "^0.8.3",
     "hono": "4.10.3",
     "mammoth": "^1.12.2",
     "openai": "4",
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1",
     "ssh2": "1.17.0",
     "unpdf": "^1.8.1",
     "xlsx": "^0.18.5",

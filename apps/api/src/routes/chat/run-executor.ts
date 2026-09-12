@@ -48,6 +48,7 @@ export async function executeBackgroundRun(
         userText: input.text + args.attachmentNote + rc.visionCtx.note + (input.attachmentIds?.length ? `\nLampiran untuk tools workspace (attachmentId): ${input.attachmentIds.join(", ")}` : ""),
         visionImages: rc.visionImages,
         reasoningEffort: rc.reasoningEffort,
+        customThinking: rc.customThinking,
         policy: {
           userId: workspace.userId,
           connectionId: connectionId ?? "none",
@@ -84,6 +85,7 @@ export async function executeBackgroundRun(
           writeBlockNote: rc.writeBlockNote,
           memorySummary: rc.memorySummary,
           reasoningEffort: rc.reasoningEffort,
+          customThinking: rc.customThinking,
           hasVisionImages: rc.visionImages.length > 0,
           visionSupported: rc.visionCtx.visionSupportedForInstruction,
           crossMemory: rc.crossMemory,

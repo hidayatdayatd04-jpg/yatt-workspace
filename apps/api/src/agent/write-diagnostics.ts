@@ -15,8 +15,6 @@
 
 import type { WriteBlockCertainty, WriteBlockDiagnosis, WriteBlockEvidence } from "./write-diagnostics-types";
 
-export type { WriteBlockCertainty, WriteBlockDiagnosis, WriteBlockEvidence } from "./write-diagnostics-types";
-
 const PW_MARKERS = /change your password|new password\s*>|penggantian password/i;
 const PROMPT_TIMEOUT_MARKERS = /timed out waiting for .*shell prompt|safe mode did not activate|shell prompt/i;
 const BUSY_MARKERS = /sedang dipakai transaksi lain/i;

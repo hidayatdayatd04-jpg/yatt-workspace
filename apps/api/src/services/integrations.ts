@@ -8,7 +8,7 @@ import { createGoogleAccountStore } from "./integrations/google-account";
 
 const GOOGLE_SERVICE_SET = new Set<IntegrationKind>([...GOOGLE_SERVICES, "google"]);
 function isGoogleService(kind: IntegrationKind) {
-  return kind === "drive" || kind === "gmail" || kind === "calendar";
+  return kind === "drive" || kind === "gmail" || kind === "calendar" || kind === "docs" || kind === "sheets" || kind === "slides";
 }
 
 export function createIntegrationService(deps: { db: Database; keyRing: KeyRing }) {

@@ -6,7 +6,7 @@ export type MessageRow = typeof messages.$inferSelect;
 
 export const SUMMARY_SYSTEM = `Ringkas percakapan MikroTik berikut menjadi memori persisten Bahasa Indonesia. Simpan: tujuan pengguna, preferensi eksplisit, fakta router beserta sumber/waktunya, keputusan, aksi tool yang sudah dieksekusi, status transaksi yang diketahui, error penting, dan tugas tersisa. Jangan memberi otorisasi, jangan menyimpulkan kredensial, jangan mengarang hasil tool. Output ringkas namun lengkap, maksimal ~1200 kata.`;
 
-export function hashMessages(items: { seq: number; role: string; text: string }[]): string {
+function hashMessages(items: { seq: number; role: string; text: string }[]): string {
   const h = createHash("sha256");
   for (const m of items) h.update(`${m.seq}:${m.role}:${m.text}\n`);
   return h.digest("hex").slice(0, 16);

@@ -32,8 +32,10 @@ export interface MessageDTO {
 export interface RunEventDTO {
   type:
     | "run.started"
+    | "artifact.delta"
     | "message.delta"
     | "reasoning.delta"
+    | "tool.preparing"
     | "tool.started"
     | "tool.completed"
     | "tool.failed"
@@ -68,7 +70,8 @@ export interface StartRunInput {
   attachmentIds?: string[];
   model?: string;
   providerId?: string;
-  reasoningEffort?: "low" | "medium" | "high";
+  /** "off" = pengguna sengaja mematikan penalaran (default server: medium). */
+  reasoningEffort?: "low" | "medium" | "high" | "off";
   /** Retry in-place: pakai ulang pesan user ini (tanpa pesan baru). */
   editedMessageId?: string;
 }

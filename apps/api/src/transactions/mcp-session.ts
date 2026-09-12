@@ -3,8 +3,6 @@ import { openSession } from "./safe-session-open";
 import { openVerifiedSession, verifyManagement } from "./safe-session-verify";
 import type { SafeModeSessionFactoryDeps, SafeSessionState } from "./safe-session-types";
 
-export type { SafeModeSessionContext } from "./safe-session-types";
-
 /**
  * SafeModeSession backed by the user's supervised mikrotik-mcp child process.
  *

@@ -1,6 +1,26 @@
-/** Deliberately narrow: a greeting with any actual request still reaches tools. */
+/** Deliberately narrow: a greeting with any actual request still reaches tools. Toleran typo vokal ganda (haloo). */
+const GREETING_TOKENS = "halo+|hallo+|hai+|hi+|hello+|hey+|hei+|assalamualaikum|assalamu'alaikum|selamat (?:pagi|siang|sore|malam)";
+const GREETING_RE = new RegExp(`^(${GREETING_TOKENS})(\\s+(min|admin|kak|bang|pak|bu|bot))?[\\s!?.👋]*$`, "iu");
+/** Awalan sapaan (greeting + honorifik + tanda baca) sebelum isi pesan. Lookahead mencegah strip salah pada kata seperti "history". */
+const GREETING_PREFIX_RE = new RegExp(`^(${GREETING_TOKENS})(\\s+(min|admin|kak|bang|pak|bu|bot))?(?![a-z0-9])[\\s!?,.:👋-]*`, "iu");
+/** Frasa permintaan bantuan murni tanpa tugas nyata — dijawab instan tanpa tool. Mengizinkan kombinasi kata tanya/modal/ganti nama (apa bisa bantu, bisakah kamu bantu). */
+const HELP_SEEKER_RE = /^((?:bisakah|bisa|apakah|apa|boleh)\s*)?((?:kamu|kau|kita|saya|aku)\s+)?((?:bisa|boleh)\s*)?(bantu|bantuin|tolong)\b/i;
+const HELP_TAIL_RE = /^(tolong|please|help)(\s+(kamu|kau|saya|aku))?\s*$/iu;
+
 export function isGreetingOnly(text: string): boolean {
-  return /^(halo|hallo|hai|hi|hello|hey|hei|assalamualaikum|assalamu'alaikum|selamat (pagi|siang|sore|malam))(\s+(min|admin|kak|bang|pak|bu|bot))?[\s!?.👋]*$/iu.test(text.trim());
+  const t = text.trim();
+  if (GREETING_RE.test(t)) return true;
+  // Buang awalan sapaan ("halo", "hai, kak!") agar "halo bisa bantu saya?"
+  // terdeteksi sebagai permintaan bantuan murni, bukan tugas nyata.
+  const stripped = t.replace(GREETING_PREFIX_RE, "");
+  // "bisa bantu saya?", "bisakah kamu bantuin", "tolong", "help", "bantu dong"
+  // — tanya ketersediaan bantuan tanpa tugas; bila ada tugas nyata, tidak match.
+  if (HELP_TAIL_RE.test(stripped)) return true;
+  const m = HELP_SEEKER_RE.exec(stripped);
+  if (!m) return false;
+  const rest = stripped.slice(m[0].length);
+  // Sisa setelah frasa bantu hanya boleh partikel tanya/sopan ("saya?", "dong?", "gak?", "nggak?").
+  return /^(\s*(saya|aku|dong|ga|gak|nggak|gpp|oke|makasih|terima kasih)?[\s!?,.]*)*$/iu.test(rest);
 }
 
 /**

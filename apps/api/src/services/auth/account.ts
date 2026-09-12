@@ -5,11 +5,12 @@ import { LOCAL_WORKSPACE_ID } from "../../lib/workspace";
 import { AppError } from "../../lib/errors";
 import type { Logger } from "../../lib/logger";
 import { hashPassword, verifyPassword } from "./password";
+import { checkLoginRateLimit, clearLoginRateLimit } from "./login-rate-limit";
 
-export const SEED_USERNAME = "yatt-agent";
-export const SEED_ALIAS = "yattagent";
-export const SEED_PASSWORD = "yatt123";
-export const SEED_DISPLAY = "yatt-agent";
+const SEED_USERNAME = "yatt-agent";
+const SEED_ALIAS = "yattagent";
+const SEED_PASSWORD = "yatt123";
+const SEED_DISPLAY = "yatt-agent";
 
 // Username lama tetap bisa login pada instalasi yang sudah ada.
 const LEGACY_USERNAMES = ["mikrotik-agent", "mikrotikagent"];
@@ -75,7 +76,7 @@ export interface AuthAccount {
   displayName: string;
 }
 
-export async function findAccountByIdentifier(db: Database, identifier: string): Promise<(AuthAccount & { passwordHash: string }) | null> {
+async function findAccountByIdentifier(db: Database, identifier: string): Promise<(AuthAccount & { passwordHash: string }) | null> {
   const id = identifier.trim();
   if (!id) return null;
   const rows = await db
@@ -94,26 +95,6 @@ export async function findAccountByIdentifier(db: Database, identifier: string):
     displayName: row.displayName,
     passwordHash: row.passwordHash,
   };
-}
-
-// In-memory login rate limit per key (IP + identifier bucket).
-const loginAttempts = new Map<string, number[]>();
-const LOGIN_MAX = 10;
-const LOGIN_WINDOW_MS = 10 * 60 * 1000;
-
-export function checkLoginRateLimit(key: string): void {
-  const now = Date.now();
-  const cutoff = now - LOGIN_WINDOW_MS;
-  const times = (loginAttempts.get(key) ?? []).filter((t) => t > cutoff);
-  if (times.length >= LOGIN_MAX) {
-    throw new AppError("RATE_LIMITED", "Terlalu banyak percobaan login. Tunggu beberapa menit.", 429);
-  }
-  times.push(now);
-  loginAttempts.set(key, times);
-}
-
-export function clearLoginRateLimit(key: string): void {
-  loginAttempts.delete(key);
 }
 
 export async function loginWithPassword(

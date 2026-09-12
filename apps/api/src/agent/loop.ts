@@ -3,16 +3,13 @@ import { agentRuns } from "../db/schema";
 import { AppError } from "../lib/errors";
 import { assembleHistory } from "./loop/history";
 import { buildRunCatalog } from "./loop/catalog";
+import { getWorkspaceScope } from "./loop/workspace-scope";
 import { createEmitter, createRunCounters } from "./loop/context";
 import { finalizeRun } from "./loop/finalize";
 import { runAgentStep } from "./loop/step";
 import type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
 
-export type { AgentRunDeps, RunEvent, StartRunInput } from "./loop/types";
-export { MAX_TOOL_RESULT_CHARS } from "./loop/types";
-export { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL, readConnectionStatus, type ConnectionLiveStatus } from "../tools/mikrotik/status";
-export { MAX_PROVIDER_TOOLS, MAX_PROVIDER_SCHEMA_CHARS, selectRelevantTools, canonicalKey, findDirectToolsForQuery } from "./loop/ranking";
-export { extractResearchPayload } from "./loop/research";
+export type { RunEvent } from "./loop/types";
 
 /**
  * Agent loop (M7): user message → provider stream → validate COMPLETE tool calls → dispatch → final answer.
@@ -49,6 +46,7 @@ export function createAgentLoop(deps: AgentRunDeps) {
       await emitSeq({ type: "run.started", payload: { conversationId: input.conversationId } });
 
       const { chatHistory } = await assembleHistory(deps.db, input);
+      input.workspaceScope = await getWorkspaceScope(deps.db, input.conversationId);
       const { greetingOnly, catalog, providerTools } = await buildRunCatalog(deps.catalog, input);
       let catalogTarget = `${input.connectionId}:${input.policy.mode}`;
       const toolCallCount = new Map<string, number>();
@@ -63,6 +61,7 @@ export function createAgentLoop(deps: AgentRunDeps) {
         client: input.client,
         maxTokens: deps.limits.maxTokens,
         reasoningEffort: input.reasoningEffort,
+        customThinking: input.customThinking,
         runId: input.runId,
         entryController: entry.controller,
         dispatcher: deps.dispatcher,

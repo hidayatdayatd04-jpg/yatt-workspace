@@ -5,7 +5,7 @@ import { useAiProviders, useMessages, useStartRun, useCancelRun } from "./chat-h
 import { useRunEvents } from "./use-run-events";
 import { readProviderSelection, resolveProviderSelection } from "./provider-selection";
 import { REASONING_STORAGE_KEY } from "./composer/use-composer-reasoning";
-import { normalizeReasoningEffort } from "@shared/index";
+import { normalizeReasoningEffort, supportsReasoning } from "@shared/index";
 
 export function useChatRun(conversationId: string, opts: { terminalOpen: boolean; onRunStarted: () => void }) {
   const qc = useQueryClient();
@@ -79,8 +79,7 @@ export function useChatRun(conversationId: string, opts: { terminalOpen: boolean
     if (opts.terminalOpen) {
       // Terminal state doesn't block chat, but keep draft intact notice.
     }
-    const effort =
-      reasoningEffort === "low" || reasoningEffort === "medium" || reasoningEffort === "high" ? reasoningEffort : undefined;
+    const effort = reasoningEffort === "off" || reasoningEffort === "low" || reasoningEffort === "medium" || reasoningEffort === "high" ? reasoningEffort : undefined;
     idemRef.current += 1;
     startRun.mutate(
       {
@@ -113,12 +112,14 @@ export function useChatRun(conversationId: string, opts: { terminalOpen: boolean
    */
   function handleRetry(editedMessageId: string, text: string) {
     const selected = resolveProviderSelection(providers.data ?? [], readProviderSelection());
-    let effort: "low" | "medium" | "high" | undefined;
+    let effort: "low" | "medium" | "high" | "off" | undefined;
     try {
-      effort = normalizeReasoningEffort(localStorage.getItem(REASONING_STORAGE_KEY)) ?? undefined;
+      const stored = localStorage.getItem(REASONING_STORAGE_KEY);
+      effort = stored === null ? undefined : stored === "" || stored === "off" ? "off" : normalizeReasoningEffort(stored) ?? "off";
     } catch {
       effort = undefined;
     }
+    if (!supportsReasoning(selected?.model)) effort = undefined;
     idemRef.current += 1;
     startRun.mutate(
       {

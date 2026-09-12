@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "@/components/icons";
-import { VISIBLE, type VisibleKind } from "./manage-catalog";
+import type { VisibleKind } from "./manage-catalog";
 import { useManageConnectors } from "./use-manage-connectors";
 import { ManagePopular } from "./ManagePopular";
 import { ManageTable } from "./ManageTable";
@@ -43,6 +43,3 @@ export function ConnectorsManagePanel(props: { initialSelected?: VisibleKind | n
     </div>
   );
 }
-
-export type { VisibleKind };
-export { VISIBLE };

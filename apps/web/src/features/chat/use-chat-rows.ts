@@ -1,10 +1,11 @@
 import type { MessageDTO, ActivityEventDTO } from "./chat-hooks";
 import { humanizeTool, type PipelineStep } from "./ToolActivity";
 import { isCompactionEvent, isManualTerminalEvent } from "./ToolActivity";
+import type { ToolActivityMetadata } from "./tool-activity/types";
 
 export type ChatRow = { kind: "message"; m: MessageDTO } | { kind: "compaction"; ev: ActivityEventDTO };
 
-export interface ToolActivityLike {
+export interface ToolActivityLike extends ToolActivityMetadata {
   id?: string;
   name: string;
   status: "running" | "done" | "failed";
@@ -45,11 +46,14 @@ export function useChatRows(messages: MessageDTO[], persistedActivities: Activit
 
   // Deep Research (web:) punya kartu hasil sendiri — bukan step pipeline live.
   const liveSteps: PipelineStep[] = toolActivity
-    .filter((t) => !t.name.startsWith("web:"))
+    .filter((t) => t.name !== "web:search")
     .map((t, i) => ({
       key: t.id ?? `live-${i}`,
       index: i + 1,
-      label: humanizeTool(t.name, t.args),
+      label: humanizeTool(t.name, t.args, t),
+      args: t.args,
+      attachmentName: t.attachmentName,
+      attachmentKind: t.attachmentKind,
       tool: t.name,
       status: t.status === "done" ? "completed" : t.status,
       durationMs: null,

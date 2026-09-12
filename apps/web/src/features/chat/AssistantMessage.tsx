@@ -1,7 +1,11 @@
+import { ArtifactFiles } from "./ArtifactFiles";
+import { completedArtifacts } from "./artifact-events";
 import { Button } from "@/components/ui/button";
-import { FileText, RotateCcw } from "@/components/icons";
+import { RotateCcw } from "@/components/icons";
+import { FileIcon } from "@/components/file-icons";
 import type { MessageDTO, ActivityEventDTO } from "./chat-hooks";
-import { RunPipeline, ResearchCard } from "./ToolActivity";
+import { ToolGroup } from "./tool-cards";
+import { AssistantTimeline } from "./AssistantTimeline";
 import { AssistantBody } from "./AssistantBody";
 import { CopyButton } from "./CopyButton";
 import { FeedbackButtons } from "./FeedbackButtons";
@@ -14,7 +18,6 @@ export function AssistantMessage(props: {
   messages: MessageDTO[];
   runActs: ActivityEventDTO[] | undefined;
   onAnswerAsk?: (label: string) => void;
-  onSendToTerminal?: (code: string) => void;
   onResendPrompt?: (prompt: string) => void;
   /** Retry in-place: ulangi run memakai pesan user yang sudah ada. */
   onRetryMessage?: (messageId: string, text: string) => void;
@@ -35,7 +38,9 @@ export function AssistantMessage(props: {
             Dijawab model cadangan ({outcome.fallbackReason}).
           </p>
         )}
-        {!!m.content.reasoning && <ReasoningBlock text={m.content.reasoning} live={false} />}
+        {!!m.content.reasoning && !displayTimeline?.some((b) => b.kind === "reasoning") && (
+          <ReasoningBlock text={m.content.reasoning} live={false} />
+        )}
         {m.content.attachments && m.content.attachments.length > 0 && (
           <div className="mb-2.5 flex flex-wrap gap-1">
             {m.content.attachments.map((a) =>
@@ -45,7 +50,7 @@ export function AssistantMessage(props: {
                 </a>
               ) : (
                 <span key={a.id} className="flex items-center gap-1 rounded-md border border-border/80 bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  <FileText className="size-3 text-cyan-500" />
+                  <FileIcon fileName={a.name} size={12} />
                   {a.name}
                 </span>
               ),
@@ -53,37 +58,32 @@ export function AssistantMessage(props: {
           </div>
         )}
         {displayTimeline ? (
-          displayTimeline.map((block) => (
-            <div key={block.key} className="my-2 first:mt-0 last:mb-0">
-              {block.kind === "text" ? (
-                <AssistantBody
-                  text={block.text}
-                  onAnswerAsk={props.onAnswerAsk}
-                  onSendToTerminal={props.onSendToTerminal}
-                  activeConnectionId={props.activeConnectionId}
-                  conversationId={props.conversationId}
-                  onSelectPrompt={props.onResendPrompt}
-                  suggestionsDisabled={props.actionsDisabled}
-                />
-              ) : block.kind === "research" ? (
-                <ResearchCard research={block.research} status={block.status} />
-              ) : (
-                <RunPipeline steps={block.steps ?? [block.step]} defaultOpen={false} overall={overall} />
-              )}
-            </div>
-          ))
+          <AssistantTimeline
+            blocks={displayTimeline}
+            m={m}
+            overall={overall}
+            onAnswerAsk={props.onAnswerAsk}
+            onResendPrompt={props.onResendPrompt}
+            actionsDisabled={props.actionsDisabled}
+            activeConnectionId={props.activeConnectionId}
+            conversationId={props.conversationId}
+          />
         ) : (
           <>
             {showPipeline && (
               <div className="mb-3">
-                <RunPipeline steps={pipeline!.steps} tx={pipeline!.tx} defaultOpen={false} overall={overall} />
+                <ToolGroup
+                  steps={pipeline!.steps}
+                  runId={m.content.runId}
+                  overall={overall}
+                  onRetry={props.onResendPrompt ? () => props.onResendPrompt?.("continue") : undefined}
+                />
               </div>
             )}
             {strippedText.chat ? (
               <AssistantBody
                 text={strippedText.chat}
                 onAnswerAsk={props.onAnswerAsk}
-                onSendToTerminal={props.onSendToTerminal}
                 activeConnectionId={props.activeConnectionId}
                 conversationId={props.conversationId}
                 onSelectPrompt={props.onResendPrompt}
@@ -108,6 +108,7 @@ export function AssistantMessage(props: {
             Status: {m.status === "failed" ? "Gagal" : m.status === "cancelled" ? "Dibatalkan" : m.status}
           </p>
         )}
+        <ArtifactFiles files={completedArtifacts(m.content.timeline ?? [])} />
         {partialFailures > 0 && (
           <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">Sebagian pembacaan gagal ({partialFailures}) — jawaban mungkin tidak lengkap.</p>
         )}

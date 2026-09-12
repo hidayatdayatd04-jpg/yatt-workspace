@@ -1,8 +1,5 @@
 import { fetchLive, getHistory, type MonitoringDeps } from "./monitoring/service";
 
-export type { InterfaceInfo, MonitoringLiveData, RouterInfo } from "./monitoring/types";
-export { parseLiveData } from "./monitoring/live-data";
-
 export function createMonitoringService(deps: MonitoringDeps) {
   return {
     fetchLive: (userId: string, connectionId: string) => fetchLive(deps, userId, connectionId),

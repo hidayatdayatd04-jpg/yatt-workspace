@@ -16,7 +16,7 @@ interface ProjectProfile {
 }
 
 /** Deteksi profil project dari manifest/lockfile pada folder tertentu. */
-export async function detectProjectAt(root: string, dir: string): Promise<(ProjectProfile & { path: string; files: string[] }) | null> {
+async function detectProjectAt(root: string, dir: string): Promise<(ProjectProfile & { path: string; files: string[] }) | null> {
   const markers: Array<[string, string]> = [
     ["package.json", "js"], ["bun.lock", "bun"], ["bun.lockb", "bun"], ["pnpm-lock.yaml", "pnpm"], ["yarn.lock", "yarn"], ["package-lock.json", "npm"],
     ["Cargo.toml", "rust"], ["go.mod", "go"], ["composer.json", "php"], ["requirements.txt", "python"], ["pyproject.toml", "python"], ["Gemfile", "ruby"], ["pom.xml", "java"], ["build.gradle", "java"], ["build.gradle.kts", "java"], ["Dockerfile", "docker"],

@@ -9,27 +9,31 @@ const STORAGE_KEY = "composer-reasoning-effort";
 /** Kunci localStorage pilihan reasoning — dipakai ulang oleh retry pesan. */
 export const REASONING_STORAGE_KEY = STORAGE_KEY;
 
+/** Nilai yang dikirim ke server: upaya penalaran, atau "off" = matikan. */
+export type ComposerEffort = ReasoningEffort | "off";
+
 /**
- * Pilihan reasoning_effort per composer. Tersimpan di localStorage dan
- * hanya berlaku bila model aktif mendukung reasoning (lihat
- * supportsReasoning) — bila model diganti ke yang tak mendukung,
- * nilai tersimpan dipertahankan tapi tidak dikirim.
+ * Pilihan reasoning_effort per composer. Tersimpan di localStorage ("off"
+ * disimpan eksplisit agar pilihan "Mati" bertahan, beda dari belum memilih)
+ * untuk semua model: server memilih reasoning native atau thinking custom.
  */
 export function useComposerReasoning(effectiveModel: string) {
-  const [effort, setEffortState] = useState<ReasoningEffort | null>(() => {
+  const [effort, setEffortState] = useState<ComposerEffort | null>(() => {
     try {
-      return normalizeReasoningEffort(localStorage.getItem(STORAGE_KEY)) ?? null;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw === "off") return "off";
+      return normalizeReasoningEffort(raw) ?? null;
     } catch {
       return null;
     }
   });
 
-  const supported = supportsReasoning(effectiveModel);
+  const nativeSupported = supportsReasoning(effectiveModel);
 
-  // Bila model tak mendukung reasoning, jangan kirim apapun (UI disembunyikan).
-  const activeEffort: ReasoningEffort | undefined = supported ? (effort ?? undefined) : undefined;
+  // Preferensi native tidak mematikan thinking custom saat pindah model biasa.
+  const activeEffort: ComposerEffort | undefined = nativeSupported ? effort ?? "medium" : undefined;
 
-  function setEffort(next: ReasoningEffort | null) {
+  function setEffort(next: ComposerEffort | null) {
     setEffortState(next);
     try {
       if (next) localStorage.setItem(STORAGE_KEY, next);
@@ -43,13 +47,13 @@ export function useComposerReasoning(effectiveModel: string) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw !== null && normalizeReasoningEffort(raw) === undefined) localStorage.removeItem(STORAGE_KEY);
+      if (raw !== null && raw !== "off" && normalizeReasoningEffort(raw) === undefined) localStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignore */
     }
   }, []);
 
-  return { effort: activeEffort, storedEffort: effort, setEffort, supported };
+  return { effort: activeEffort, storedEffort: effort, setEffort, nativeSupported };
 }
 
 export type ComposerReasoning = ReturnType<typeof useComposerReasoning>;

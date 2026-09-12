@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Send, Square, ShieldCheck } from "@/components/icons";
+import { ArrowDown, Square, ShieldCheck } from "@/components/icons";
 import { useConnectors } from "@/features/connectors/connector-hooks";
 import { ContextMeter } from "./ContextMeter";
 import { useComposerModel } from "./composer/use-composer-model";
@@ -7,7 +7,6 @@ import { useModelScroll } from "./composer/use-model-scroll";
 import { useComposerDraft } from "./composer/use-composer-draft";
 import { useComposerActions } from "./composer/use-composer-actions";
 import { useComposerReasoning } from "./composer/use-composer-reasoning";
-import { ReasoningPicker } from "./composer/ReasoningPicker";
 import { ComposerMenu } from "./composer/ComposerMenu";
 import { ComposerInput } from "./composer/ComposerInput";
 import { VoiceButton } from "./composer/VoiceButton";
@@ -57,13 +56,13 @@ export function ChatComposer(props: ChatComposerProps) {
 
   const isDocked = Boolean(props.conversationId);
   return (
-    <div className={isDocked ? "border-t border-border/40 bg-background/80 backdrop-blur-md px-3 py-3 sm:px-6 sm:py-4" : "w-full"}>
+    <div className={isDocked ? "bg-background px-3 pb-4 pt-2 sm:px-6 sm:pb-5" : "w-full"}>
       <div className={isDocked ? "mx-auto max-w-3xl" : "w-full"}>
         <ComposerAttachments attachments={props.attachments} onRemoveAttachment={props.onRemoveAttachment} previewUrls={props.previewUrls} />
-        <div className="relative flex flex-col rounded-2xl border border-border/70 bg-card/95 p-2 shadow-sm transition-colors duration-200 hover:border-border">
+        <div className="relative flex min-h-[126px] flex-col rounded-[20px] border border-border bg-card p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.04)] transition-colors focus-within:border-foreground/30 sm:p-3" data-testid="chat-composer">
           <ComposerInput composer={props} draft={draft} actions={actions} uploadDisabled={uploadDisabled} text={text} setText={setText} textareaRef={textareaRef} />
-          <div className="mt-1 flex flex-wrap items-center justify-between gap-1.5 pt-1">
-            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+          <div className="mt-auto flex items-center justify-between gap-1 pt-2">
+            <div className="flex shrink-0 items-center gap-0.5">
               <ComposerMenu
                 uploading={props.uploading}
                 running={props.running}
@@ -74,6 +73,8 @@ export function ChatComposer(props: ChatComposerProps) {
                 onPickFile={(images) => { if (!uploadDisabled) actions.pickFile(images); }}
                 onAttachFile={props.onPickFile}
               />
+              <ContextMeter conversationId={props.conversationId} running={props.running}
+                providerId={model.effectiveSelection?.providerId ?? null} model={model.effectiveModel || undefined} providerName={model.effectiveProvider?.name} />
               {props.connector?.status === "connected" && (
                 <button
                   type="button"
@@ -88,30 +89,22 @@ export function ChatComposer(props: ChatComposerProps) {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1 sm:gap-1.5 ml-auto">
+            <div className="ml-auto flex min-w-0 items-center gap-0.5 sm:gap-1">
+              <ModelPicker model={model} scroll={scroll} reasoning={reasoning} />
               <VoiceButton
                 onTranscript={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
                 disabled={props.disabled || props.running}
               />
-              <ReasoningPicker reasoning={reasoning} />
-              <ModelPicker model={model} scroll={scroll} />
-              <ContextMeter
-                conversationId={props.conversationId}
-                running={props.running}
-                providerId={model.effectiveSelection?.providerId ?? null}
-                model={model.effectiveModel || undefined}
-                providerName={model.effectiveProvider?.name}
-              />
               <Button
                 type="button"
                 size="icon"
-                className={`size-9 rounded-xl transition-colors ${props.running ? "bg-foreground text-background hover:bg-foreground/85" : "bg-indigo-600 text-white hover:bg-indigo-500"}`}
+                className={`ml-1 size-9 shrink-0 rounded-[10px] transition-colors ${props.running ? "bg-foreground text-background hover:bg-foreground/85" : "bg-[#c96442] text-white hover:bg-[#b65435] disabled:bg-muted disabled:text-muted-foreground"}`}
                 onClick={props.running ? props.onCancel : draft.submit}
                 disabled={props.running ? props.cancelling : props.disabled || props.uploading || setMode.isPending || !text.trim()}
                 aria-label={props.running ? "Hentikan jawaban" : setMode.isPending ? "Menunggu mode router…" : "Kirim pesan"}
                 title={props.running ? "Hentikan jawaban" : setMode.isPending ? "Menunggu mode router…" : "Kirim pesan"}
               >
-                {props.running ? <Square className="size-3.5 fill-current" /> : <Send className="size-4" />}
+                {props.running ? <Square className="size-3.5 fill-current" /> : <ArrowDown className="size-5 rotate-180" />}
               </Button>
             </div>
           </div>

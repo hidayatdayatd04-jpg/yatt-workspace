@@ -9,8 +9,6 @@ import { decryptCredential } from "./connector/credentials";
 import { requireOwned } from "./connector/ownership";
 import type { ConnectorCtx, ConnectorServiceDeps } from "./connector/types";
 
-export type { ConnectorServiceDeps } from "./connector/types";
-
 export function createConnectorService(deps: ConnectorServiceDeps) {
   const ctx: ConnectorCtx = {
     db: deps.db,

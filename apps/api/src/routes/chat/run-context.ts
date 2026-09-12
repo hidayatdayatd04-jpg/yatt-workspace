@@ -1,4 +1,4 @@
-import { normalizeReasoningEffort, supportsReasoning } from "@shared/index";
+import { resolveRunThinking } from "./run-thinking";
 import { isReadOnlyIntent } from "../../agent/intent";
 import type { ProviderConfigWithKey } from "../../agent/provider-settings";
 import type { WorkspaceContext } from "../../lib/workspace";
@@ -51,9 +51,7 @@ export async function prepareRunContext(
   const memorySummary = await loadMemorySummary(ctx, conv.id);
   const crossMemory = await loadCrossMemory(deps.db, workspace.userId).catch(() => null);
   const customInstructions = await loadCustomInstructions(ctx, workspace.userId).catch(() => null);
-  const requestedReasoning = normalizeReasoningEffort((input as { reasoningEffort?: unknown }).reasoningEffort);
-  const modelForReasoning = input.model ?? cfg?.model ?? "";
-  const reasoningEffort = requestedReasoning && supportsReasoning(modelForReasoning) ? requestedReasoning : undefined;
+  const { reasoningEffort, customThinking } = resolveRunThinking(input.model ?? cfg?.model ?? "", input.reasoningEffort);
   const visionCtx = await buildVisionContext(ctx, {
     images: args.visionImages ?? [],
     modelForVision: input.model ?? cfg?.model ?? "",
@@ -63,5 +61,5 @@ export async function prepareRunContext(
     conversationId: conv.id,
     policyMode: policyModeForCtx,
   });
-  return { mikrotikEnabled, readOnlyRequested, conn, effectiveMode, writeBlockNote, policyModeForCtx, client, routerLabel, memorySummary, crossMemory, customInstructions, reasoningEffort, visionCtx, visionImages: visionCtx.visionImages };
+  return { mikrotikEnabled, readOnlyRequested, conn, effectiveMode, writeBlockNote, policyModeForCtx, client, routerLabel, memorySummary, crossMemory, customInstructions, reasoningEffort, customThinking, visionCtx, visionImages: visionCtx.visionImages };
 }

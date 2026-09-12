@@ -45,5 +45,3 @@ export function createLogger(level: LogLevel = "info"): Logger {
     error: (m, d) => emit("error", m, d),
   };
 }
-
-export { redactValue };

@@ -4,15 +4,6 @@ import { executeApproval } from "./approval/execute";
 import { getApproval, getOperationLog, listApprovals } from "./approval/queries";
 import type { ApprovalStatus } from "./approval/types";
 
-export type {
-  ApprovalDTO,
-  ApprovalOperation,
-  ApprovalStatus,
-  CreateApprovalInput,
-  OperationLogDTO,
-  RiskLevel,
-} from "./approval/types";
-
 export function createApprovalService(deps: {
   db: Database;
   executeTool?: (input: { userId: string; connectionId: string; fqName: string; args: unknown }) => Promise<{ ok: boolean; output: string; errorCode?: string }>;

@@ -59,7 +59,7 @@ export function useApprovalFlow(
 
   async function handleApproveAndExecute() {
     if (!opts.activeConnectionId) {
-      toast.error("Router belum terhubung. Pilih router di kolom chat terlebih dahulu.");
+      toast.error("Kartu approval ini khusus untuk perubahan konfigurasi router, tetapi belum ada router yang dipilih. Untuk mengedit file/dokumen, minta langsung lewat chat (tool office), tanpa kartu approval.");
       return;
     }
 

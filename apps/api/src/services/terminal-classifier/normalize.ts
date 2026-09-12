@@ -1,14 +1,12 @@
 import { ROUTEROS_ROOTS, ROUTEROS_ROOT_COMMANDS } from "../routeros-menus";
 import { LOCAL_COMMANDS } from "./patterns";
 
-export { LOCAL_COMMANDS } from "./patterns";
-
 export function isLocalCommand(cmd: string): boolean {
   return LOCAL_COMMANDS.has(cmd.trim().toLowerCase());
 }
 
 /** Normalize slash-path notation (e.g. `/interface/vlan/print` → `/interface vlan print`). */
-export function normalizeSlashes(cmd: string): string {
+function normalizeSlashes(cmd: string): string {
   const parts = cmd.trim().split(/\s+/);
   if (!parts[0]?.startsWith("/")) return cmd;
   const firstToken = parts[0];

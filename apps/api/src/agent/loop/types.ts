@@ -5,12 +5,14 @@ import type { PolicyDispatcher, PolicySnapshot } from "../../policies/dispatcher
 import type { TransactionCoordinator } from "../../transactions/coordinator";
 import type { NormalizedTool } from "../../policies/normalize";
 import type { ReasoningEffort } from "@shared/index";
+import type { WorkspaceScope } from "./workspace-scope";
 
 export interface RunEvent {
   type:
     | "run.started"
     | "message.delta"
     | "reasoning.delta"
+    | "tool.preparing"
     | "tool.started"
     | "tool.completed"
     | "tool.failed"
@@ -62,8 +64,11 @@ export interface StartRunInput {
    * sebagai `reasoning_effort`; undefined = default model).
    */
   reasoningEffort?: ReasoningEffort;
+  customThinking?: boolean;
   /** Lazily opens Safe Mode transaction only when a mutation is about to run */
   ensureTransaction?: () => Promise<{ ok: boolean; transactionId?: string; error?: string }>;
+  /** Cakupan workspace percakapan (diisi loop sebelum katalog): browse terkunci bila false. */
+  workspaceScope?: WorkspaceScope;
 }
 
 export const MAX_TOOL_RESULT_CHARS = 8_000;

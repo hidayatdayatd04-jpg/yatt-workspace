@@ -16,7 +16,6 @@ export function MessageItem(props: {
   onCancelEdit: () => void;
   onSubmitEdit: () => void;
   onAnswerAsk?: (label: string) => void;
-  onSendToTerminal?: (code: string) => void;
   onResendPrompt?: (prompt: string) => void;
   onRetryMessage?: (messageId: string, text: string) => void;
   actionsDisabled?: boolean;
@@ -57,7 +56,6 @@ export function MessageItem(props: {
             messages={props.messages}
             runActs={runActs}
             onAnswerAsk={props.onAnswerAsk}
-            onSendToTerminal={props.onSendToTerminal}
             onResendPrompt={props.onResendPrompt}
             onRetryMessage={props.onRetryMessage}
             actionsDisabled={props.actionsDisabled}

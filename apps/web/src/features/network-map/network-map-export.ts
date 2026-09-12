@@ -10,7 +10,7 @@ const escapeXml = (value: string) => value.replace(/[<>&"']/g, char => ({ "<": "
 const shorten = (value: string, length: number) => Array.from(value).length > length ? Array.from(value).slice(0, length - 1).join("") + "…" : value;
 
 /** Render from graph data, including nodes culled by the interactive viewport. */
-export function createMapSvg(graph: Graph, snapshot: NetworkMapSnapshot, scope: string) {
+function createMapSvg(graph: Graph, snapshot: NetworkMapSnapshot, scope: string) {
   if (!graph.nodes.length) throw new Error("Tidak ada perangkat untuk diekspor.");
   const minX = Math.min(...graph.nodes.map(n => n.position.x));
   const minY = Math.min(...graph.nodes.map(n => n.position.y));

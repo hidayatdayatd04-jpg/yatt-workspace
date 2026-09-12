@@ -9,7 +9,7 @@ import { isIP } from "node:net";
  */
 const BLOCKED_MESSAGE = "URL ditolak kebijakan egress (IP internal/loopback/link-local/non-HTTP diblokir).";
 
-export class UrlPolicyError extends Error {
+class UrlPolicyError extends Error {
   constructor(message = BLOCKED_MESSAGE) {
     super(message);
     this.name = "UrlPolicyError";

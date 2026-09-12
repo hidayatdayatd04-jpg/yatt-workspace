@@ -6,8 +6,7 @@ import type { NetworkMapService } from "../../services/network-map";
 import { tryExecuteCustomTool } from "./executor/custom";
 import { executeViaMcp } from "./executor/mcp";
 
-export { ToolTimeoutError } from "./executor/timeout";
-export type { OwnedConnection, ToolExecResult } from "./executor/types";
+export type { OwnedConnection } from "./executor/types";
 
 /**
  * Executes dispatched tools on the user's supervised mikrotik-mcp child
@@ -20,7 +19,7 @@ export type { OwnedConnection, ToolExecResult } from "./executor/types";
  * pasti) — pemanggil TIDAK BOLEH mengulang mutasi yang timeout tanpa
  * verifikasi baca terlebih dahulu.
  */
-export const TOOL_TIMEOUT_MS = 45_000;
+const TOOL_TIMEOUT_MS = 45_000;
 
 export function createToolExecutor(deps: {
   supervisor: McpSupervisor;

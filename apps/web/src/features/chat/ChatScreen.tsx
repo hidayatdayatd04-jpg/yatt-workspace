@@ -61,15 +61,12 @@ export function ChatScreen(props: { conversationId: string; activeConnector: Con
             txStatus={runEvents.txStatus}
             queueStatus={runEvents.queueStatus}
             runLive={runEvents.live}
+            activeRunId={run.activeRunId}
             runError={runEvents.runError}
             emptyTitle="Apa yang ingin Anda kerjakan?"
             onAnswerAsk={(label) => run.handleSend(label, [])}
             onResendPrompt={(prompt) => run.handleSend(prompt, [])}
             onRetryMessage={(messageId, text) => run.handleRetry(messageId, text)}
-            onSendToTerminal={(code) => {
-              target.setTerminalDraft(code);
-              target.setTerminalOpen(true);
-            }}
             activeConnectionId={props.activeConnector?.id ?? null}
             conversationId={props.conversationId}
           />
@@ -113,5 +110,3 @@ export function ChatScreen(props: { conversationId: string; activeConnector: Con
     </div>
   );
 }
-
-export type { ConnectorDTO };

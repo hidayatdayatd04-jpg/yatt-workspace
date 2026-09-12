@@ -2,7 +2,7 @@ import type { z } from "zod";
 import type { Logger } from "../../lib/logger";
 import { WebSearchQuery } from "./web-search-definition";
 
-export { WEB_SEARCH_FQ, WebSearchQuery, WEB_SEARCH_TOOL } from "./web-search-definition";
+export { WEB_SEARCH_TOOL } from "./web-search-definition";
 
 // --- Rate limit + cache internal (single-process; app ini single-user lokal) ---
 // 20/menit: sesi deep research yang sah bisa memakan 5-10 putaran pencarian.

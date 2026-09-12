@@ -1,7 +1,15 @@
 export type StepStatus = "running" | "completed" | "failed" | "unknown";
 
-export interface PipelineStep {
+export interface ToolActivityMetadata {
+  activityLabel?: string;
+  attachmentName?: string;
+  attachmentKind?: string;
+}
+
+export interface PipelineStep extends ToolActivityMetadata {
   key: string;
+  /** callId event tool (dipakai Tool Card mengambil detail eksekusi). */
+  callId?: string;
   index: number;
   label: string;
   tool: string;

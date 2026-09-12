@@ -5,7 +5,7 @@ import { defineTool, objectSchema, stringField } from "../types";
 /** Utility teks deterministik — tanpa shell/Python untuk operasi kecil. */
 
 /** Unified diff sederhana baris-demi-baris (LCS ringan, cocok untuk teks pendek). */
-export function diffLines(a: string, b: string): { line: number; type: "same" | "add" | "del"; text: string }[] {
+function diffLines(a: string, b: string): { line: number; type: "same" | "add" | "del"; text: string }[] {
   const left = a.split("\n");
   const right = b.split("\n");
   const n = left.length;

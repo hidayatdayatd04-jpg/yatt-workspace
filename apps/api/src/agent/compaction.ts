@@ -5,8 +5,6 @@ import { AppError } from "../lib/errors";
 import type { CompactionDeps } from "./compaction-types";
 import { runCompactionJob } from "./compaction-job";
 
-export type { CompactionDeps } from "./compaction-types";
-
 /** Single job per conversation+revision guard; CAS via revision. */
 export async function startCompaction(
   deps: CompactionDeps,

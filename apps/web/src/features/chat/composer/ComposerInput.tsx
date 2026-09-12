@@ -81,7 +81,7 @@ export function ComposerInput(props: {
         aria-label="Pesan untuk AI"
         rows={1}
         disabled={composer.disabled}
-        className="max-h-44 min-h-[38px] w-full resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted-foreground/70 disabled:opacity-50"
+        className="max-h-44 min-h-[56px] w-full resize-none bg-transparent px-2 py-1.5 text-[15px] leading-6 outline-none placeholder:text-muted-foreground/70 disabled:opacity-50"
       />
     </>
   );

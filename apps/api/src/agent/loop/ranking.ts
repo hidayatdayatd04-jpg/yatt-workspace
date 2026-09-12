@@ -11,7 +11,7 @@ import { intentBoostPrefixes } from "./intent-routing";
  */
 export const MAX_PROVIDER_TOOLS = 48;
 /** Batas ukuran total schema per request (~17rb token estimasi) agar payload tidak membengkak. */
-export const MAX_PROVIDER_SCHEMA_CHARS = 60_000;
+const MAX_PROVIDER_SCHEMA_CHARS = 60_000;
 
 function schemaChars(t: NormalizedTool): number {
   let schemaLen = 0;
@@ -51,9 +51,13 @@ function hasAny(set: Set<string>, list: string[]): boolean {
 
 /** Skor relevansi satu tool terhadap kata kunci (dipakai ranking + budget deskripsi). */
 export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): number {
-  if (t.fqName === CONNECTION_CHECK_FQ) return 1_000_000;
+  if (t.fqName === "skills:read" || t.fqName === CONNECTION_CHECK_FQ) return 1_000_000;
   let base = 0;
-  if (/^(general|mikrotik|drive|gmail|calendar|telegram|web|git|data|text|project|compute|archive|system|browser):/.test(t.fqName)) {
+  if (t.fqName.startsWith("office:")) {
+    // Tool dokumen (docx/xlsx/pdf/pptx) prioritas tinggi: jangan terpotong
+    // budget 48-tool pada query umum ("ubah namanya jadi ...").
+    base = 900_000;
+  } else if (/^(general|mikrotik|drive|gdocs|sheets|slides|gmail|calendar|telegram|web|git|data|text|project|compute|archive|system):/.test(t.fqName)) {
     base = 700_000;
   } else if (CORE_ROUTER_READ_TOOLS.has(t.rawName)) {
     base = 600_000;
@@ -70,9 +74,17 @@ export function scoreToolForQuery(t: NormalizedTool, keywords: Set<string>): num
     domainBoost += 100_000;
   } else if (t.fqName.startsWith("drive:") && hasAny(keywords, ["drive", "document", "doc"])) {
     domainBoost += 100_000;
+  } else if (t.fqName.startsWith("gdocs:") && hasAny(keywords, ["docs", "document", "dokumen", "doc"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("sheets:") && hasAny(keywords, ["sheets", "spreadsheet", "excel", "untung", "lembar"])) {
+    domainBoost += 100_000;
+  } else if (t.fqName.startsWith("slides:") && hasAny(keywords, ["slides", "presentation", "presentasi", "powerpoint", "ppt"])) {
+    domainBoost += 100_000;
   } else if (t.fqName.startsWith("telegram:") && hasAny(keywords, ["telegram", "bot", "chat"])) {
     domainBoost += 100_000;
   } else if (t.fqName.startsWith("web:") && hasAny(keywords, ["web", "search", "research", "news", "price", "query"])) {
+    domainBoost += 150_000;
+  } else if (t.fqName.startsWith("office:") && hasAny(keywords, ["excel", "spreadsheet", "word", "docx", "xlsx", "pdf", "ppt", "pptx", "powerpoint", "presentation", "dokumen", "presentasi"])) {
     domainBoost += 150_000;
   }
 

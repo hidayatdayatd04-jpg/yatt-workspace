@@ -1,6 +1,7 @@
 import type { ChatToolDefinition } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
 import { isGreetingOnly } from "../intent";
+import { hasBrowseIntent } from "./workspace-scope";
 import { CONNECTION_CHECK_FQ, CONNECTION_CHECK_TOOL } from "../../tools/mikrotik/status";
 import { toProviderTools } from "./provider-tools";
 import { selectRelevantTools } from "./ranking";
@@ -29,6 +30,16 @@ export async function buildRunCatalog(
     ? fullCatalog
     : fullCatalog.filter((t) => t.fqName.startsWith("docs:") || t.fqName.startsWith("web:") || t.fqName === CONNECTION_CHECK_FQ);
   const catalog = [...routerCatalog, ...(greetingOnly ? [] : input.additionalTools ?? [])];
-  const providerTools = toProviderTools(selectRelevantTools(catalog, input.userText), input.userText);
-  return { greetingOnly, catalog, providerTools };
+  // Kunci anti-intip: daftar isi workspace hanya ditawarkan bila percakapan
+  // ini sudah berkutat dengan file (riwayat/lampiran) atau pengguna memintanya
+  // eksplisit. Tanpa itu model wajib bertanya dulu, bukan menebak dari disk.
+  const canBrowse = !!input.workspaceScope?.browsingAuthorized || hasBrowseIntent(input.userText);
+  // Kunci anti-intip juga menutup jalur pintas pencarian broad: search_files
+  // dengan pattern ".*" setara list_files. Tanpa otorisasi browse, tool
+  // pencarian workspace tidak ditawarkan.
+  const browsedCatalog = canBrowse
+    ? catalog
+    : catalog.filter((t) => t.fqName !== "general:list_files" && t.fqName !== "general:search_files" && t.fqName !== "general:search_code");
+  const providerTools = toProviderTools(selectRelevantTools(browsedCatalog, input.userText), input.userText);
+  return { greetingOnly, catalog: browsedCatalog, providerTools };
 }

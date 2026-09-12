@@ -6,7 +6,7 @@ import type { ResearchResult } from "@shared/index";
  * tool output. Data is untrusted internet content — never router data.
  */
 export function extractResearchPayload(fqName: string, result: { ok: boolean; output: string }): ResearchResult | null {
-  if (!fqName.startsWith("web:") || !result.ok) return null;
+  if (fqName !== "web:search" || !result.ok) return null;
   try {
     const parsed = JSON.parse(result.output) as { query?: unknown; answer?: unknown; results?: unknown };
     const rows = Array.isArray(parsed.results) ? parsed.results : [];

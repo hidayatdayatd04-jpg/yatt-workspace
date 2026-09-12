@@ -4,7 +4,7 @@ import type { User } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 
 /** Gaya input seragam: tinggi, radius, dan tanpa ring/border tambahan saat difokuskan. */
-export const FIELD_CLASS =
+const FIELD_CLASS =
   "h-11 rounded-xl border-border/60 bg-muted/40 px-4 text-sm shadow-none transition-colors placeholder:text-muted-foreground/70 focus-visible:border-border/60 focus-visible:ring-0";
 
 type FieldProps = Omit<ComponentProps<typeof Input>, "className" | "id"> & {

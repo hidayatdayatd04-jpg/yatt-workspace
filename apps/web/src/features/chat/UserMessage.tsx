@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { FileText, Pencil } from "@/components/icons";
+import { Pencil } from "@/components/icons";
+import { FileIcon } from "@/components/file-icons";
 import type { MessageDTO } from "./chat-hooks";
 import { CopyButton } from "./CopyButton";
 import { EditBox } from "./editing";
@@ -42,7 +43,7 @@ export function UserMessage(props: {
                   </a>
                 ) : (
                   <span key={a.id} className="flex items-center gap-1 rounded-md bg-white/20 px-2.5 py-0.5 text-xs text-white">
-                    <FileText className="size-3" />
+                    <FileIcon fileName={a.name} size={12} />
                     {a.name}
                   </span>
                 ),

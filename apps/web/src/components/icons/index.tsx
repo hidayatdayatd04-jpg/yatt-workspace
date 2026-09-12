@@ -1,6 +1,6 @@
 /* Handcrafted Custom Modern Icons for Agent Workspace — barrel re-export. */
 export type { IconProps } from "./base";
-export { createCustomIcon } from "./base";
+
 export {
   Activity,
   AlertCircle,
@@ -42,6 +42,6 @@ export {
 } from "./icons-b";
 export { MoreHorizontal, MoreVertical, Palette, PanelLeftClose, Pencil, Pin, PinOff, Plug, Plus, Power, Radio } from "./icons-c";
 export { RefreshCw, RotateCcw, Scissors, Search, Send, Server, Settings, Settings2, ShieldCheck, Square, Sun } from "./icons-d";
-export { TerminalSquare, Trash2, User, Wifi, X, XCircle, OctagonXIcon, TriangleAlertIcon, CheckIcon, ChevronRightIcon, XIcon } from "./icons-e";
+export { TerminalSquare, Trash2, User, Wifi, X, OctagonXIcon, TriangleAlertIcon, CheckIcon, ChevronRightIcon, XIcon } from "./icons-e";
 export { Network, Bell, BarChart3, Shield, FileDiff, Users, HardDrive, Brain } from "./icons-f";
-export { Folder, Mail, ArrowRight, Calendar, GoogleG, GmailIcon, GoogleDriveIcon, GoogleCalendarIcon, MikrotikIcon } from "./integrations";
+export { Folder, Mail, ArrowRight, Calendar, GoogleG, GmailIcon, GoogleDriveIcon, GoogleCalendarIcon, GoogleDocsIcon, GoogleSheetsIcon, GoogleSlidesIcon, MikrotikIcon } from "./integrations";

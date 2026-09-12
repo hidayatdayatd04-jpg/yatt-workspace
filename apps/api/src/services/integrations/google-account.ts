@@ -1,4 +1,8 @@
 import { GOOGLE_SERVICES, type IntegrationKind } from "@shared/index";
+
+function isGoogleService(kind: string): kind is Exclude<IntegrationKind, "mikrotik" | "workspace" | "google" | "telegram"> {
+  return kind === "drive" || kind === "gmail" || kind === "calendar" || kind === "docs" || kind === "sheets" || kind === "slides";
+}
 import type { Database } from "../../db";
 import { integrations } from "../../db/schema";
 import { sealSecret, type KeyRing } from "../../lib/crypto";
@@ -38,7 +42,7 @@ export function createGoogleAccountStore(deps: { db: Database; keyRing: KeyRing 
       throw new AppError("VALIDATION_FAILED", "Token Google tidak lengkap.", 422);
     }
     const target = tokens.targetService;
-    if (target && (target === "drive" || target === "gmail" || target === "calendar")) {
+    if (target && isGoogleService(target)) {
       const existing = await selectIntegrationRow(db, userId, target);
       const sealed = sealCreds(tokens, userId, target);
       const values = {

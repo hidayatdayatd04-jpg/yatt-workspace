@@ -35,6 +35,11 @@ export function createOpenAiCompatibleClient(cfg: ProviderConfigWithKey, logger:
     timeout: 90_000,
     maxRetries: 0, // Surface quota errors promptly; never multiply a user's limited request.
     fetch: buildGeminiAwareFetch(cfg, logger),
+    // Atribusi aplikasi (kebijakan OpenRouter): model agentic ":free"
+    // menolak klien tanpa identitas — cantumkan nama + repo aplikasi ini.
+    ...(cfg.kind === "openrouter"
+      ? { defaultHeaders: { "HTTP-Referer": "https://github.com/yatt-agent/yatt-agent", "X-Title": "YATT Agent" } }
+      : {}),
   });
 
   const limiter = opts.limiter ?? globalRateLimiter;

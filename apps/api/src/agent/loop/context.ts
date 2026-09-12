@@ -16,6 +16,9 @@ export interface ToolMsg {
 
 /** Seluruh state mutable per-run (pengganti closure `run()`). */
 export interface RunCounters {
+  emptyResponseRetries?: number;
+  /** Nudge anti-loop thinking (penalaran tanpa tindakan) — maksimal satu. */
+  thinkNudges?: number;
   seqCounter: number;
   timeline: RunEvent[];
   finalStatus: "completed" | "failed" | "cancelled";
@@ -86,8 +89,8 @@ export function createEmitter(
     const event: RunEvent = { ...e, runId, seq: counters.seqCounter };
     if (e.type === "message.delta" || e.type === "reasoning.delta" || e.type.startsWith("tool.")) {
       const previous = counters.timeline.at(-1);
-      if ((e.type === "message.delta" || e.type === "reasoning.delta") && previous?.type === e.type) {
-        previous.payload = { text: String(previous.payload.text ?? "") + String(e.payload.text ?? "") };
+      if ((e.type === "message.delta" || e.type === "reasoning.delta") && previous?.type === e.type && !e.payload.segmentStart) {
+        previous.payload = { ...previous.payload, ...e.payload, text: String(previous.payload.text ?? "") + String(e.payload.text ?? "") };
       } else counters.timeline.push({ ...event, payload: { ...event.payload } });
     }
     await emit(event);

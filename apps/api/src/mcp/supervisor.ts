@@ -2,8 +2,7 @@ import type { Logger } from "../lib/logger";
 import { ChildRegistry, spawnChildProcess } from "./supervisor-registry";
 import type { ConnectionSpec, McpChild, SpawnPlan, SupervisorLimits } from "./supervisor-types";
 
-export type { ConnectionSpec, McpChild, SpawnPlan, SupervisedEntry, SupervisorLimits } from "./supervisor-types";
-export { McpSpawnError } from "./supervisor-types";
+export type { ConnectionSpec, McpChild, SpawnPlan } from "./supervisor-types";
 
 /**
  * Spawns mikrotik-mcp child processes with a minimal, connection-scoped env.

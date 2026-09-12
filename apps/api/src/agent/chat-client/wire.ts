@@ -99,7 +99,7 @@ export function buildProviderMessages(
 }
 
 /** Argumen tool harus berupa objek JSON valid; selain itu kirim "{}" agar provider tidak 400. */
-export function sanitizeToolArguments(raw: string | null | undefined): string {
+function sanitizeToolArguments(raw: string | null | undefined): string {
   const s = (raw ?? "").trim();
   if (!s) return "{}";
   try {

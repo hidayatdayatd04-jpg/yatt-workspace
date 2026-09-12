@@ -11,12 +11,14 @@ export interface ChatToolCall {
   name: string;
   argumentsJson: string;
   extraContent?: unknown;
+  preparationMs?: number;
 }
 
 export interface StreamEvent {
-  type: "text" | "tool_calls" | "done" | "usage" | "reasoning";
+  type: "text" | "tool_progress" | "tool_calls" | "done" | "usage" | "reasoning";
   text?: string;
   toolCalls?: ChatToolCall[];
+  toolProgress?: { id: string; name: string; activityLabel?: string };
   finishReason?: string;
   usage?: { promptTokens: number; completionTokens: number };
 }

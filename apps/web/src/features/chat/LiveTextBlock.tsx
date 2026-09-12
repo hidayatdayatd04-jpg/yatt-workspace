@@ -1,26 +1,25 @@
+import { useMemo } from "react";
 import { stripAskBlocks } from "./ask-card";
 import { stripApprovalBlocks } from "./approval-card";
 import { stripSuggestions } from "./suggestion-card";
 import { stripConfidence } from "./AssistantBody";
-import { Markdown } from "./Markdown";
-import { useSmoothText } from "./use-smooth-text";
+import { balanceFences, Markdown } from "./Markdown";
 
 export function LiveTextBlock({
   text,
-  isLatest,
   live,
-  onSendToTerminal,
 }: {
   text: string;
-  isLatest: boolean;
-  live: boolean;
-  onSendToTerminal?: (code: string) => void;
+  live?: boolean;
 }) {
-  const { displayedText } = useSmoothText(text, live && isLatest);
-  const clean = stripConfidence(stripSuggestions(stripApprovalBlocks(stripAskBlocks(displayedText))));
+  // Teks tiba sudah berpacing huruf per huruf dari antrean; cukup render.
+  const clean = useMemo(
+    () => stripConfidence(stripSuggestions(stripApprovalBlocks(stripAskBlocks(balanceFences(text))))),
+    [text],
+  );
   return (
     <div className="relative">
-      {clean ? <Markdown text={clean} onSendToTerminal={onSendToTerminal} /> : null}
+      {clean ? <Markdown text={clean} live={live} /> : null}
     </div>
   );
 }

@@ -26,7 +26,7 @@ const SETTINGS_SECTIONS = new Set([
   "help",
 ]);
 
-export function parsePath(pathname: string): Route {
+function parsePath(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === "/login") return { name: "login" };
   if (path === "/connectors" || path === "/settings/connectors") return { name: "connectors" };
@@ -56,7 +56,7 @@ export function parsePath(pathname: string): Route {
   return { name: "chat-new" };
 }
 
-export function routePath(route: Route): string {
+function routePath(route: Route): string {
   switch (route.name) {
     case "login":
       return "/login";

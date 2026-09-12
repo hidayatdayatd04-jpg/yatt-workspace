@@ -1,7 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { RunEventDTO } from "./chat-hooks";
+import type { ToolActivityMetadata } from "./tool-activity/types";
 
-export interface LiveToolItem {
+export interface LiveToolItem extends ToolActivityMetadata {
   id: string;
   name: string;
   status: "running" | "done" | "failed";
@@ -23,6 +24,7 @@ export const STREAM_EVENT_TYPES = [
   "run.started",
   "message.delta",
   "reasoning.delta",
+  "tool.preparing",
   "tool.started",
   "tool.completed",
   "tool.failed",

@@ -3,7 +3,7 @@ import { singleRisk } from "./terminal-classifier/risk";
 import type { CommandRisk } from "./terminal-classifier/patterns";
 
 export type { CommandRisk } from "./terminal-classifier/patterns";
-export { LOCAL_COMMANDS, isLocalCommand, normalizeSlashes, normalizeBare } from "./terminal-classifier/normalize";
+export { isLocalCommand } from "./terminal-classifier/normalize";
 
 export interface ClassifiedCommand {
   raw: string;
@@ -14,7 +14,7 @@ export interface ClassifiedCommand {
 }
 
 /** Split batch input on newlines/semicolons outside quotes (best-effort, strict on ambiguity). */
-export function splitBatch(input: string): string[] {
+function splitBatch(input: string): string[] {
   const parts: string[] = [];
   let cur = "";
   let inQuote = false;

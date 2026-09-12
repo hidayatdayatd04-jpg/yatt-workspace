@@ -6,9 +6,8 @@ import { registerConversationExport } from "./chat/conversation-export";
 import { registerMessageRoutes } from "./chat/messages";
 import { registerRunRoutes } from "./chat/runs";
 import { registerRunEventRoutes } from "./chat/run-events";
+import { registerRunToolRoutes } from "./chat/run-tools";
 import type { ChatCtx, ChatRouteDeps } from "./chat/types";
-
-export type { ChatRouteDeps } from "./chat/types";
 
 /**
  * Conversations + runs (M7). Runs execute in the background (agent loop) and
@@ -33,6 +32,7 @@ export function createChatRoutes(deps: ChatRouteDeps) {
   registerMessageRoutes(routes, ctx);
   registerRunRoutes(routes, ctx);
   registerRunEventRoutes(routes, ctx);
+  registerRunToolRoutes(routes, ctx);
 
   return routes;
 }

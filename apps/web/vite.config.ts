@@ -35,5 +35,8 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    // Icon vscode-icons diterbitkan sebagai file asset (bukan data-URI base64
+    // yang menggembungkan chunk JS); di-fetch browser hanya saat icon dipakai.
+    assetsInlineLimit: 0,
   },
 });

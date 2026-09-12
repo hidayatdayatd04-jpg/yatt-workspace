@@ -1,50 +1,22 @@
-import ReactMarkdown from "react-markdown";
+import { useMemo } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { remarkCleanResponse } from "./clean-response";
 import { CodeBlock } from "./OutputBlocks";
+import { detectLanguage, extractFenceLanguage, extractText, sanitizeTerminalText } from "./markdown-utils";
 
-/** Strip ANSI/OSC escape sequences from model output before render. */
-export function sanitizeTerminalText(text: string): string {
-  return text
-    .replace(/\x1B\][^\x07]*(?:\x07|\x1B\\)/g, "")
-    .replace(/\x1B\[[0-9;?]*[A-Za-z]/g, "")
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-    .slice(0, 20000);
-}
-
-export function detectLanguage(code: string): string {
-  const t = code.trim().toLowerCase();
-  if (t.startsWith("/")) return "RouterOS";
-  if (t.includes("{") && t.includes(":")) return "JSON";
-  if (t.includes("get-") || t.includes("write-host")) return "PowerShell";
-  if (t.includes("#!/bin/bash") || t.startsWith("sudo ")) return "Bash";
-  return "Code";
-}
-
-export function extractText(node: unknown): string {
-  if (node == null || typeof node === "boolean") return "";
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(extractText).join("");
-  if (typeof node === "object" && "props" in (node as Record<string, unknown>)) {
-    const props = (node as { props?: { children?: unknown } }).props;
-    return extractText(props?.children);
-  }
-  return "";
-}
+export { balanceFences } from "./markdown-utils";
 
 export function Markdown({
   text,
-  onSendToTerminal,
+  live,
 }: {
   text: string;
-  onSendToTerminal?: (code: string) => void;
+  live?: boolean;
 }) {
   const safe = sanitizeTerminalText(text);
-  return (
-    <div className="chat-markdown prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0 prose-pre:bg-transparent prose-pre:rounded-none">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkCleanResponse]}
-        components={{
+  // Identitas renderer stabil: canvas dan spinner tidak remount setiap delta.
+  const components = useMemo<Components>(() => ({
           a: ({ href, children }) => {
             const url = href && /^https?:\/\//i.test(href) ? href : undefined;
             if (!url) return <>{children}</>;
@@ -61,11 +33,12 @@ export function Markdown({
           },
           pre: ({ children }) => {
             const codeText = extractText(children);
+            const fence = extractFenceLanguage(children);
             return (
               <CodeBlock
-                language={detectLanguage(codeText)}
+                language={fence || detectLanguage(codeText)}
                 code={codeText}
-                onSendToTerminal={onSendToTerminal}
+                live={live}
               />
             );
           },
@@ -102,7 +75,12 @@ export function Markdown({
               {children}
             </td>
           ),
-        }}
+  }), [live]);
+  return (
+    <div className="chat-markdown prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:p-0 prose-pre:bg-transparent prose-pre:rounded-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkCleanResponse]}
+        components={components}
       >
         {safe}
       </ReactMarkdown>

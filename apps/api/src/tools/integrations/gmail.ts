@@ -4,7 +4,7 @@ import { defineTool, objectSchema, stringField } from "../types";
 import { googleRequest } from "./http";
 
 const emailSchema = z.object({ to: z.string().email().max(254).refine((x) => !/[\r\n]/.test(x)), subject: z.string().max(500).refine((x) => !/[\r\n]/.test(x)), body: z.string().max(100000) }).strict();
-export function encodeEmail(args: z.infer<typeof emailSchema>) {
+function encodeEmail(args: z.infer<typeof emailSchema>) {
   const input = emailSchema.parse(args);
   return Buffer.from(`To: ${input.to}\r\nSubject: =?UTF-8?B?${Buffer.from(input.subject).toString("base64")}?=\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${Buffer.from(input.body).toString("base64").match(/.{1,76}/g)?.join("\r\n") ?? ""}`).toString("base64url");
 }

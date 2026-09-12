@@ -21,20 +21,28 @@ export function createRunPublisher(ctx: ChatCtx, runId: string, conversationId: 
     deps.hub.publish(event.runId, { ...event, seq: ++eventSeq });
     const p = (event.payload ?? {}) as Record<string, unknown>;
     if (event.type === "run.started") persist("run.started", "system", `run-${runId}`, null, { conversationId });
-    else if (event.type === "tool.started")
-      persist("tool.started", "ai", String(p.callId ?? `tool-${eventSeq}`), `run-${runId}`, {
+    else if ((event.type === "tool.preparing" || event.type === "tool.started"))
+      persist(event.type, "ai", String(p.callId ?? `tool-${eventSeq}`), `run-${runId}`, {
         tool: String(p.name ?? "tool"),
+        activityLabel: typeof p.activityLabel === "string" ? p.activityLabel : undefined,
+        attachmentName: typeof p.attachmentName === "string" ? p.attachmentName : undefined,
+        attachmentKind: typeof p.attachmentKind === "string" ? p.attachmentKind : undefined,
         callId: String(p.callId ?? ""),
         args: typeof p.args === "string" ? p.args.slice(0, 500) : null,
       });
     else if (event.type === "tool.completed" || event.type === "tool.failed")
       persist(event.type === "tool.completed" ? "tool.completed" : "tool.failed", "ai", String(p.callId ?? `tool-${eventSeq}`), `run-${runId}`, {
         tool: String(p.name ?? "tool"),
+        activityLabel: typeof p.activityLabel === "string" ? p.activityLabel : undefined,
+        attachmentName: typeof p.attachmentName === "string" ? p.attachmentName : undefined,
+        attachmentKind: typeof p.attachmentKind === "string" ? p.attachmentKind : undefined,
         callId: String(p.callId ?? ""),
         summary: String(p.summary ?? p.message ?? "").slice(0, 2000),
         code: String(p.code ?? ""),
+        preparationMs: typeof p.preparationMs === "number" ? p.preparationMs : undefined,
         durationMs: typeof p.durationMs === "number" ? p.durationMs : null,
         args: typeof p.args === "string" ? p.args.slice(0, 500) : null,
+        artifact: p.artifact && typeof p.artifact === "object" ? p.artifact : undefined,
         research: p.research && typeof p.research === "object" ? (p.research as Record<string, unknown>) : null,
       });
     else if (event.type === "transaction.updated")

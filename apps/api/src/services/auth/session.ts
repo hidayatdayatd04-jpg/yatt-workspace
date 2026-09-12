@@ -7,11 +7,11 @@ import type { AuthAccount } from "./account";
 export const SESSION_COOKIE = "ma_session";
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-export function hashToken(token: string): string {
+function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function newSessionToken(): string {
+function newSessionToken(): string {
   return randomBytes(32).toString("hex");
 }
 
@@ -76,15 +76,6 @@ export async function verifySessionToken(db: Database, token: string): Promise<S
 
 export async function revokeSession(db: Database, sessionId: string): Promise<void> {
   await db.update(sessions).set({ revokedAt: new Date() }).where(eq(sessions.id, sessionId));
-}
-
-export async function revokeOtherSessions(db: Database, accountId: string, keepSessionId: string): Promise<void> {
-  const all = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.accountId, accountId));
-  const now = new Date();
-  for (const row of all) {
-    if (row.id === keepSessionId) continue;
-    await db.update(sessions).set({ revokedAt: now }).where(eq(sessions.id, row.id));
-  }
 }
 
 export async function revokeAllForAccount(db: Database, accountId: string): Promise<void> {

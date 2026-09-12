@@ -1,3 +1,4 @@
+import { splitToolPresentation, withToolPresentation } from "./tool-presentation";
 import type { Logger } from "../../lib/logger";
 import type { ChatMessage, ChatToolCall, ChatToolDefinition } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
@@ -11,6 +12,7 @@ import type { ToolEnv } from "./dispatch";
 import { toProviderTools } from "./provider-tools";
 import { recordTxAction } from "./tx-record";
 import type { StartRunInput } from "./types";
+import { redactObject } from "../../lib/redaction";
 
 export interface SingleToolEnv extends ToolEnv {
   logger: Logger;
@@ -39,6 +41,9 @@ export async function executeSingleTool(
   state: SingleToolState,
   chatHistory: ChatMessage[],
 ): Promise<void> {
+  const presentation = splitToolPresentation(args);
+  args = presentation.args;
+  emitSeq = withToolPresentation(emitSeq, presentation.activityLabel);
   const { identicalCalls, providerTools } = state;
   // Guard anti-loop: (tool + argumen kanonis) identik yang ketiga
   // kalinya tanpa kemajuan → hentikan run, jangan eksekusi ulang.
@@ -55,17 +60,24 @@ export async function executeSingleTool(
       content: JSON.stringify({ error: "TOOL_LOOP_DETECTED", message: counters.failMessage }),
       toolCallId: call.id,
     });
+    // Emit penyelesaian agar kartu aktivitas tool yang sudah berjalan tidak
+    // menggantung dalam status "loading" sampai run berakhir.
+    await emitSeq({ type: "tool.failed", payload: { callId: call.id, name: fq,
+      code: "TOOL_LOOP_DETECTED", summary: counters.failMessage.slice(0, 1500), durationMs: 0 } });
     return;
   }
   let toolMsg: ToolMsg;
   if (seen && fq !== CONNECTION_CHECK_FQ && fq !== "mikrotik:connect_router") {
     // Pengulangan identik ke-2: pakai hasil cache, tanpa eksekusi ulang.
     seen.count += 1;
-    await emitSeq({ type: "tool.started", payload: { callId: call.id, name: fq, index: toolIndex, cached: true } });
+    const metadata = await env.agentTools?.activityMetadata(fq, args, input).catch(() => ({})) ?? {};
+    const argsPreview = JSON.stringify(redactObject(args ?? {})).slice(0, 500);
+    const replay: EmitFn = (event) => emitSeq({ ...event, payload: { ...event.payload, args: argsPreview, ...metadata } });
+    await replay({ type: "tool.started", payload: { callId: call.id, name: fq, index: toolIndex, cached: true } });
     if (seen.ok) {
-      await emitSeq({ type: "tool.completed", payload: { callId: call.id, name: fq, summary: seen.note, durationMs: 0, index: toolIndex, cached: true } });
+      await replay({ type: "tool.completed", payload: { callId: call.id, name: fq, summary: seen.note, durationMs: 0, index: toolIndex, cached: true } });
     } else {
-      await emitSeq({ type: "tool.failed", payload: { callId: call.id, name: fq, code: seen.errorCode ?? "TOOL_FAILED", summary: seen.note, durationMs: 0, cached: true } });
+      await replay({ type: "tool.failed", payload: { callId: call.id, name: fq, code: seen.errorCode ?? "TOOL_FAILED", summary: seen.note, durationMs: 0, cached: true } });
     }
     toolMsg = { role: "tool", content: seen.content, toolCallId: call.id, note: seen.note, ok: seen.ok, errorCode: seen.errorCode, risk: seen.risk };
   } else {

@@ -5,7 +5,6 @@ import { AppError } from "../lib/errors";
 
 /** Deteksi jenis konten (magic bytes) kini tinggal di services/file-extract. */
 export { detectContentKind } from "./file-extract/detect";
-export type { SniffedKind, DetectResult } from "./file-extract/detect";
 
 const MAX_OBJECT_KEY_LEN = 512;
 

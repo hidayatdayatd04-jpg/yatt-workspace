@@ -3,7 +3,7 @@ import type { BlockRegistry } from "./blocks";
 import { sumTokens, type BucketStore } from "./buckets";
 import type { EffectiveLimits, ModelRateSnapshot } from "./types";
 
-export function providerKindOf(modelKey: string): string {
+function providerKindOf(modelKey: string): string {
   const idx = modelKey.indexOf(":");
   return idx > 0 ? modelKey.slice(0, idx) : "custom";
 }

@@ -60,9 +60,8 @@ export function toolFailGuidance(errorCode: string, toolName: string): string {
   }
   if (toolName.startsWith("general:write_file")) {
     return (
-      "Operasi tulis berkas gagal. Bila berkas sudah ada di workspace atau hash berubah, Anda WAJIB memanggil " +
-      "general:read_file terlebih dahulu untuk membaca isi terkini dan memperoleh sha256 terbaru, lalu panggil kembali " +
-      "general:write_file dengan expectedHash=<sha256 tersebut>."
+      "Operasi tulis berkas gagal. Bila hash tidak cocok (FILE_CHANGED), WAJIB memanggil general:read_file " +
+      "untuk isi terkini, lalu ulangi dengan expectedHash=<sha256 terbaru> bila perlindungan tumpang-tindih diperlukan."
     );
   }
   if (toolName.startsWith("general:read_file")) {
@@ -114,6 +113,19 @@ export function toolFailGuidance(errorCode: string, toolName: string): string {
     return `Tool "${toolName}" tidak tersedia dengan nama itu. Pilih nama tool persis dari daftar tools yang tersedia.`;
   }
   if (errorCode === "TOOL_FAILED") {
+    if (toolName.startsWith("general:import_attachment")) {
+      return (
+        `Import lampiran gagal (kemungkinan file tujuan sudah ada). Periksa general:list_files dulu: ` +
+        `bila file sudah ada dengan isi sama, lanjutkan saja; bila beda, pilih path lain yang belum ada.`
+      );
+    }
+    if (toolName.startsWith("general:extract_zip")) {
+      return (
+        `Ekstraksi ZIP gagal. Bila folder tujuan sudah ada, lanjutkan dengan general:list_files/general:read_file ` +
+        `atau ekstrak ke destination lain. Bila limit terlampaui, baca daftar via read_file tanpa entryPath lalu ` +
+        `baca entryPath relevan atau ekstrak selektif via entries.`
+      );
+    }
     return (
       `Tool "${toolName}" gagal dieksekusi. Periksa output error di atas dan koreksi argumen Anda sebelum mencoba lagi. ` +
       "Jangan mengklaim operasi berhasil tanpa bukti dari tool."

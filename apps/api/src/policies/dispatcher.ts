@@ -3,14 +3,7 @@ import { checkAntiLockout } from "./dispatcher-antilockout";
 import { checkGatewayRules } from "./dispatcher-gateway";
 import type { CatalogSource, DispatchCheckInput, DispatchDecision, ModeSource, PolicySnapshot, SchemaValidator } from "./dispatcher-types";
 
-export type {
-  CatalogSource,
-  DispatchCheckInput,
-  DispatchDecision,
-  ModeSource,
-  PolicySnapshot,
-  SchemaValidator,
-} from "./dispatcher-types";
+export type { PolicySnapshot, SchemaValidator } from "./dispatcher-types";
 export { buildModeCatalog } from "./dispatcher-catalog";
 
 /**

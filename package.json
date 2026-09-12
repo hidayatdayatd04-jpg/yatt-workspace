@@ -15,7 +15,6 @@
     "prepack": "bun run build"
   },
   "devDependencies": {
-    "@eslint/js": "9.36.0",
     "concurrently": "9.2.1",
     "eslint": "9.36.0",
     "typescript": "5.9.2",

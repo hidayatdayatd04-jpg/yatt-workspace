@@ -2,7 +2,7 @@ import { looksTextualFile, isTextBytes } from "./text";
 
 export type SniffedKind = "image" | "pdf" | "text" | "doc" | "archive" | "unsupported";
 export interface DetectResult { ok: boolean; kind: SniffedKind; mimeType?: string; reason?: string }
-export const normalizeMime = (mime: string) => mime.split(";")[0]!.trim().toLowerCase();
+const normalizeMime = (mime: string) => mime.split(";")[0]!.trim().toLowerCase();
 const DOC_EXTENSIONS = new Set(["docx", "xlsx", "xls", "pptx", "odt", "ods", "odp"]);
 
 /** MIME parameters and browser aliases never override the actual file signature. */

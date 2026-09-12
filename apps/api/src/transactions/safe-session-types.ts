@@ -1,4 +1,3 @@
-import type { TransactionContext } from "./coordinator";
 import type { McpSupervisor } from "../mcp/supervisor";
 import type { McpChild } from "../mcp/supervisor";
 import type { Logger } from "../lib/logger";
@@ -45,5 +44,3 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
     );
   });
 }
-
-export type { TransactionContext };

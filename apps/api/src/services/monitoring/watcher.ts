@@ -40,14 +40,14 @@ export async function updateWatcherSettings(db: Database, userId: string, input:
   return next;
 }
 
-export function clampInterval(v: unknown): number {
+function clampInterval(v: unknown): number {
   const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n)) return 180_000;
   return Math.min(900_000, Math.max(60_000, Math.floor(n)));
 }
 
 /** Satu putaran poll: semua connector connected → fetchLive (alert+dedup otomatis). */
-export async function pollOnce(deps: WatcherDeps): Promise<{ checked: number; errors: number }> {
+async function pollOnce(deps: WatcherDeps): Promise<{ checked: number; errors: number }> {
   const rows = await deps.db
     .select({ userId: routerConnections.userId, id: routerConnections.id })
     .from(routerConnections)

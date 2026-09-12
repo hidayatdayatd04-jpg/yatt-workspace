@@ -5,7 +5,7 @@ import type { NetworkMapService } from "../../services/network-map";
 import { AppError } from "../../lib/errors";
 
 export const NETWORK_MAP_FQ = "custom:read_network_map";
-export const NetworkMapQuery = z.object({
+const NetworkMapQuery = z.object({
   view: z.enum(["summary", "nodes", "path"]).default("summary"),
   query: z.string().max(128).optional(),
   vlanId: z.string().regex(/^\d{1,4}$/).optional(),
@@ -25,7 +25,7 @@ export const NETWORK_MAP_TOOL: NormalizedTool = {
   }, additionalProperties: false },
 };
 
-export function summarizeNetworkMap(snapshot: NetworkMapSnapshot, input: z.input<typeof NetworkMapQuery>): string {
+function summarizeNetworkMap(snapshot: NetworkMapSnapshot, input: z.input<typeof NetworkMapQuery>): string {
   const args = NetworkMapQuery.parse(input);
   const counts: Record<string, number> = {};
   for (const node of snapshot.nodes) counts[node.kind] = (counts[node.kind] ?? 0) + 1;

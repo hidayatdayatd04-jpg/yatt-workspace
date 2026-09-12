@@ -16,7 +16,6 @@ export interface ToolActivity {
   status: "running" | "done" | "failed";
 }
 
-export { Markdown } from "./Markdown";
 export { fmtSize } from "./format-size";
 
 export function ChatPanel(props: {
@@ -29,13 +28,13 @@ export function ChatPanel(props: {
   txStatus?: string | null;
   queueStatus?: string | null;
   runLive: boolean;
+  activeRunId?: string | null;
   runError?: LiveRunError | null;
   emptyTitle?: string;
   onResendPrompt?: (prompt: string) => void;
   /** Retry in-place untuk pesan user yang diedit (tanpa pesan duplikat). */
   onRetryMessage?: (messageId: string, text: string) => void;
   onAnswerAsk?: (label: string) => void;
-  onSendToTerminal?: (code: string) => void;
   activeConnectionId?: string | null;
   conversationId?: string | null;
 }) {
@@ -46,7 +45,10 @@ export function ChatPanel(props: {
     props.runLive,
     props.persistedActivities?.length,
   );  const edit = useMessageEditing();
-  const { rows, byRun, liveSteps } = useChatRows(props.messages, props.persistedActivities ?? [], props.toolActivity);
+  // Pesan tersimpan bisa tiba sebelum antrean ketik selesai; tampilkan satu versi.
+  const visibleMessages = props.runLive && props.activeRunId
+    ? props.messages.filter((m) => m.role !== "assistant" || m.content.runId !== props.activeRunId) : props.messages;
+  const { rows, byRun, liveSteps } = useChatRows(visibleMessages, props.persistedActivities ?? [], props.toolActivity);
 
   function submitEdit() {
     const trimmed = edit.editingContent.trim();
@@ -110,7 +112,6 @@ export function ChatPanel(props: {
               onCancelEdit={edit.cancelEdit}
               onSubmitEdit={submitEdit}
               onAnswerAsk={props.onAnswerAsk}
-              onSendToTerminal={props.onSendToTerminal}
               onResendPrompt={props.onResendPrompt}
               onRetryMessage={props.onRetryMessage}
               actionsDisabled={props.runLive}
@@ -121,13 +122,13 @@ export function ChatPanel(props: {
 
           <LiveTurn
             runLive={props.runLive}
+            runId={props.activeRunId}
             streamText={props.streamText}
             reasoningText={props.reasoningText}
             liveEvents={props.liveEvents}
             liveSteps={liveSteps}
             queueStatus={props.queueStatus}
             txStatus={props.txStatus}
-            onSendToTerminal={props.onSendToTerminal}
           />
 
           {liveError && (

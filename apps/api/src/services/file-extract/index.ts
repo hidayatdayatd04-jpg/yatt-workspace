@@ -4,9 +4,6 @@ import { extractPdfText } from "./pdf";
 import { extractOfficeText } from "./office";
 import { extractArchiveText } from "./zip";
 
-export { detectContentKind } from "./detect";
-export type { SniffedKind, DetectResult } from "./detect";
-
 /**
  * Ekstrak teks dari lampiran apa pun yang dikenali (PDF, Word, Excel,
  * PowerPoint, OpenDocument, ZIP/folder, teks/kode). Null bila format tidak

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { FileIcon, FolderIcon } from "@/components/file-icons";
 import type { AttachmentDTO } from "./chat-hooks/types";
 
 type FileContent = { content?: string; kind: string; nextOffset: number | null;
@@ -20,8 +21,13 @@ export function ChatFilePreview({ file }: { file: AttachmentDTO }) {
     {content.isError && <p role="alert" className="text-sm text-destructive">{content.error.message}</p>}
     {content.data?.entries && <div className="max-h-72 space-y-1 overflow-auto">
       {content.data.entries.map((item) => <button key={item.name} disabled={item.directory}
-        className="block w-full rounded p-2 text-left text-xs break-all hover:bg-muted disabled:text-muted-foreground"
-        onClick={() => { setEntry(item.name); setOffset(0); }}>{item.directory ? "Folder: " : ""}{item.name}</button>)}
+        className="flex w-full items-center gap-2 rounded p-2 text-left text-xs break-all hover:bg-muted disabled:text-muted-foreground"
+        onClick={() => { setEntry(item.name); setOffset(0); }}>
+        {item.directory
+          ? <FolderIcon folderName={item.name.replaceAll("\\", "/").split("/").filter(Boolean).at(-1) ?? item.name} size={16} />
+          : <FileIcon fileName={item.name} size={16} />}
+        <span className="min-w-0 break-all">{item.name}</span>
+      </button>)}
     </div>}
     {content.data?.content && <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-muted p-3 text-xs">{content.data.content}</pre>}
     <div className="flex gap-2">

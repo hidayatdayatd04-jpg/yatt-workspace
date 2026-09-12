@@ -1,3 +1,4 @@
+import { presentationSchema } from "./tool-presentation";
 import type { ChatToolDefinition } from "../chat-client";
 import type { NormalizedTool } from "../../policies/normalize";
 import { extractQueryKeywords } from "./ranking-synonyms";
@@ -13,7 +14,7 @@ const SHORT_DESC_CHARS = 300;
  * Deskripsi tool yang terpotong tengah kalimat membuat model salah paham
  * parameter — sumber klasik pemanggilan tool "bodoh".
  */
-export function cutAtBoundary(text: string, limit: number): string {
+function cutAtBoundary(text: string, limit: number): string {
   if (text.length <= limit) return text;
   const slice = text.slice(0, limit);
   const marks = [
@@ -59,7 +60,7 @@ export function toProviderTools(catalog: NormalizedTool[], userText = ""): ChatT
       function: {
         name: t.fqName.replace(/[^A-Za-z0-9_-]/g, "_"),
         description: cutAtBoundary(desc, budget),
-        parameters: (t.inputSchema && typeof t.inputSchema === "object"
+        parameters: presentationSchema(t.inputSchema && typeof t.inputSchema === "object"
           ? (t.inputSchema as Record<string, unknown>)
           : { type: "object", properties: {} }),
       },

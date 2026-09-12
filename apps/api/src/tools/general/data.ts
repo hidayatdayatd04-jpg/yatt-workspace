@@ -100,5 +100,3 @@ export function createDataTools(baseDir: string) {
       } }),
   ];
 }
-
-export { queryJson };

@@ -27,7 +27,8 @@ export function useChatScroll(
   useEffect(() => {
     if (nearBottomRef.current) {
       const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      bottomRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "end" });
+      // Saat live ikuti seketika: smooth tiap flush justru terlihat melayang/terlalu cepat.
+      bottomRef.current?.scrollIntoView({ behavior: runLive || reduced ? "auto" : "smooth", block: "end" });
     }
   }, [messageCount, streamText, toolCount, runLive, activityCount]);
 

@@ -1,3 +1,4 @@
+import { createSkillReadTool } from "./general/skills";
 import { createAttachmentReadTools } from "./general/attachment-read";
 import type { Database } from "../db";
 import type { IntegrationService } from "../services/integrations";
@@ -22,11 +23,20 @@ import { createTextTools } from "./general/text";
 import { createSystemTools } from "./general/system";
 import { createComputeTools } from "./general/compute";
 import { createArchiveTools } from "./general/archive";
+import { createOfficeReadTools } from "./general/office-read";
+import { createOfficeXlsxTools } from "./general/office-xlsx";
+import { createOfficeDocxTools } from "./general/office-docx";
+import { createOfficePdfTools } from "./general/office-pdf";
+import { createOfficePptxTools } from "./general/office-pptx";
 import { createDriveTools } from "./integrations/drive";
+import { createGDocsTools } from "./integrations/gdocs";
+import { createGSheetsTools } from "./integrations/gsheets";
+import { createGSlidesTools } from "./integrations/gslides";
 import { createGmailTools } from "./integrations/gmail";
 import { createCalendarTools } from "./integrations/calendar";
 import { createTelegramTools } from "./integrations/telegram";
 import { AppError } from "../lib/errors";
+import { redactObject } from "../lib/redaction";
 import { toolErrorBody } from "./errors";
 import { createAttachmentTool } from "./general/attachments";
 import type { WorkspaceProcessManager } from "../services/workspace-processes";
@@ -34,6 +44,7 @@ import type { WorkspaceProcessManager } from "../services/workspace-processes";
 export function createAgentToolRegistry(deps: { db: Database; integrations: IntegrationService; connectors: ConnectorService; supervisor: McpSupervisor; transactions: TransactionCoordinator; dataDir: string; shellAvailable: boolean; logger: Logger; processes: WorkspaceProcessManager; readObject?: (key: string) => Promise<Buffer>; describeImage?: Parameters<typeof createAttachmentReadTools>[0]["describeImage"] }) {
   const { processes } = deps;
   const tools = [
+    createSkillReadTool(),
     ...createConnectionTools(deps),
     ...createFileTools(deps.dataDir, deps.describeImage),
     ...(deps.readObject ? [createAttachmentTool({ ...deps, readObject: deps.readObject }), ...createAttachmentReadTools({ ...deps, readObject: deps.readObject })] : []),
@@ -51,7 +62,15 @@ export function createAgentToolRegistry(deps: { db: Database; integrations: Inte
     ...createSystemTools(deps.shellAvailable),
     ...createComputeTools(deps.shellAvailable),
     ...createArchiveTools(deps.dataDir),
+    ...createOfficeReadTools(deps.dataDir),
+    ...createOfficeXlsxTools(deps.dataDir),
+    ...createOfficeDocxTools(deps.dataDir),
+    ...createOfficePdfTools(deps.dataDir),
+    ...createOfficePptxTools(deps.dataDir),
     ...createDriveTools(deps.integrations),
+    ...createGDocsTools(deps.integrations),
+    ...createGSheetsTools(deps.integrations),
+    ...createGSlidesTools(deps.integrations),
     ...createGmailTools(deps.integrations),
     ...createCalendarTools(deps.integrations),
     ...createTelegramTools(deps.integrations),
@@ -66,6 +85,12 @@ export function createAgentToolRegistry(deps: { db: Database; integrations: Inte
       });
     },
     has: (name: string) => byName.has(name),
+    async activityMetadata(name: string, args: unknown, run: StartRunInput) {
+      const tool = byName.get(name);
+      if (!tool?.activityMetadata) return {};
+      await deps.integrations.assertAllowed(run.userId, tool.connector, tool.permission);
+      return redactObject(await tool.activityMetadata(args, run)) as Record<string, unknown>;
+    },
     async execute(name: string, args: unknown, run: StartRunInput, signal?: AbortSignal) {
       const tool = byName.get(name);
       if (!tool) throw new AppError("TOOL_UNSUPPORTED", "Tool agent tidak ditemukan.", 400);

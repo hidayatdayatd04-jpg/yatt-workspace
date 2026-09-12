@@ -1,4 +1,5 @@
 import { Trash2, Download, FileDiff } from "@/components/icons";
+import { FileIcon } from "@/components/file-icons";
 import { Button } from "@/components/ui/button";
 import { formatBytes } from "./backup-format";
 import type { ConfigBackupDTO } from "@shared/index";
@@ -57,7 +58,12 @@ export function BackupTable(props: {
                         title="Pilih untuk perbandingan diff"
                       />
                     </td>
-                    <td className="px-4 py-3 font-semibold text-foreground">{b.name}</td>
+                    <td className="px-4 py-3 font-semibold text-foreground">
+                      <span className="flex items-center gap-2">
+                        <FileIcon fileName={`${b.name}.rsc`} size={16} />
+                        <span className="truncate">{b.name}</span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {b.routerIdentity || "—"} ({b.boardName || "RouterOS"})
                     </td>

@@ -1,5 +1,4 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import type { ToolResultError } from "../errors";
 import { ToolResultError as Err } from "../errors";
 
 /** Env allowlist — tanpa API key provider, path DB, atau kredensial apa pun. */
@@ -28,7 +27,7 @@ export interface ExecResult {
 }
 
 /** Kill tree proses lintas platform: taskkill /T /F (Windows) atau kill -group (POSIX). */
-export function killTree(child: ChildProcess): void {
+function killTree(child: ChildProcess): void {
   const windows = process.platform === "win32";
   if (windows && child.pid) {
     spawn("taskkill.exe", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" }).on("error", () => child.kill());
@@ -140,5 +139,3 @@ export async function execCommand(opts: ExecOptions): Promise<ExecResult> {
     });
   });
 }
-
-export type { ToolResultError };

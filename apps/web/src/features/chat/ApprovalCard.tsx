@@ -12,6 +12,14 @@ interface Props {
   onRejected?: (summary: string) => void;
 }
 
+function NoRouterNotice() {
+  return (
+    <div className="my-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm leading-relaxed text-amber-700 dark:text-amber-400">
+      Kartu persetujuan ini hanya berlaku untuk konfigurasi router, dan belum ada router yang terhubung. Untuk mengubah file atau dokumen (Word, Excel, PDF, PPT), minta langsung lewat chat — agent akan mengeksekusinya tanpa kartu persetujuan.
+    </div>
+  );
+}
+
 export function ApprovalCard({ spec, activeConnectionId, conversationId, onRejected }: Props) {
   const flow = useApprovalFlow(spec, { activeConnectionId, conversationId, onRejected });
   const log = useApprovalLogPanel(spec, flow.logs, flow.serverVerification);
@@ -27,6 +35,10 @@ export function ApprovalCard({ spec, activeConnectionId, conversationId, onRejec
       <ApprovalRejectedCard spec={spec} expanded={flow.isExpanded} onToggle={() => flow.setIsExpanded(!flow.isExpanded)} />
     );
   }
+
+  // Tanpa router aktif, kartu persetujuan router tidak bisa dieksekusi —
+  // tampilkan penjelasan, bukan tombol yang pasti gagal.
+  if (!activeConnectionId) return <NoRouterNotice />;
 
   // Render when idle or in_progress or failed
   return <ApprovalPendingCard spec={spec} flow={flow} />;

@@ -16,7 +16,7 @@ Web dan API: http://localhost:3000
 Data default: ~/.yatt-agent
 Ctrl+C untuk berhenti. Setup lokal otomatis pada run pertama.`;
 
-function resolveDataDir(explicit?: string): string {
+function resolveDataDir(explicit) {
   if (explicit) return resolve(explicit);
   if (process.env.DATA_DIR) return resolve(process.env.DATA_DIR);
   const next = resolve(homedir(), ".yatt-agent");
